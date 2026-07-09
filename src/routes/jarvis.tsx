@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
