@@ -1720,14 +1720,14 @@ function JarvisPage() {
 
                 {(phase === "listening" || rtUserPartial) && (
                   <div
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(180 90% 65%)" }}>
                       You
                     </div>
                     {rtUserPartial ? (
-                      <div className="font-sans text-sm leading-relaxed text-white/80 italic">
+                      <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/80 italic break-words [overflow-wrap:anywhere] hyphens-auto">
                         {rtUserPartial}
                         <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
