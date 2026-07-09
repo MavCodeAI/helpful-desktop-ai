@@ -152,10 +152,10 @@ type Phase = "idle" | "listening" | "thinking" | "speaking";
 /** Preview-parity color language: each phase has a hue that drives the orb,
  *  rings, glow, side buttons, caption tint, and message role labels. */
 const PHASE_HUE: Record<Phase, number> = {
-  idle: 258,       // violet — resting
-  listening: 180,  // cyan   — user speaking
-  thinking: 48,    // amber  — connecting / composing
-  speaking: 258,   // violet — assistant replying
+  idle: 200,       // cyan  — resting (perfect1 aesthetic)
+  listening: 195,  // bright cyan — user speaking
+  thinking: 48,    // amber — connecting / composing (kept as state cue)
+  speaking: 210,   // deeper cyan — assistant replying
 };
 const PHASE_CAPTION: Record<Phase, string> = {
   idle: "TAP TO START",
@@ -1879,7 +1879,9 @@ function JarvisPage() {
             {(() => {
               const hue = PHASE_HUE[phase];
               const isEmpty = messages.length === 0 && !partial && !lastFailed;
-              const showSides = !isEmpty || phase !== "idle";
+              // Always show side buttons (mic on left, stop on right) so the
+              // controls are visible from the first moment — matches perfect1.
+              const showSides = true;
               const core = isEmpty ? 200 : 140;
               const innerRing = core + 40;
               const outerRing = core + 100;
