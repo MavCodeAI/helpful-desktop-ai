@@ -975,7 +975,7 @@ function JarvisPage() {
           <button
             ref={micButtonRef}
             onClick={handleMicClick}
-            className="relative w-20 h-20 sm:w-24 sm:h-24 [@media(max-height:640px)]:w-16 [@media(max-height:640px)]:h-16 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="relative -mt-6 sm:-mt-10 w-20 h-20 sm:w-24 sm:h-24 [@media(max-height:640px)]:w-16 [@media(max-height:640px)]:h-16 [@media(max-height:640px)]:-mt-4 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={statusLabel}
             aria-live="polite"
           >
