@@ -1654,9 +1654,74 @@ function JarvisPage() {
                 >
                   <Volume2 className="w-4 h-4 mr-1.5" /> Test voice
                 </Button>
+
+                {/* ---------- Microphone section ---------- */}
+                {/* Sensitivity slider retunes the meter thresholds without
+                    touching the raw mic gain — so calibration is purely a
+                    visual/UX decision and never affects STT quality. The
+                    inline meter here IS the test mode: it renders live,
+                    unconditionally, and nothing captured here is sent to
+                    the assistant. */}
+                <div className="pt-4 border-t border-white/5">
+                  <div className="flex justify-between mb-2">
+                    <label className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Mic sensitivity
+                    </label>
+                    <span className="text-xs text-jarvis font-mono">{tts.micSensitivity.toFixed(2)}×</span>
+                  </div>
+                  <Slider
+                    min={0.3}
+                    max={3}
+                    step={0.05}
+                    value={[tts.micSensitivity]}
+                    onValueChange={([v]) => updateTts({ micSensitivity: v })}
+                    aria-label="Microphone meter sensitivity"
+                  />
+                  <p className="mt-1 text-[10px] text-muted-foreground/70">
+                    Adjusts the volume-meter zones only — raise for quiet mics, lower for loud rooms.
+                  </p>
+
+                  <div className="mt-3 rounded-lg bg-white/[0.03] border border-white/10 px-3 py-2.5 flex items-center gap-3">
+                    <VolumeMeter level={micLevel} peak={micPeak} sensitivity={tts.micSensitivity} />
+                    <span className="text-[10px] font-mono tabular-nums text-foreground/50 ml-auto">
+                      {micActive ? "live" : "off"}
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="w-full mt-3"
+                    onClick={() => setMicTestOpen((v) => !v)}
+                    aria-pressed={micTestOpen}
+                  >
+                    <Mic className="w-4 h-4 mr-1.5" />
+                    {micTestOpen ? "Close mic test" : "Full-screen mic test"}
+                  </Button>
+                </div>
+
+                {/* ---------- Auto-adaptive pace ---------- */}
+                <div className="pt-4 border-t border-white/5">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-jarvis"
+                      checked={tts.autoAdaptivePace}
+                      onChange={(e) => updateTts({ autoAdaptivePace: e.target.checked })}
+                    />
+                    <span className="flex-1">
+                      <span className="block text-xs uppercase tracking-widest text-muted-foreground">
+                        Auto-adaptive pace
+                      </span>
+                      <span className="block text-[10px] text-muted-foreground/70 mt-0.5">
+                        Nudges speaking rate up (max +0.3×) when STT + TTS round-trip exceeds ~1s, so replies feel responsive on slow networks.
+                      </span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
+
 
           {/* Account menu — replaces the raw license chip with a proper avatar dropdown */}
           <DropdownMenu>
