@@ -1859,7 +1859,33 @@ function JarvisPage() {
             />
           </div>
 
+          {/* Persistent mode badge — makes the active voice pipeline visible
+              at a glance instead of hiding it behind transient toasts. */}
+          <div
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full glass-pill px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
+            title={
+              mode === "realtime"
+                ? realtimeOn ? "Realtime WebRTC session active" : "Realtime mode — not yet connected"
+                : "Classic pipeline (record → STT → chat → TTS)"
+            }
+          >
+            <span
+              aria-hidden="true"
+              className={`h-1.5 w-1.5 rounded-full ${
+                mode === "realtime"
+                  ? realtimeOn
+                    ? "bg-emerald-400 motion-safe:animate-pulse"
+                    : "bg-amber-400"
+                  : "bg-jarvis"
+              }`}
+            />
+            <span className={mode === "realtime" ? "text-jarvis" : "text-foreground/80"}>
+              {mode === "realtime" ? "Realtime" : "Voice"}
+            </span>
+          </div>
+
           {/* History drawer */}
+
           <Sheet>
             <SheetTrigger asChild>
               <Button
