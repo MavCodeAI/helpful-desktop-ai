@@ -1251,15 +1251,22 @@ function JarvisPage() {
                   </div>
                 )}
                 {phase === "speaking" && (
-                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
+                  <div
+                    className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]"
+                    role="group"
+                    aria-label="Playback controls"
+                  >
                     {playPaused ? (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={resumePlayback}
                         className="h-8 rounded-full"
+                        aria-label="Resume playback"
+                        aria-pressed={false}
+                        title="Resume playback"
                       >
-                        <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                        <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                       </Button>
                     ) : (
                       <Button
@@ -1267,8 +1274,11 @@ function JarvisPage() {
                         size="sm"
                         onClick={pausePlayback}
                         className="h-8 rounded-full"
+                        aria-label="Pause playback"
+                        aria-pressed={false}
+                        title="Pause playback"
                       >
-                        <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                        <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                       </Button>
                     )}
                     <Button
@@ -1276,16 +1286,21 @@ function JarvisPage() {
                       size="sm"
                       onClick={restartPlayback}
                       className="h-8 rounded-full"
+                      aria-label="Restart playback from beginning"
+                      title="Restart"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={stopPlayback}
                       className="h-8 rounded-full"
+                      aria-label="Stop playback"
+                      aria-keyshortcuts="Escape"
+                      title="Stop (Esc)"
                     >
-                      <Square className="w-3.5 h-3.5 mr-1" /> Stop
+                      <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Stop
                     </Button>
                   </div>
                 )}
