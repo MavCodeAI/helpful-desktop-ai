@@ -863,9 +863,11 @@ function JarvisPage() {
     try {
       if (localStorage.getItem("jarvis:coachmark:v1")) return;
       const t = setTimeout(() => {
+        const isTouch = window.matchMedia?.("(hover: none)").matches;
         toast("Tap the orb to talk", {
-          description:
-            "Hold Space to speak, release to send. Press Esc to cancel. Tap orb again while I'm speaking to interrupt.",
+          description: isTouch
+            ? "Tap once to start recording. Tap again to send. Tap while I'm speaking to interrupt."
+            : "Hold Space to speak, release to send. Press Esc to cancel. Tap orb again while I'm speaking to interrupt.",
           duration: 8000,
         });
         localStorage.setItem("jarvis:coachmark:v1", "1");
