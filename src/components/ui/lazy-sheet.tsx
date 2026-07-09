@@ -7,7 +7,7 @@
  * click. On slow networks the fallback is `null` (button stays pressed
  * for a beat) — no layout jump.
  */
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 let sheetPrefetched = false;
 export function prefetchSheet(): void {
@@ -51,10 +51,13 @@ const SheetImpl = lazy(async () => {
 });
 
 export interface LazySheetTriggerProps {
+  ref: (node: HTMLElement | null) => void;
   onClick: () => void;
+  onKeyDown: (e: KeyboardEvent<HTMLElement>) => void;
   onPointerEnter: () => void;
   onFocus: () => void;
   "aria-expanded": boolean;
+  "aria-haspopup": "dialog";
 }
 
 export function LazySheet({
@@ -72,25 +75,47 @@ export function LazySheet({
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   const openSheet = () => {
     setMounted(true);
     setOpen(true);
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    // Native <button> already fires onClick on Enter/Space, but callers may
+    // pass a non-button element — normalize activation here.
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openSheet();
+    }
+  };
+
   return (
     <>
       {trigger({
+        ref: (node) => {
+          triggerRef.current = node;
+        },
         onClick: openSheet,
+        onKeyDown: handleKeyDown,
         onPointerEnter: prefetchSheet,
         onFocus: prefetchSheet,
         "aria-expanded": open,
+        "aria-haspopup": "dialog",
       })}
       {mounted && (
         <Suspense fallback={null}>
           <SheetImpl
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) {
+                // Radix Dialog restores focus to the previously-focused element,
+                // but our trigger may have been re-rendered — ensure focus lands.
+                queueMicrotask(() => triggerRef.current?.focus());
+              }
+            }}
             side={side}
             title={title}
             contentClassName={contentClassName}
