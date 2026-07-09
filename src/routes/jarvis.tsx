@@ -1190,7 +1190,7 @@ function JarvisPage() {
 
   const connectRealtime = useCallback(async () => {
     if (realtimeRef.current) return;
-    setPhase("thinking");
+    dispatch({ type: "START_THINKING" });
     // Dynamic import — first realtime click pays the load cost (~10-15 KB),
     // every subsequent click hits the module cache.
     const { RealtimeClient, RealtimeError } = await import("@/lib/realtime-client");
