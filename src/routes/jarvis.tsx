@@ -1231,13 +1231,19 @@ function JarvisPage() {
             <Button
               type="submit"
               size="icon"
+              variant="ghost"
               disabled={phase !== "idle" || !composerText.trim()}
-              className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+              className={`shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full transition-all ${
+                composerText.trim()
+                  ? "bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110"
+                  : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
+              } disabled:shadow-none`}
               aria-label="Send message"
             >
               <SendHorizontal className="w-4 h-4" />
             </Button>
           )}
+
         </form>
 
         {/* Keyboard shortcut hints — subtle */}
