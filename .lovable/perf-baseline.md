@@ -18,7 +18,9 @@
 | Phase constants + reducer | inline `useState` in route | pure `voiceReducer` in `src/features/voice/` |
 | Phase-machine tests | 0 | 8 passing (vitest) |
 | `useMicLevel` React updates | ~60 fps | throttled to **~20 fps** (RAF math unchanged) |
+| `RealtimeClient` bundling | eager in jarvis chunk | **lazy chunk `realtime-client-*.js` (~3.6 KB)** — loaded on first realtime click |
 | Server error mapping | duplicated per route | shared `src/lib/server/errors.ts` + `gateway-client.ts` |
+| `/api/chat`, `/api/stt`, `/api/tts` | inline `fetch` + `Bearer` | migrated to `gatewayFetch()` (single upstream helper) |
 
 ## New module layout
 
@@ -42,14 +44,13 @@ src/features/jarvis-ui/
 
 ## Deferred to next pass
 
-- **Wire `voiceReducer` into `JarvisPage`** — module + tests shipped; the
-  ~2.4k-line component still uses scattered `useState` for `phase`. Swap
-  is mechanical but touches every phase-transition site; do it once per
-  transition family to keep diffs reviewable.
-- **Lazy-load `RealtimeClient`** — realtime WebRTC is imported eagerly at
-  the top of `jarvis.tsx`. Move to a dynamic `import()` inside the "enter
-  realtime" handler to drop ~10-15 KB from the initial chunk for
-  non-realtime users.
-- **Adopt `src/lib/server/*` in `/api/{chat,stt,tts,realtime-token}`** —
-  scaffold is in; each route needs a 5-10 line swap to `gatewayFetch` +
-  `gatewayError`.
+- **Wire `voiceReducer` into `JarvisPage`.** The reducer + 8 passing tests
+  ship; the ~2.4k-line component still uses `useState<Phase>` with 97
+  `phase`/`setPhase` references. A mechanical rewrite in one turn is
+  high-risk without Playwright coverage of PTT / Auto-VAD / Realtime.
+  Recommended sequence: (1) add Playwright smokes for the three flows,
+  (2) swap one transition family at a time (recorder → TTS → realtime),
+  (3) delete `setPhase` and expose only `dispatch`.
+- **Playwright smokes** for PTT / Auto-VAD / Realtime — spec sketch:
+  reproduce a full voice cycle against the live preview and assert the
+  orb reaches `idle` again within N seconds.

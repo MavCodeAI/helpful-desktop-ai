@@ -27,18 +27,29 @@ intentionally deferred.
 7. **Docs** — `src/features/voice/README.md` with pipeline diagram +
    contracts; this file + `perf-baseline.md` track deltas.
 
+7. **`RealtimeClient` lazy-loaded** — split into its own `realtime-client-*.js`
+   chunk (~3.6 KB), fetched on first realtime click via `await import()`.
+   Non-realtime users (PTT / Auto-VAD) no longer pay the WebRTC code cost
+   at initial load.
+8. **`/api/chat`, `/api/stt`, `/api/tts` migrated to `gatewayFetch()`** —
+   upstream URL, auth header, and `LOVABLE_API_KEY` read now live in one
+   place (`src/lib/server/gateway-client.ts`). Wire format unchanged
+   (Bearer auth, plain-text error bodies) so client parsing is untouched.
+
 ## Deferred (each safe on its own)
 
-- **Adopt `voiceReducer` inside `JarvisPage`.** The reducer + tests are
-  shipped, but `JarvisPage` still uses scattered `useState` for phase.
-  Swap is mechanical — do it once per transition family (recorder, TTS,
-  realtime) to keep diffs reviewable.
-- **Lazy-load `RealtimeClient`.** Move to a dynamic `import()` inside the
-  "enter realtime" handler to shave ~10-15 KB off the initial chunk.
-- **Migrate `/api/{chat,stt,tts,realtime-token}` to `src/lib/server/*`.**
-  5-10 lines per route.
-- **Playwright smoke tests** for PTT / auto-VAD / realtime — spec listed
-  in the perf-baseline "Deferred" section.
+- **Adopt `voiceReducer` inside `JarvisPage`.** Reducer + 8 tests shipped;
+  the ~2.4k-line component still uses `useState<Phase>` (97 `phase`/
+  `setPhase` refs). Recommended sequence:
+  1. Add Playwright smokes for PTT / Auto-VAD / Realtime.
+  2. Swap one transition family at a time (recorder → TTS → realtime).
+  3. Delete `setPhase`, expose only `dispatch`.
+- **Playwright smoke tests** for the three voice flows — asserts each
+  flow returns to `idle` and shows no error toast.
+- **`realtime-token` unification.** That route hits `api.openai.com`
+  directly (not the Lovable gateway), so it correctly stays outside
+  `gatewayFetch`. If we ever proxy realtime through Lovable, migrate it
+  then.
 
 Elon-style rule: don't touch what isn't demonstrably slow. Each deferred
 item has a measurable payoff (bundle size, LOC, test coverage) — tackle
