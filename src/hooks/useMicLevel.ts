@@ -20,9 +20,7 @@ import { useEffect, useRef, useState } from "react";
 export function useMicLevel(active: boolean): number {
   const [level, setLevel] = useState(0);
   // Track visibility so the effect re-runs when the tab hides/returns.
-  const [visible, setVisible] = useState(
-    typeof document === "undefined" ? true : !document.hidden,
-  );
+  const [visible, setVisible] = useState(typeof document === "undefined" ? true : !document.hidden);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
