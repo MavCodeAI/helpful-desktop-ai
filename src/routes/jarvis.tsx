@@ -53,15 +53,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { LazySheet, prefetchSheet } from "@/components/ui/lazy-sheet";
+import { LazyDropdownMenu, prefetchDropdownMenu } from "@/components/ui/lazy-dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getLicense, clearLicense } from "@/lib/license";
 import {
@@ -248,6 +241,8 @@ function JarvisPage() {
   // once per mount; a no-op on subsequent mounts.
   useEffect(() => {
     prefetchMarkdown();
+    prefetchSheet();
+    prefetchDropdownMenu();
   }, []);
 
   useEffect(() => {
@@ -1511,9 +1506,13 @@ function JarvisPage() {
 
           {/* History drawer */}
 
-          <Sheet>
-            <SheetTrigger asChild>
+          <LazySheet
+            side="left"
+            title="Conversations"
+            contentClassName="w-[85vw] sm:w-[320px] flex flex-col"
+            trigger={(p) => (
               <Button
+                {...p}
                 variant="ghost"
                 size="icon"
                 aria-label="Conversation history"
@@ -1522,14 +1521,8 @@ function JarvisPage() {
               >
                 <History className="w-4 h-4" />
               </Button>
-            </SheetTrigger>
-
-            <SheetContent side="left" className="w-[85vw] sm:w-[320px] flex flex-col">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">
-                  Conversations
-                </SheetTitle>
-              </SheetHeader>
+            )}
+          >
               <Button onClick={newConversation} className="mt-4" variant="outline">
                 <Plus className="w-4 h-4 mr-1.5" /> New conversation
               </Button>
@@ -1562,15 +1555,19 @@ function JarvisPage() {
                   </div>
                 ))}
               </div>
-            </SheetContent>
-          </Sheet>
+          </LazySheet>
+
 
           {/* STT diagnostics drawer — rolling log of the last 10 transcription
               attempts (pre-transcode result, HTTP status, retry reason). Lets
               the user see *why* a transcription failed at a glance. */}
-          <Sheet>
-            <SheetTrigger asChild>
+          <LazySheet
+            side="right"
+            title="STT Diagnostics"
+            contentClassName="w-[92vw] sm:w-[420px] flex flex-col"
+            trigger={(p) => (
               <Button
+                {...p}
                 variant="ghost"
                 size="icon"
                 aria-label={`STT diagnostics${sttLog.some((e) => e.finalStatus !== "ok" && e.finalStatus !== "aborted") ? " — recent failures" : ""}`}
@@ -1585,13 +1582,8 @@ function JarvisPage() {
                   />
                 )}
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[92vw] sm:w-[420px] flex flex-col">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">
-                  STT Diagnostics
-                </SheetTitle>
-              </SheetHeader>
+            )}
+          >
               <div className="mt-2 text-xs text-muted-foreground">
                 Last {sttLog.length} of 10 attempts · newest first
               </div>
@@ -1680,14 +1672,18 @@ function JarvisPage() {
                   Clear log
                 </Button>
               )}
-            </SheetContent>
-          </Sheet>
+          </LazySheet>
+
 
           {/* TTS settings drawer */}
 
-          <Sheet>
-            <SheetTrigger asChild>
+          <LazySheet
+            side="right"
+            title="Voice Settings"
+            contentClassName="w-[85vw] sm:w-[340px]"
+            trigger={(p) => (
               <Button
+                {...p}
                 variant="ghost"
                 size="icon"
                 aria-label="Voice settings"
@@ -1696,14 +1692,8 @@ function JarvisPage() {
               >
                 <Settings className="w-4 h-4" />
               </Button>
-            </SheetTrigger>
-
-            <SheetContent side="right" className="w-[85vw] sm:w-[340px]">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">
-                  Voice Settings
-                </SheetTitle>
-              </SheetHeader>
+            )}
+          >
               <div className="mt-6 space-y-6">
                 <div>
                   <label className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block">
@@ -1857,13 +1847,14 @@ function JarvisPage() {
                   </label>
                 </div>
               </div>
-            </SheetContent>
-          </Sheet>
+          </LazySheet>
 
 
           {/* Account menu — replaces the raw license chip with a proper avatar dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <LazyDropdownMenu
+            align="end"
+            contentClassName="w-56"
+            triggerButton={
               <Button
                 variant="ghost"
                 aria-label="Account menu"
@@ -1875,21 +1866,25 @@ function JarvisPage() {
                   </AvatarFallback>
                 </Avatar>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                Licensed as
-                <div className="mt-1 font-mono text-foreground truncate">{license}</div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={signOut}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="w-4 h-4 mr-2" /> Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            }
+          >
+            {(parts) => (
+              <>
+                <parts.Label className="text-xs font-normal text-muted-foreground">
+                  Licensed as
+                  <div className="mt-1 font-mono text-foreground truncate">{license}</div>
+                </parts.Label>
+                <parts.Separator />
+                <parts.Item
+                  onClick={signOut}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-2" /> Sign out
+                </parts.Item>
+              </>
+            )}
+          </LazyDropdownMenu>
+
         </div>
       </header>
 
