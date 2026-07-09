@@ -181,9 +181,10 @@ function WaveBars({
         };
 
   useEffect(() => {
-    if (!active) {
-      smoothLevelRef.current = 0;
-      heightsRef.current = heightsRef.current.map(() => 0.15);
+    if (!active || reduced) {
+      // reduced-motion: freeze bars at a calm mid-height, skip the RAF loop.
+      smoothLevelRef.current = reduced ? 0.4 : 0;
+      heightsRef.current = heightsRef.current.map(() => (reduced ? 0.4 : 0.15));
       force((n) => n + 1);
       return;
     }
