@@ -1105,14 +1105,15 @@ function JarvisPage() {
                 </div>
               </button>
 
+              {/* Visual status chip — decorative, updates instantly. The
+                  screen-reader announcement is handled by a separate,
+                  debounced live region below to prevent overlap on rapid
+                  phase changes (e.g. thinking-stage cycling). */}
               <div
                 className="inline-flex items-center gap-2 rounded-full px-3 py-1"
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
+                aria-hidden="true"
               >
                 <span
-                  aria-hidden="true"
                   className={`w-1.5 h-1.5 rounded-full ${
                     phase === "idle"
                       ? "bg-jarvis/70"
@@ -1126,6 +1127,16 @@ function JarvisPage() {
                 <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">
                   {statusLabel}
                 </span>
+              </div>
+
+              {/* Debounced live region for assistive tech. */}
+              <div
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className="sr-only"
+              >
+                {announcedLabel}
               </div>
             </div>
 
