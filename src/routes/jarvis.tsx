@@ -2475,6 +2475,25 @@ function JarvisPage() {
         <div className="sr-only" aria-live="polite" aria-atomic="false">
           {partial}
         </div>
+
+        {/*
+          Reducer-owned error surface. `voiceState.error` is set by
+          `dispatch({ type: "ERROR", message })` from speak/chat/STT
+          catch blocks — single source of truth alongside the toast.
+          `aria-live="assertive"` because errors interrupt flow; the
+          toast fires-and-forgets, this stays on-screen until the next
+          successful transition clears it (any SET_PHASE / CANCEL /
+          START_* event zeroes `state.error`).
+        */}
+        {voiceState.error && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="pointer-events-none fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive backdrop-blur-md"
+          >
+            {voiceState.error}
+          </div>
+        )}
       </div>
     </main>
   );
