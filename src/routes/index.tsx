@@ -22,13 +22,13 @@ export const Route = createFileRoute("/")({
   component: LicenseGate,
   head: () => ({
     meta: [
-      { title: "JARVIS — Desktop AI Assistant" },
+      { title: "JARVIS — Voice AI Assistant" },
       {
         name: "description",
         content:
           "Your personal voice-powered AI assistant. Enter your license key to activate JARVIS.",
       },
-      { property: "og:title", content: "JARVIS — Desktop AI Assistant" },
+      { property: "og:title", content: "JARVIS — Voice AI Assistant" },
       {
         property: "og:description",
         content: "Voice-powered AI assistant inspired by Tony Stark's JARVIS.",
