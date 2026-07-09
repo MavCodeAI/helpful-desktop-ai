@@ -567,7 +567,7 @@ function JarvisPage() {
         audio.volume = tts.volume;
         audioRef.current = audio;
         audio.onended = () => {
-          setPhase("idle");
+          dispatch({ type: "PLAYBACK_DONE" });
           setPlayPaused(false);
           haptic(8);
           toast.success("Ready for your next message", { duration: 1500 });
@@ -698,7 +698,7 @@ function JarvisPage() {
     setRtUserPartial("");
     setRtAsstPartial("");
     setPartial("");
-    setPhase("idle");
+    dispatch({ type: "CANCEL" });
   };
 
 
@@ -745,10 +745,10 @@ function JarvisPage() {
         const blob = new Blob(chunksRef.current, { type: mime });
         if (blob.size < 1500) {
           toast.error("Recording too short");
-          setPhase("idle");
+          dispatch({ type: "CANCEL" });
           return;
         }
-        setPhase("thinking");
+        dispatch({ type: "STOP_LISTENING" });
         setRtUserPartial("");
         // Wire STT into the same abort channel as the chat stream so Escape /
         // stopGenerating cancel transcription mid-flight instead of letting it
@@ -863,7 +863,7 @@ function JarvisPage() {
             toast.error("Didn't catch that", {
               description: "The model returned an empty transcript. Speak a bit louder and retry.",
             });
-            setPhase("idle");
+            dispatch({ type: "CANCEL" });
             return;
           }
           // Snap the caret's text to the final transcript BEFORE sendToChat
@@ -876,7 +876,7 @@ function JarvisPage() {
           if ((e as { name?: string })?.name === "AbortError") {
             trace.finalStatus = "aborted";
             setRtUserPartial("");
-            setPhase("idle");
+            dispatch({ type: "CANCEL" });
             return;
           }
           // Distinguish a network drop (TypeError from fetch) from an HTTP error.
@@ -914,7 +914,7 @@ function JarvisPage() {
 
       rec.start(100);
       setRecStartedAt(Date.now());
-      setPhase("listening");
+      dispatch({ type: "START_LISTENING" });
     } catch (e) {
       console.error(e);
       toast.error("Microphone access denied — enable it in browser settings.");
@@ -951,7 +951,7 @@ function JarvisPage() {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         mediaRef.current = null;
         setRtUserPartial("");
-        setPhase("idle");
+        dispatch({ type: "CANCEL" });
         setRecPaused(false);
         setRecStartedAt(null);
       };
@@ -986,7 +986,7 @@ function JarvisPage() {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
-    setPhase("idle");
+    dispatch({ type: "PLAYBACK_DONE" });
     setPlayPaused(false);
   };
   /** Restart from beginning; if no audio loaded, re-request TTS. */
