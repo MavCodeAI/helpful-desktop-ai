@@ -645,6 +645,7 @@ function JarvisPage() {
     } else if (phase === "speaking") {
       // Barge-in: stop TTS AND immediately start listening — feels seamless.
       stopPlayback();
+      toast("Interrupted — I'm listening", { duration: 1500 });
       // stopPlayback flips phase to idle synchronously → startListening's guard passes.
       // Use a microtask so state settles first.
       queueMicrotask(() => startListening());
@@ -1050,7 +1051,15 @@ function JarvisPage() {
                   handleTextSend();
                 }
               }}
-              placeholder={phase === "idle" ? "Type a message… (Enter to send, Shift+Enter for newline)" : "Wait for JARVIS to finish…"}
+              placeholder={
+                phase === "idle"
+                  ? "Type a message… (Enter to send, Shift+Enter for newline)"
+                  : phase === "speaking"
+                  ? "JARVIS is speaking — tap mic to interrupt…"
+                  : phase === "listening"
+                  ? "Listening…"
+                  : "Thinking…"
+              }
               disabled={phase !== "idle"}
               rows={1}
               className="min-h-[40px] max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 text-sm"
