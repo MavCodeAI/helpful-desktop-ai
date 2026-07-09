@@ -107,6 +107,14 @@ function JarvisPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll transcript to bottom as new tokens stream in
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [partial, messages]);
+
 
   /* ---------- bootstrap ---------- */
 
