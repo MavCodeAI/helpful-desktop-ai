@@ -1028,19 +1028,24 @@ function JarvisPage() {
             ref={transcriptRef}
             className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
           >
-            {messages.length === 0 && !partial && (
+            {messages.length === 0 && !partial && !lastFailed && (
               <p className="text-center text-sm text-muted-foreground italic">
                 Say hello to begin — tap the mic, type a message, or hold Space to talk.
               </p>
             )}
             {messages.map((m, i) => (
-              <div key={i} className="text-sm">
-                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+              <div
+                key={i}
+                className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+              >
+                <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1 px-1">
                   {m.role === "user" ? "You" : "Jarvis"}
                 </span>
                 <div
-                  className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
-                    m.role === "user" ? "text-foreground" : "text-jarvis/90"
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                    m.role === "user"
+                      ? "bg-jarvis/10 border border-jarvis/20 text-foreground rounded-tr-sm"
+                      : "bg-transparent text-jarvis/90 rounded-tl-sm"
                   }`}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
@@ -1048,17 +1053,35 @@ function JarvisPage() {
               </div>
             ))}
             {partial && (
-              <div className="text-sm">
-                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1 px-1">
                   Jarvis
                 </span>
-                <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
+                <div className="max-w-[85%] rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
                   <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                 </div>
               </div>
             )}
+            {lastFailed && phase === "idle" && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+                <span className="text-destructive">Last message failed to send.</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    const t = lastFailed;
+                    setLastFailed(null);
+                    void sendToChat(t);
+                  }}
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" /> Retry
+                </Button>
+              </div>
+            )}
           </div>
+
 
           {/* Unified composer — mic + textarea + send/stop in one row. */}
           <form
