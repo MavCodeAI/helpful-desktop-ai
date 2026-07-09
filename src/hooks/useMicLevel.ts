@@ -90,6 +90,10 @@ export function useMicLevel(active: boolean): MicStatus {
       setPeak(0);
       setLatencyMs(0);
       setLive(false);
+      // Clear a stale error when the caller stops asking for mic — the
+      // banner should only show while the caller wants the mic AND we
+      // just failed to open it.
+      setError(null);
       return;
     }
 
