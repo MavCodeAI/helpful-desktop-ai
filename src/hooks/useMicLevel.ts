@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { classifyMicError, type MicErrorInfo } from "@/lib/mic-permission";
 
 /**
  * Live microphone amplitude (0..1), smoothed.
@@ -33,7 +34,12 @@ export interface MicStatus {
    *  Reflects the browser's reported input→analyser delay; useful as a
    *  visible metric next to the recording pill. */
   latencyMs: number;
+  /** Classified failure from the most recent getUserMedia rejection. Null
+   *  while pending, on success, or after the caller flips `active` off.
+   *  Use to render a friendly explanation in place of the meter. */
+  error: MicErrorInfo | null;
 }
+
 
 
 export function useMicLevel(active: boolean): MicStatus {
