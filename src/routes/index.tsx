@@ -58,18 +58,34 @@ function LicenseGate() {
    * an instant regex, without adding real latency for testers.
    */
   const activate = async () => {
+    // Guard against double-submit (Enter spamming during the 400ms delay).
+    if (checking) return;
     setChecking(true);
-    await new Promise((r) => setTimeout(r, 400));
-    if (!validateLicenseKey(key)) {
-      toast.error("Invalid license key", {
-        description: "Try JARVIS-DEMO-0001 to demo.",
-      });
+    try {
+      await new Promise((r) => setTimeout(r, 400));
+      if (!validateLicenseKey(key)) {
+        toast.error("Invalid license key", {
+          description: "Try JARVIS-DEMO-0001 to demo.",
+        });
+        return;
+      }
+      const persisted = saveLicense(key);
+      if (!persisted) {
+        // Storage failed — most likely private-browsing / quota. The user
+        // can still proceed for this session; warn but don't block.
+        toast.warning("Couldn't save license", {
+          description: "You'll need to re-enter it next visit.",
+        });
+      } else {
+        toast.success("License activated. Welcome.");
+      }
+      navigate({ to: "/jarvis" });
+    } catch (e) {
+      console.error("[activate] failed", e);
+      toast.error("Something went wrong — please retry.");
+    } finally {
       setChecking(false);
-      return;
     }
-    saveLicense(key);
-    toast.success("License activated. Welcome.");
-    navigate({ to: "/jarvis" });
   };
 
   return (
