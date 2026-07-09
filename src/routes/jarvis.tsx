@@ -105,6 +105,7 @@ import { OrbSideButton } from "@/features/jarvis-ui/OrbSideButton";
 import { LiveWaveform } from "@/features/jarvis-ui/LiveWaveform";
 import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
+import { MarkdownMessage } from "@/features/jarvis-ui/MarkdownMessage";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
