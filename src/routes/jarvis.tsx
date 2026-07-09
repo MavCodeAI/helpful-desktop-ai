@@ -547,11 +547,23 @@ function JarvisPage() {
     if (!text || phase !== "idle") return;
     setComposerText("");
     haptic(8);
-    // Keep focus in the composer so the user can immediately keep typing —
-    // otherwise browsers move focus to the clicked/pressed Submit button.
-    queueMicrotask(() => composerRef.current?.focus());
     void sendToChat(text);
   };
+
+  // Return focus to the composer whenever we transition back to idle from
+  // any active phase (send → thinking → idle, recording cancel, playback end).
+  // Textarea is `disabled` while non-idle so we can't focus in-flight;
+  // instead we refocus on the trailing edge. Skip the very first mount so
+  // we don't steal focus from the license/landing flow.
+  const prevPhaseRef = useRef<Phase>("idle");
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (prev !== "idle" && phase === "idle") {
+      // rAF so React has committed `disabled={false}` before we focus.
+      requestAnimationFrame(() => composerRef.current?.focus());
+    }
+  }, [phase]);
 
   /* ---------- Recording controls ---------- */
 
