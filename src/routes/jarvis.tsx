@@ -614,6 +614,9 @@ function JarvisPage() {
   const spaceHeldRef = useRef(false);
   const [scrolledUp, setScrolledUp] = useState(false);
   const [thinkStageIdx, setThinkStageIdx] = useState(0);
+  // How many ms we've been in "thinking" without a first token yet. Drives
+  // the slow-response progress hint so the user knows we're not frozen.
+  const [thinkElapsedMs, setThinkElapsedMs] = useState(0);
   const [lastFailed, setLastFailed] = useState<string | null>(null);
   const reduced = useReducedMotion();
 
