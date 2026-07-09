@@ -1038,6 +1038,46 @@ function JarvisPage() {
           </div>
 
 
+          {/* Inline mini-controls — appear directly above the composer during active phases. */}
+          {phase === "listening" && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-jarvis/25 bg-background/60 backdrop-blur-md px-2 py-1.5">
+              {recPaused ? (
+                <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8">
+                  <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8">
+                  <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={stopListening} className="h-8">
+                <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+              </Button>
+              <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 text-muted-foreground">
+                Cancel
+              </Button>
+            </div>
+          )}
+          {phase === "speaking" && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-jarvis/25 bg-background/60 backdrop-blur-md px-2 py-1.5">
+              {playPaused ? (
+                <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8">
+                  <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8">
+                  <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8">
+                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
+              </Button>
+              <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8">
+                <Square className="w-3.5 h-3.5 mr-1" /> Stop
+              </Button>
+            </div>
+          )}
+
           {/* Unified composer — mic + textarea + send/stop in one row. */}
           <form
             onSubmit={(e) => {
