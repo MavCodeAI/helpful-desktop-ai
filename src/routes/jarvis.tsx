@@ -1104,6 +1104,21 @@ function JarvisPage() {
         // Hoisted so the catch below can report exactly what was uploaded.
         let uploadBlob: Blob = blob;
         let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
+        // Diagnostic trace — populated as the pipeline progresses; pushed to
+        // the rolling STT log in `finally` so both success and failure paths
+        // record what happened.
+        const trace: SttAttempt = {
+          ts: Date.now(),
+          origMime: mime || "unknown",
+          origBytes: blob.size,
+          preTranscode: "skipped",
+          sentMime: blob.type || "unknown",
+          sentBytes: blob.size,
+          firstStatus: 0 as unknown as number,
+          retryReason: null,
+          finalStatus: "ok",
+          ms: 0,
+        };
         try {
           // POST the recording; on ANY "unsupported/corrupted" rejection
           // (415 from our proxy, or 400 from upstream with codes like
@@ -1121,55 +1136,58 @@ function JarvisPage() {
             });
           };
 
-          const needsTranscodeRetry = (status: number, body: string): boolean => {
-            if (status === 415) return true;
-            if (status !== 400) return false;
+          const needsTranscodeRetry = (status: number, body: string): { retry: boolean; reason: string } => {
+            if (status === 415) return { retry: true, reason: "HTTP 415 unsupported format" };
+            if (status !== 400) return { retry: false, reason: "" };
             const low = body.toLowerCase();
-            return (
-              low.includes("corrupted") ||
-              low.includes("unsupported") ||
-              low.includes("invalid_value") ||
-              low.includes("could not decode") ||
-              low.includes("decode")
-            );
+            if (low.includes("corrupted")) return { retry: true, reason: "upstream: audio corrupted" };
+            if (low.includes("invalid_value")) return { retry: true, reason: "upstream: invalid_value" };
+            if (low.includes("unsupported")) return { retry: true, reason: "upstream: unsupported format" };
+            if (low.includes("decode")) return { retry: true, reason: "upstream: could not decode" };
+            return { retry: false, reason: "" };
           };
 
           // Pre-transcode to 16 kHz mono WAV up front — universally decodable,
           // sidesteps all browser codec quirks, and eliminates the wasted first
           // round-trip we'd otherwise spend discovering the format is rejected.
-          // If AudioContext.decodeAudioData can't parse the blob (rare), fall
-          // back to shipping the original bytes and let the retry path handle it.
           try {
             uploadBlob = await transcodeToWav(blob);
             uploadName = "recording.wav";
+            trace.preTranscode = "ok";
           } catch (preErr) {
             console.warn("[stt] pre-transcode failed, sending original blob", preErr);
+            trace.preTranscode = "failed";
           }
+          trace.sentMime = uploadBlob.type || "unknown";
+          trace.sentBytes = uploadBlob.size;
+
           let res = await postAudio(uploadBlob, uploadName);
+          trace.firstStatus = res.status;
           let peekBody = "";
           if (!res.ok) {
-            // Peek the body once so we can both decide-to-retry and, if we
-            // don't retry, still surface the original error text below.
             peekBody = await res.clone().text().catch(() => "");
           }
-          if (!res.ok && needsTranscodeRetry(res.status, peekBody) && uploadName !== "recording.wav") {
-            console.warn("[stt] upstream rejected format — retrying with WAV transcode", {
-              status: res.status,
-              body: peekBody.slice(0, 200),
-            });
+          const decision = !res.ok ? needsTranscodeRetry(res.status, peekBody) : { retry: false, reason: "" };
+          if (decision.retry && uploadName !== "recording.wav") {
+            trace.retryReason = decision.reason;
+            console.warn("[stt] retrying with WAV transcode", { reason: decision.reason, status: res.status });
             try {
               const wav = await transcodeToWav(blob);
               toast.message("Retrying with a different audio format…", { duration: 2500 });
               uploadBlob = wav;
               uploadName = "recording.wav";
+              trace.sentMime = wav.type || "audio/wav";
+              trace.sentBytes = wav.size;
               res = await postAudio(wav, "recording.wav");
               if (!res.ok) peekBody = await res.clone().text().catch(() => "");
             } catch (transcodeErr) {
               console.error("[stt] WAV transcode failed", transcodeErr);
-              // Fall through — original response is still `res` for error UI.
+              trace.retryReason = `${decision.reason} → transcode also failed`;
             }
           }
+          trace.finalStatus = res.ok ? "ok" : res.status;
           if (!res.ok) {
+            trace.errorBody = peekBody.slice(0, 300);
             await cooldown.startFromResponse(res);
             const err = new Error(peekBody || `${res.status}`) as Error & { sttStatus?: number; sttBody?: string };
             err.sttStatus = res.status;
