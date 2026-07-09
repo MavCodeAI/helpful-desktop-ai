@@ -302,18 +302,32 @@ function JarvisPage() {
     }
     setLicense(k);
 
-    // Load threads; create the first one if empty.
-    const existing = loadThreads();
-    if (existing.length === 0) {
+    // Load threads; create the first one if empty. Bootstrap runs once so a
+    // storage failure here only warns — the app still works with in-memory
+    // messages that just won't persist across reloads.
+    try {
+      const existing = loadThreads();
+      if (existing.length === 0) {
+        const t = createThread();
+        const list = upsertThread(t);
+        setThreads(list);
+        setActiveId(t.id);
+        setMessages([]);
+      } else {
+        setThreads(existing);
+        setActiveId(existing[0].id);
+        setMessages(existing[0].messages);
+      }
+    } catch (e) {
+      console.error("[jarvis] bootstrap failed", e);
+      toast.warning("Conversation history unavailable", {
+        description: "Your messages this session won't be saved.",
+      });
+      // Fall back to an in-memory thread so the UI still has an activeId.
       const t = createThread();
-      const list = upsertThread(t);
-      setThreads(list);
+      setThreads([t]);
       setActiveId(t.id);
       setMessages([]);
-    } else {
-      setThreads(existing);
-      setActiveId(existing[0].id);
-      setMessages(existing[0].messages);
     }
   }, [navigate]);
 
