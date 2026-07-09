@@ -340,13 +340,30 @@ function JarvisPage() {
    * working — losing persistence is not worth a crashed render.
    */
   const storageToastShownRef = useRef(false);
+  const activeIdRef = useRef(activeId);
   useEffect(() => {
-    if (!activeId) return;
-    const current = threads.find((t) => t.id === activeId);
+    activeIdRef.current = activeId;
+  }, [activeId]);
+  useEffect(() => {
+    const id = activeIdRef.current;
+    if (!id) return;
+    const current = threads.find((t) => t.id === id);
     // Skip write when the active thread is empty and messages are empty too.
     if (!current && messages.length === 0) return;
+    // Skip write when messages are byte-identical to the persisted thread —
+    // otherwise merely OPENING an old conversation bumps its `updatedAt` and
+    // reorders the sidebar, plus wastes a localStorage round-trip.
+    if (
+      current &&
+      current.messages.length === messages.length &&
+      current.messages.every(
+        (m, i) => m.role === messages[i].role && m.content === messages[i].content,
+      )
+    ) {
+      return;
+    }
     const updated: Thread = {
-      id: activeId,
+      id,
       title: deriveTitle(messages) || current?.title || "New conversation",
       updatedAt: Date.now(),
       messages,
@@ -363,8 +380,11 @@ function JarvisPage() {
         );
       }
     }
+    // threads intentionally omitted: we read the latest via the find() above,
+    // and including it would re-run the effect after every write we just made.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
+
 
   /**
    * Push-to-talk: hold Space to start listening, release to send.
