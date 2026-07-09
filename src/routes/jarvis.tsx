@@ -1036,7 +1036,7 @@ function JarvisPage() {
         </aside>
 
         {/* RIGHT COLUMN — premium chat console */}
-        <section className="jarvis-panel rounded-3xl p-4 sm:p-6 flex flex-col min-h-[520px] lg:min-h-[calc(100dvh-9rem)]">
+        <section className="jarvis-panel rounded-2xl lg:rounded-3xl p-3 sm:p-5 lg:p-6 flex flex-col min-h-[360px] sm:min-h-[420px] lg:min-h-[calc(100dvh-9rem)] pb-[env(safe-area-inset-bottom)]">
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
         <div className="relative z-10 w-full flex-1 flex flex-col gap-3">
           <div className="relative w-full flex-1 flex flex-col">
