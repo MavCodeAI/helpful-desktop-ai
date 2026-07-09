@@ -863,7 +863,7 @@ function JarvisPage() {
             toast.error("Didn't catch that", {
               description: "The model returned an empty transcript. Speak a bit louder and retry.",
             });
-            setPhase("idle");
+            dispatch({ type: "CANCEL" });
             return;
           }
           // Snap the caret's text to the final transcript BEFORE sendToChat
