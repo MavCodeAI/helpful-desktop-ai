@@ -1041,6 +1041,20 @@ function JarvisPage() {
     };
   }, [mode, disconnectRealtime]);
 
+  // Sync forward refs so handleMicClick can call the latest closures.
+  useEffect(() => {
+    connectRealtimeRef.current = connectRealtime;
+    disconnectRealtimeRef.current = disconnectRealtime;
+  });
+
+  // Also sync realtime status into the visible phase so the orb reflects
+  // it (listening halo while connected, idle otherwise). We only touch phase
+  // when in realtime mode to avoid stepping on the other pipelines.
+  useEffect(() => {
+    if (mode !== "realtime") return;
+    setPhase(realtimeOn ? "listening" : "idle");
+  }, [mode, realtimeOn]);
+
   const changeMode = useCallback(
     (m: VoiceMode) => {
       if (m === mode) return;
