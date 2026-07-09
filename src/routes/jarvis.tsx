@@ -2519,7 +2519,7 @@ function JarvisPage() {
                           key={prompt}
                           type="button"
                           onClick={() => { void sendToChat(prompt); }}
-                          className="glass-pill rounded-full px-3 py-1.5 text-xs text-foreground/80 hover:text-foreground hover:bg-white/[0.08] transition-colors border border-white/10"
+                          className="glass-pill rounded-full px-4 min-h-11 inline-flex items-center text-xs text-foreground/80 hover:text-foreground hover:bg-white/[0.08] transition-colors border border-white/10"
                         >
                           {prompt}
                         </button>
