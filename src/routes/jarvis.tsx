@@ -564,7 +564,6 @@ function JarvisPage() {
       const controller = new AbortController();
       abortRef.current = controller;
       let full = "";
-      let aborted = false;
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
