@@ -43,26 +43,31 @@ export const Route = createFileRoute("/api/stt")({
         let inbound: FormData;
         try {
           inbound = await request.formData();
-        } catch {
-          return new Response("Invalid form body", { status: 400 });
+        } catch (e) {
+          console.error("[/api/stt] formData parse failed", e);
+          return new Response("Invalid form body (could not parse multipart)", { status: 400 });
         }
 
         // 2. Validate the `file` part: presence, shape, MIME, and size.
         const file = inbound.get("file") as File | Blob | null;
         if (!file || typeof (file as Blob).arrayBuffer !== "function") {
-          return new Response("Audio file required", { status: 400 });
+          console.error("[/api/stt] missing file field", { keys: [...inbound.keys()] });
+          return new Response("Audio file required (no `file` field in form)", { status: 400 });
         }
         const blob = file as Blob;
         if (blob.size < MIN_AUDIO_BYTES) {
-          return new Response("Recording too short", { status: 400 });
+          console.error("[/api/stt] recording too short", { size: blob.size });
+          return new Response(`Recording too short (${blob.size} bytes)`, { status: 400 });
         }
         if (blob.size > MAX_AUDIO_BYTES) {
           return new Response("Recording too long (max 25 MB)", { status: 413 });
         }
         const mime = (blob.type || "").toLowerCase();
         if (mime && !ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p))) {
-          return new Response("Unsupported audio format", { status: 415 });
+          console.error("[/api/stt] unsupported mime", { mime });
+          return new Response(`Unsupported audio format: ${mime}`, { status: 415 });
         }
+        console.log("[/api/stt] accepted", { size: blob.size, mime, name: (file as File).name });
 
         // 3. Rebuild multipart so we can add `model` and ensure a filename
         //    with an extension the upstream STT can sniff.
