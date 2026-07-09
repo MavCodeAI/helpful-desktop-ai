@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -128,7 +128,7 @@ const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as con
  * in /api/chat so we can reject over-long input in the UI with a friendly
  * toast instead of round-tripping to a 400.
  */
-const MAX_MESSAGE_CHARS = 8000;
+
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -368,8 +368,6 @@ function JarvisPage() {
   // --- Chat phase + streaming ---
   const [phase, setPhase] = useState<Phase>("idle");
   const [partial, setPartial] = useState("");
-  const [composerText, setComposerText] = useState("");
-  const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Voice interaction mode: push-to-talk, auto-VAD, or realtime streaming.
   const [mode, setMode] = useState<VoiceMode>(() => loadVoiceMode());
@@ -770,37 +768,6 @@ function JarvisPage() {
     abortRef.current?.abort();
   };
 
-  /** Send a typed message via the text composer. */
-  const handleTextSend = () => {
-    const text = composerText.trim();
-    if (!text || phase !== "idle") return;
-    // Enforce the same cap the server enforces, but surface it here so the
-    // user doesn't wait for a 400 round-trip to learn their draft is too big.
-    if (text.length > MAX_MESSAGE_CHARS) {
-      toast.error("Message is too long", {
-        description: `Please keep it under ${MAX_MESSAGE_CHARS.toLocaleString()} characters.`,
-      });
-      return;
-    }
-    setComposerText("");
-    haptic(8);
-    void sendToChat(text);
-  };
-
-  // Return focus to the composer whenever we transition back to idle from
-  // any active phase (send → thinking → idle, recording cancel, playback end).
-  // Textarea is `disabled` while non-idle so we can't focus in-flight;
-  // instead we refocus on the trailing edge. Skip the very first mount so
-  // we don't steal focus from the license/landing flow.
-  const prevPhaseRef = useRef<Phase>("idle");
-  useEffect(() => {
-    const prev = prevPhaseRef.current;
-    prevPhaseRef.current = phase;
-    if (prev !== "idle" && phase === "idle") {
-      // rAF so React has committed `disabled={false}` before we focus.
-      requestAnimationFrame(() => composerRef.current?.focus());
-    }
-  }, [phase]);
 
   /* ---------- Recording controls ---------- */
 
