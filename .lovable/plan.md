@@ -75,6 +75,14 @@ intentionally deferred.
     in-repo.
 
 ## Deferred (each safe on its own)
+15. **Markdown lazy-loaded** — `react-markdown` + `remark-gfm` moved
+    behind `React.lazy` in `MarkdownMessage`. Initial `jarvis` chunk
+    **339 KB → 189 KB (−44%)**; markdown deps become on-demand chunks
+    fetched on the first assistant bubble. Fallback renders raw text so
+    streaming shows immediately. See `.lovable/perf-baseline.md`.
+
+## Deferred (each safe on its own)
+
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
   `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.
