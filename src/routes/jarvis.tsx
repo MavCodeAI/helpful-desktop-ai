@@ -848,7 +848,7 @@ function JarvisPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
           {/* Mic activity — reflects the true state of the useMicLevel hook,
               not user intent. Green pulses with input, dim when hook is down
               (tab hidden, permission denied, not-yet-granted). Hidden on
