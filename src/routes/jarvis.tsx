@@ -881,7 +881,7 @@ function JarvisPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
+      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 [@media(max-height:640px)]:pt-2 [@media(max-height:640px)]:pb-2 [@media(max-height:640px)]:gap-2 relative gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
