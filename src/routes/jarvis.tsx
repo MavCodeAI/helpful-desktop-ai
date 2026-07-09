@@ -1860,22 +1860,45 @@ function JarvisPage() {
                     {/* Volume meter — instant pass/fail feedback so the user
                         can tell if their voice is actually being captured. */}
                     <div className="glass-pill flex items-center gap-3 rounded-full px-3 py-1.5">
-                      <VolumeMeter level={micLevel} peak={micPeak} />
+                      <VolumeMeter level={micLevel} peak={micPeak} sensitivity={tts.micSensitivity} />
                     </div>
 
-                    {/* Live metrics — audio input latency + current TTS pace,
-                        so speed changes are quantified, not just felt. */}
-                    <div className="flex items-center gap-3 text-[10px] font-mono tabular-nums text-foreground/60">
+                    {/* Live metrics — input latency, last STT round-trip, last
+                        TTS round-trip, and the *effective* pace (adaptive if
+                        enabled). Splitting STT/TTS makes it obvious where
+                        delay actually comes from — network, model, or both. */}
+                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-mono tabular-nums text-foreground/60">
                       <span title="Audio input latency (browser-reported)">
-                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Lat</span>
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">In</span>
                         {micLatency ? `${micLatency}ms` : "—"}
                       </span>
                       <span className="text-foreground/20">·</span>
-                      <span title="Current speaking rate preset">
+                      <span title="Last speech-to-text round-trip (upload + transcription)">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">STT</span>
+                        {sttMs ? `${sttMs}ms` : "—"}
+                      </span>
+                      <span className="text-foreground/20">·</span>
+                      <span title="Last text-to-speech round-trip (request → first sound)">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">TTS</span>
+                        {ttsMs ? `${ttsMs}ms` : "—"}
+                      </span>
+                      <span className="text-foreground/20">·</span>
+                      <span title={tts.autoAdaptivePace ? "Speaking rate — auto-adapts to pipeline latency" : "Speaking rate"}>
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Pace</span>
-                        {paceLabel(tts.speed)} {tts.speed.toFixed(2)}×
+                        {(() => {
+                          const eff = adaptiveSpeed(tts.speed, sttMs + ttsMs, tts.autoAdaptivePace);
+                          return (
+                            <>
+                              {paceLabel(eff)} {eff.toFixed(2)}×
+                              {tts.autoAdaptivePace && Math.abs(eff - tts.speed) > 0.01 && (
+                                <span className="ml-1 text-jarvis/80">auto</span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </span>
                     </div>
+
 
                     <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1" role="group" aria-label="Recording controls">
                       {recPaused ? (
