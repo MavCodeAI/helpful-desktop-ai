@@ -128,7 +128,7 @@ const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as con
  * in /api/chat so we can reject over-long input in the UI with a friendly
  * toast instead of round-tripping to a 400.
  */
-const MAX_MESSAGE_CHARS = 8000;
+
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
