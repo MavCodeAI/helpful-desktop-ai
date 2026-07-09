@@ -1667,12 +1667,6 @@ function JarvisPage() {
                           <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={stopListening} className="h-11 sm:h-8 rounded-full px-3" aria-label="Stop recording and send" aria-keyshortcuts="Space" title="Send (release Space)">
-                        <SendHorizontal className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Send
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-11 sm:h-8 rounded-full px-3 text-muted-foreground" aria-label="Cancel recording and discard audio" aria-keyshortcuts="Escape" title="Cancel (Esc)">
-                        Cancel
-                      </Button>
                     </div>
                   </div>
                 )}
