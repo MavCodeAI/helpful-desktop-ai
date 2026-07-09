@@ -32,6 +32,7 @@ import {
   ArrowDown,
   Loader2,
   X,
+  Activity,
 } from "lucide-react";
 import { loadVoiceMode, saveVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient, RealtimeError } from "@/lib/realtime-client";
@@ -126,6 +127,24 @@ function friendlyError(e: unknown, fallback: string): string {
     return "Session expired — please sign in again.";
   return fallback;
 }
+
+/**
+ * One STT attempt's diagnostic trace. Captured from the recorder pipeline
+ * and rendered in the diagnostics sheet so failures are self-explaining.
+ */
+type SttAttempt = {
+  ts: number;
+  origMime: string;
+  origBytes: number;
+  preTranscode: "ok" | "failed" | "skipped";
+  sentMime: string;
+  sentBytes: number;
+  firstStatus: number | "network-error";
+  retryReason: string | null;
+  finalStatus: number | "ok" | "aborted" | "network-error";
+  ms: number;
+  errorBody?: string;
+};
 
 /**
  * Map an STT failure (server text + HTTP status) into a structured toast:
@@ -556,6 +575,18 @@ function JarvisPage() {
   // True end-to-end latency for realtime: server-VAD speech_stopped → first
   // assistant audio frame. Reflects what the user actually feels.
   const [e2eMs, setE2eMs] = useState(0);
+
+  /**
+   * Rolling log of the last 10 STT attempts. Populated by the recorder
+   * pipeline (pre-transcode result, first HTTP status, retry reason, final
+   * outcome) so the user can open the diagnostics panel and see *why* a
+   * transcription failed — and whether the WAV pre-transcode is silently
+   * saving the day on this browser.
+   */
+  const [sttLog, setSttLog] = useState<SttAttempt[]>([]);
+  const pushSttLog = useCallback((entry: SttAttempt) => {
+    setSttLog((prev) => [entry, ...prev].slice(0, 10));
+  }, []);
 
   // Mic permission state (granted/denied/prompt/unknown) — surfaced as a
   // small dot in the listening strip so the user knows why capture may fail.
@@ -1073,6 +1104,21 @@ function JarvisPage() {
         // Hoisted so the catch below can report exactly what was uploaded.
         let uploadBlob: Blob = blob;
         let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
+        // Diagnostic trace — populated as the pipeline progresses; pushed to
+        // the rolling STT log in `finally` so both success and failure paths
+        // record what happened.
+        const trace: SttAttempt = {
+          ts: Date.now(),
+          origMime: mime || "unknown",
+          origBytes: blob.size,
+          preTranscode: "skipped",
+          sentMime: blob.type || "unknown",
+          sentBytes: blob.size,
+          firstStatus: 0 as unknown as number,
+          retryReason: null,
+          finalStatus: "ok",
+          ms: 0,
+        };
         try {
           // POST the recording; on ANY "unsupported/corrupted" rejection
           // (415 from our proxy, or 400 from upstream with codes like
@@ -1090,55 +1136,58 @@ function JarvisPage() {
             });
           };
 
-          const needsTranscodeRetry = (status: number, body: string): boolean => {
-            if (status === 415) return true;
-            if (status !== 400) return false;
+          const needsTranscodeRetry = (status: number, body: string): { retry: boolean; reason: string } => {
+            if (status === 415) return { retry: true, reason: "HTTP 415 unsupported format" };
+            if (status !== 400) return { retry: false, reason: "" };
             const low = body.toLowerCase();
-            return (
-              low.includes("corrupted") ||
-              low.includes("unsupported") ||
-              low.includes("invalid_value") ||
-              low.includes("could not decode") ||
-              low.includes("decode")
-            );
+            if (low.includes("corrupted")) return { retry: true, reason: "upstream: audio corrupted" };
+            if (low.includes("invalid_value")) return { retry: true, reason: "upstream: invalid_value" };
+            if (low.includes("unsupported")) return { retry: true, reason: "upstream: unsupported format" };
+            if (low.includes("decode")) return { retry: true, reason: "upstream: could not decode" };
+            return { retry: false, reason: "" };
           };
 
           // Pre-transcode to 16 kHz mono WAV up front — universally decodable,
           // sidesteps all browser codec quirks, and eliminates the wasted first
           // round-trip we'd otherwise spend discovering the format is rejected.
-          // If AudioContext.decodeAudioData can't parse the blob (rare), fall
-          // back to shipping the original bytes and let the retry path handle it.
           try {
             uploadBlob = await transcodeToWav(blob);
             uploadName = "recording.wav";
+            trace.preTranscode = "ok";
           } catch (preErr) {
             console.warn("[stt] pre-transcode failed, sending original blob", preErr);
+            trace.preTranscode = "failed";
           }
+          trace.sentMime = uploadBlob.type || "unknown";
+          trace.sentBytes = uploadBlob.size;
+
           let res = await postAudio(uploadBlob, uploadName);
+          trace.firstStatus = res.status;
           let peekBody = "";
           if (!res.ok) {
-            // Peek the body once so we can both decide-to-retry and, if we
-            // don't retry, still surface the original error text below.
             peekBody = await res.clone().text().catch(() => "");
           }
-          if (!res.ok && needsTranscodeRetry(res.status, peekBody) && uploadName !== "recording.wav") {
-            console.warn("[stt] upstream rejected format — retrying with WAV transcode", {
-              status: res.status,
-              body: peekBody.slice(0, 200),
-            });
+          const decision = !res.ok ? needsTranscodeRetry(res.status, peekBody) : { retry: false, reason: "" };
+          if (decision.retry && uploadName !== "recording.wav") {
+            trace.retryReason = decision.reason;
+            console.warn("[stt] retrying with WAV transcode", { reason: decision.reason, status: res.status });
             try {
               const wav = await transcodeToWav(blob);
               toast.message("Retrying with a different audio format…", { duration: 2500 });
               uploadBlob = wav;
               uploadName = "recording.wav";
+              trace.sentMime = wav.type || "audio/wav";
+              trace.sentBytes = wav.size;
               res = await postAudio(wav, "recording.wav");
               if (!res.ok) peekBody = await res.clone().text().catch(() => "");
             } catch (transcodeErr) {
               console.error("[stt] WAV transcode failed", transcodeErr);
-              // Fall through — original response is still `res` for error UI.
+              trace.retryReason = `${decision.reason} → transcode also failed`;
             }
           }
+          trace.finalStatus = res.ok ? "ok" : res.status;
           if (!res.ok) {
+            trace.errorBody = peekBody.slice(0, 300);
             await cooldown.startFromResponse(res);
             const err = new Error(peekBody || `${res.status}`) as Error & { sttStatus?: number; sttBody?: string };
             err.sttStatus = res.status;
@@ -1170,17 +1219,21 @@ function JarvisPage() {
         } catch (e) {
           // User-initiated cancel (Escape / stopGenerating) — silent teardown.
           if ((e as { name?: string })?.name === "AbortError") {
+            trace.finalStatus = "aborted";
             setRtUserPartial("");
             setPhase("idle");
             return;
+          }
+          // Distinguish a network drop (TypeError from fetch) from an HTTP error.
+          const isNetErr = (e as { name?: string })?.name === "TypeError";
+          if (isNetErr) {
+            trace.finalStatus = "network-error";
+            if (trace.firstStatus === 0) trace.firstStatus = "network-error";
           }
           console.error(e);
           setRtUserPartial("");
           const ex = e as { sttStatus?: number; sttBody?: string; name?: string };
           const detail = sttErrorDetail(ex.sttStatus ?? null, ex.sttBody ?? "", e);
-          // Attach the actually-uploaded MIME + byte count so the user sees
-          // immediately whether the browser captured audio, what container
-          // was sent, and how big it was.
           const sentType = uploadBlob.type || "unknown";
           const originalType = mime || "unknown";
           const fileLine =
@@ -1193,9 +1246,8 @@ function JarvisPage() {
           });
           setPhase("idle");
         } finally {
-          // Reader cleanup lives inside readSttResponse's finally block.
-          // Only clear abortRef if it still points at OUR controller — sendToChat
-          // may have overwritten it with its own controller for the LLM stream.
+          trace.ms = Math.round(performance.now() - sttT0);
+          pushSttLog(trace);
           if (abortRef.current === sttController) abortRef.current = null;
         }
       };
@@ -1815,7 +1867,126 @@ function JarvisPage() {
             </SheetContent>
           </Sheet>
 
+          {/* STT diagnostics drawer — rolling log of the last 10 transcription
+              attempts (pre-transcode result, HTTP status, retry reason). Lets
+              the user see *why* a transcription failed at a glance. */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`STT diagnostics${sttLog.some((e) => e.finalStatus !== "ok" && e.finalStatus !== "aborted") ? " — recent failures" : ""}`}
+                title="STT diagnostics"
+                className="relative text-muted-foreground hover:text-foreground min-h-11 min-w-11 h-11 w-11 rounded-full"
+              >
+                <Activity className="w-4 h-4" />
+                {sttLog[0] && sttLog[0].finalStatus !== "ok" && sttLog[0].finalStatus !== "aborted" && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-400 ring-2 ring-background"
+                  />
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[92vw] sm:w-[420px] flex flex-col">
+              <SheetHeader>
+                <SheetTitle className="font-display tracking-widest text-jarvis">
+                  STT Diagnostics
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Last {sttLog.length} of 10 attempts · newest first
+              </div>
+              <div className="mt-4 flex-1 overflow-y-auto space-y-3">
+                {sttLog.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">
+                    No transcription attempts yet. Tap the orb to record.
+                  </p>
+                )}
+                {sttLog.map((e, i) => {
+                  const ok = e.finalStatus === "ok";
+                  const aborted = e.finalStatus === "aborted";
+                  const statusColor = ok
+                    ? "text-emerald-400 border-emerald-400/30"
+                    : aborted
+                    ? "text-muted-foreground border-border"
+                    : "text-red-400 border-red-400/40";
+                  const statusLabel = ok ? "OK" : aborted ? "Cancelled" : `Failed (${e.finalStatus})`;
+                  const preLabel = e.preTranscode === "ok"
+                    ? "WAV transcode: ok"
+                    : e.preTranscode === "failed"
+                    ? "WAV transcode: failed → sent original"
+                    : "WAV transcode: skipped";
+                  const nextStep = ok
+                    ? null
+                    : aborted
+                    ? "You cancelled this attempt."
+                    : e.retryReason
+                    ? "Retry didn't help — check network / credits, or reload."
+                    : e.preTranscode === "failed"
+                    ? "Browser couldn't decode the audio. Reload the page."
+                    : e.finalStatus === "network-error"
+                    ? "Check your network and try again."
+                    : e.finalStatus === 402
+                    ? "Top up AI credits."
+                    : e.finalStatus === 429
+                    ? "Rate limited — wait a few seconds."
+                    : "Retry once; if it repeats, reload the page.";
+                  return (
+                    <div key={`${e.ts}-${i}`} className="rounded-md border border-border/60 bg-card/40 p-3 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-muted-foreground">
+                          {new Date(e.ts).toLocaleTimeString()}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full border ${statusColor} font-mono`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="text-foreground/80">
+                        <span className="text-muted-foreground">Input:</span>{" "}
+                        {e.origMime} · {e.origBytes.toLocaleString()} b
+                      </div>
+                      <div className="text-foreground/80">
+                        <span className="text-muted-foreground">Sent:</span>{" "}
+                        {e.sentMime} · {e.sentBytes.toLocaleString()} b · {e.ms} ms
+                      </div>
+                      <div className={e.preTranscode === "ok" ? "text-emerald-400/90" : e.preTranscode === "failed" ? "text-amber-400/90" : "text-muted-foreground"}>
+                        {preLabel}
+                      </div>
+                      {e.retryReason && (
+                        <div className="text-amber-400/90">
+                          Retry: {e.retryReason}
+                        </div>
+                      )}
+                      {e.errorBody && (
+                        <div className="text-red-400/80 font-mono text-[10px] break-all">
+                          {e.errorBody}
+                        </div>
+                      )}
+                      {nextStep && (
+                        <div className="text-jarvis pt-1 border-t border-border/40">
+                          → {nextStep}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {sttLog.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSttLog([])}
+                  className="mt-3 text-muted-foreground"
+                >
+                  Clear log
+                </Button>
+              )}
+            </SheetContent>
+          </Sheet>
+
           {/* TTS settings drawer */}
+
           <Sheet>
             <SheetTrigger asChild>
               <Button
