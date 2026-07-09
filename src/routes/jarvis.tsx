@@ -58,6 +58,8 @@ import {
   type Thread,
   type ChatMsg,
 } from "@/lib/chat-history";
+import { HologramSafe } from "@/components/HologramSafe";
+import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/jarvis")({
