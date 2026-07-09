@@ -18,7 +18,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Mic,
-  MicOff,
   Loader2,
   LogOut,
   Volume2,
@@ -30,6 +29,7 @@ import {
   History,
   Plus,
   Trash2,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -41,6 +41,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getLicense, clearLicense } from "@/lib/license";
 import {
   loadTTSSettings,
@@ -63,6 +72,47 @@ import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+/** Respect the OS reduced-motion setting — kills orb/wave/ring animations. */
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const on = () => setReduced(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return reduced;
+}
+
+/** Best-effort haptic feedback; silently no-ops where unsupported. */
+function haptic(ms = 10) {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    /* not supported */
+  }
+}
+
+/**
+ * Convert a failed fetch (thrown Error / non-ok Response text) into a
+ * user-facing reason. Gateway returns 429 (rate limit) and 402 (credits
+ * exhausted) verbatim; network drops surface as TypeError.
+ */
+function friendlyError(e: unknown, fallback: string): string {
+  const err = e as { message?: string; name?: string };
+  const msg = (err?.message || "").toLowerCase();
+  if (!navigator.onLine) return "You're offline — check your connection.";
+  if (err?.name === "TypeError" || msg.includes("failed to fetch")) return "Network error — please retry.";
+  if (msg.includes("429") || msg.includes("rate")) return "Rate limit reached — slow down and retry.";
+  if (msg.includes("402") || msg.includes("credit")) return "AI credits exhausted — top up in your workspace.";
+  if (msg.includes("401") || msg.includes("unauthorized")) return "Session expired — please sign in again.";
+  return fallback;
+}
+
+/** Cycle short verbs during the "thinking" phase so it feels alive. */
+const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
 
 
 export const Route = createFileRoute("/jarvis")({
@@ -96,13 +146,12 @@ function WaveBars({
   mode: "listening" | "speaking";
 }) {
   const BARS = 7;
-  // Unique per-mode gradient id so React never reuses one <defs> across modes
-  // (would otherwise cache the previous mode's stops on the first paint).
   const gradId = `wavebar-grad-${mode}`;
   const heightsRef = useRef<number[]>(Array(BARS).fill(0.15));
   const smoothLevelRef = useRef(0);
   const [, force] = useState(0);
   const phaseRef = useRef(0);
+  const reduced = useReducedMotion();
 
   // Per-mode motion + palette profiles.
   //  listening → snappy follow (mic input is the truth, react fast).
@@ -131,9 +180,10 @@ function WaveBars({
         };
 
   useEffect(() => {
-    if (!active) {
-      smoothLevelRef.current = 0;
-      heightsRef.current = heightsRef.current.map(() => 0.15);
+    if (!active || reduced) {
+      // reduced-motion: freeze bars at a calm mid-height, skip the RAF loop.
+      smoothLevelRef.current = reduced ? 0.4 : 0;
+      heightsRef.current = heightsRef.current.map(() => (reduced ? 0.4 : 0.15));
       force((n) => n + 1);
       return;
     }
@@ -158,7 +208,7 @@ function WaveBars({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active, level, profile.phaseStep, profile.levelLerp, profile.barLerp, profile.barSpread]);
+  }, [active, level, reduced, profile.phaseStep, profile.levelLerp, profile.barLerp, profile.barSpread]);
 
   const intensity = smoothLevelRef.current;
   const topStop = profile.top(intensity);
@@ -228,12 +278,39 @@ function JarvisPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const micButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [scrolledUp, setScrolledUp] = useState(false);
+  const [thinkStageIdx, setThinkStageIdx] = useState(0);
+  const reduced = useReducedMotion();
 
-  // Auto-scroll transcript to bottom as new tokens stream in
+  // Auto-scroll transcript ONLY when the user hasn't scrolled up to read history.
   useEffect(() => {
     const el = transcriptRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [partial, messages]);
+    if (!el || scrolledUp) return;
+    el.scrollTop = el.scrollHeight;
+  }, [partial, messages, scrolledUp]);
+
+  // Track whether the user has scrolled up; if so, show a "scroll to bottom" pill.
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setScrolledUp(distance > 60);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Cycle "Reading → Analyzing → Composing" while thinking (before first token).
+  useEffect(() => {
+    if (phase !== "thinking" || partial) {
+      setThinkStageIdx(0);
+      return;
+    }
+    const id = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
+    return () => clearInterval(id);
+  }, [phase, partial]);
 
 
   /* ---------- bootstrap ---------- */
@@ -284,10 +361,16 @@ function JarvisPage() {
     const next = { ...tts, ...patch };
     setTts(next);
     saveTTSSettings(next);
-    // Live-apply volume to any in-flight playback.
     if (audioRef.current && patch.volume !== undefined) {
       audioRef.current.volume = patch.volume;
     }
+    // Persistence confirmation — subtle, single-line so it doesn't fight sliders.
+    const label =
+      patch.voice !== undefined ? `Voice: ${patch.voice}`
+      : patch.speed !== undefined ? `Speed: ${patch.speed.toFixed(2)}×`
+      : patch.volume !== undefined ? `Volume: ${Math.round(patch.volume * 100)}%`
+      : "Settings saved";
+    toast.success("Saved", { description: label, duration: 1400 });
   };
 
   /* ---------- Speak (TTS) ---------- */
@@ -327,7 +410,7 @@ function JarvisPage() {
       } catch (e) {
         console.error(e);
         setPhase("idle");
-        toast.error("Voice playback failed");
+        toast.error(friendlyError(e, "Voice playback failed"));
       }
     },
     [tts]
@@ -351,7 +434,10 @@ function JarvisPage() {
           body: JSON.stringify({ messages: next }),
           signal: controller.signal,
         });
-        if (!res.ok || !res.body) throw new Error(await res.text());
+        if (!res.ok || !res.body) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`${res.status} ${body}`);
+        }
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -399,10 +485,12 @@ function JarvisPage() {
           return;
         }
         console.error(e);
-        toast.error("JARVIS is unavailable");
+        toast.error(friendlyError(e, "JARVIS is unavailable"));
         setPhase("idle");
       } finally {
         abortRef.current = null;
+        // Return focus to the mic so keyboard users can immediately talk again.
+        setTimeout(() => micButtonRef.current?.focus(), 0);
       }
     },
     [messages, speak]
@@ -453,7 +541,7 @@ function JarvisPage() {
           await sendToChat(text);
         } catch (e) {
           console.error(e);
-          toast.error("Transcription failed");
+          toast.error(friendlyError(e, "Transcription failed"));
           setPhase("idle");
         }
       };
@@ -462,7 +550,7 @@ function JarvisPage() {
       setPhase("listening");
     } catch (e) {
       console.error(e);
-      toast.error("Microphone access denied");
+      toast.error("Microphone access denied — enable it in browser settings.");
     }
   };
 
@@ -537,9 +625,20 @@ function JarvisPage() {
   /* ---------- Orb tap dispatch ---------- */
 
   const handleMicClick = () => {
-    if (phase === "listening") stopListening();
-    else if (phase === "idle") startListening();
-    else if (phase === "speaking") stopPlayback();
+    haptic(12);
+    if (phase === "listening") {
+      stopListening();
+    } else if (phase === "idle") {
+      startListening();
+    } else if (phase === "speaking") {
+      // Barge-in: stop TTS AND immediately start listening — feels seamless.
+      stopPlayback();
+      // stopPlayback flips phase to idle synchronously → startListening's guard passes.
+      // Use a microtask so state settles first.
+      queueMicrotask(() => startListening());
+    } else if (phase === "thinking") {
+      stopGenerating();
+    }
   };
 
   /* ---------- Thread actions ---------- */
@@ -595,10 +694,11 @@ function JarvisPage() {
 
   if (!license) return null;
 
+  const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
     idle: "Ready. Tap to speak.",
     listening: recPaused ? "Paused" : "Listening…",
-    thinking: partial ? "Responding…" : "Thinking…",
+    thinking: partial ? "Responding…" : stagedThinkingLabel,
     speaking: playPaused ? "Paused" : "Speaking…",
   }[phase];
 
@@ -607,7 +707,7 @@ function JarvisPage() {
       {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
+          <div className="w-2.5 h-2.5 rounded-full bg-jarvis motion-safe:animate-pulse" />
           <span className="font-display tracking-[0.3em] text-sm text-jarvis">JARVIS</span>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
@@ -740,57 +840,73 @@ function JarvisPage() {
             </SheetContent>
           </Sheet>
 
-          <span className="text-xs font-mono text-muted-foreground hidden md:inline">
-            {license}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={signOut}
-            aria-label="Sign out"
-            className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3"
-          >
-            <LogOut className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Sign out</span>
-          </Button>
+          {/* Account menu — replaces the raw license chip with a proper avatar dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                aria-label="Account menu"
+                className="min-h-11 min-w-11 rounded-full p-0 hover:bg-jarvis/10"
+              >
+                <Avatar className="h-9 w-9 border border-jarvis/40">
+                  <AvatarFallback className="bg-jarvis/15 text-jarvis text-xs font-mono tracking-wider">
+                    {(license?.slice(0, 2) || "JV").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                Licensed as
+                <div className="mt-1 font-mono text-foreground truncate">{license}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+                <LogOut className="w-4 h-4 mr-2" /> Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
-        {/* Top zone — orb wraps the mic button so they read as one unit */}
-        <div className="relative z-10 flex flex-col items-center gap-5 mt-6 sm:mt-16">
-          {/* Orb sits behind the button, matching its center */}
+        {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
+            the orb + mic shrink so all three zones stay on one screen. */}
+        <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5 mt-2 sm:mt-16 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
           <div className="relative flex items-center justify-center">
             <div
-              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] transition-opacity duration-500 ${
+              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[160px] [@media(max-height:640px)]:h-[160px] transition-opacity duration-500 ${
                 phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
-              }`}
+              } ${reduced ? "opacity-30" : ""}`}
               aria-hidden="true"
             >
-              <HologramSafe level={micLevel} />
+              <HologramSafe level={reduced ? 0 : micLevel} />
             </div>
-          <button
-            onClick={handleMicClick}
-            className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            aria-label={statusLabel}
-          >
-            {phase === "listening" && !recPaused && (
-              <>
-                <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
-                <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
-              </>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {phase === "thinking" ? (
-                <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
-              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
-              ) : (
-                <Mic className="w-11 h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
+            <button
+              ref={micButtonRef}
+              onClick={handleMicClick}
+              className="relative w-32 h-32 sm:w-44 sm:h-44 [@media(max-height:640px)]:w-24 [@media(max-height:640px)]:h-24 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label={statusLabel}
+              aria-live="polite"
+            >
+              {phase === "listening" && !recPaused && !reduced && (
+                <>
+                  <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
+                  <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
+                </>
               )}
-            </div>
-          </button>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {phase === "thinking" ? (
+                  <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-jarvis motion-safe:animate-spin" />
+                ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
+                  <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
+                ) : (
+                  <Mic className="w-10 h-10 sm:w-11 sm:h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
+                )}
+              </div>
+            </button>
           </div>
 
 
@@ -862,41 +978,64 @@ function JarvisPage() {
           )}
         </div>
 
-        {/* Bottom zone — transcript pinned to the bottom, auto-scrolls as tokens stream in */}
-        <div
-          ref={transcriptRef}
-          className="relative z-10 w-full max-w-2xl space-y-4 max-h-[280px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
-        >
-          {messages.length === 0 && !partial && (
-            <p className="text-center text-sm text-muted-foreground italic">
-              Say hello to begin — tap the mic and speak.
-            </p>
-          )}
-          {messages.map((m, i) => (
-            <div key={i} className="text-sm">
-              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
-                {m.role === "user" ? "You" : "Jarvis"}
-              </span>
-              <div
-                className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
-                  m.role === "user" ? "text-foreground" : "text-jarvis/90"
-                }`}
-              >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+        {/* Bottom zone — wrapper for scroll-to-bottom pill overlay. */}
+        <div className="relative z-10 w-full max-w-2xl">
+          <div
+            ref={transcriptRef}
+            className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
+          >
+            {messages.length === 0 && !partial && (
+              <p className="text-center text-sm text-muted-foreground italic">
+                Say hello to begin — tap the mic and speak.
+              </p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className="text-sm">
+                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+                  {m.role === "user" ? "You" : "Jarvis"}
+                </span>
+                <div
+                  className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                    m.role === "user" ? "text-foreground" : "text-jarvis/90"
+                  }`}
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                </div>
               </div>
-            </div>
-          ))}
-          {partial && (
-            <div className="text-sm">
-              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
-                Jarvis
-              </span>
-              <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
-                <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
+            ))}
+            {partial && (
+              <div className="text-sm">
+                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+                  Jarvis
+                </span>
+                <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
+                  <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+
+          {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
+          {scrolledUp && (
+            <button
+              onClick={() => {
+                const el = transcriptRef.current;
+                if (el) el.scrollTop = el.scrollHeight;
+                setScrolledUp(false);
+              }}
+              className="absolute left-1/2 -translate-x-1/2 -top-4 flex items-center gap-1.5 rounded-full border border-jarvis/40 bg-background/90 backdrop-blur-md px-3 py-1.5 text-xs text-jarvis shadow-lg hover:bg-jarvis/10 transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1"
+              aria-label="Scroll to latest message"
+            >
+              <ArrowDown className="w-3.5 h-3.5" /> New reply
+            </button>
           )}
+
+          {/* SR-only live region — announces streaming chunks to assistive tech
+              (aria-live on the visual bubble would spam; polite here batches). */}
+          <div className="sr-only" aria-live="polite" aria-atomic="false">
+            {partial}
+          </div>
         </div>
       </div>
     </main>
