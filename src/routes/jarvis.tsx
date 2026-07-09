@@ -58,6 +58,8 @@ import {
   type Thread,
   type ChatMsg,
 } from "@/lib/chat-history";
+import { HologramSafe } from "@/components/HologramSafe";
+import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/jarvis")({
@@ -433,6 +435,11 @@ function JarvisPage() {
     navigate({ to: "/" });
   };
 
+  // Live mic amplitude → volumetric orb density.
+  // Passive analyser runs while page is mounted; the recording MediaRecorder
+  // uses its own independent stream, so both can coexist.
+  const micLevel = useMicLevel(!!license);
+
   if (!license) return null;
 
   const statusLabel = {
@@ -444,6 +451,10 @@ function JarvisPage() {
 
   return (
     <main className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Volumetric energy orb — full-screen reactive background. */}
+      <div className="absolute inset-0 pointer-events-none">
+        <HologramSafe level={micLevel} />
+      </div>
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
@@ -592,14 +603,10 @@ function JarvisPage() {
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative">
-        <div className="absolute inset-0 pointer-events-none opacity-40">
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-jarvis/10 blur-3xl" />
-        </div>
-
         <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-2xl">
           <button
             onClick={handleMicClick}
-            className="relative w-48 h-48 rounded-full border-2 border-jarvis/40 flex items-center justify-center jarvis-glow transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-card/40"
+            className="relative w-48 h-48 rounded-full border border-jarvis/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-[2px]"
             aria-label={statusLabel}
           >
             {phase === "listening" && !recPaused && (
@@ -608,22 +615,15 @@ function JarvisPage() {
                 <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
               </>
             )}
-            <div
-              className={`w-24 h-24 rounded-full bg-jarvis/80 ${
-                phase !== "idle" && !recPaused && !playPaused
-                  ? "animate-[jarvis-pulse_1.5s_ease-in-out_infinite]"
-                  : ""
-              }`}
-            />
             <div className="absolute inset-0 flex items-center justify-center">
               {phase === "thinking" ? (
-                <Loader2 className="w-10 h-10 text-primary-foreground animate-spin" />
+                <Loader2 className="w-10 h-10 text-jarvis animate-spin" />
               ) : phase === "speaking" ? (
-                <Volume2 className="w-10 h-10 text-primary-foreground" />
+                <Volume2 className="w-10 h-10 text-jarvis" />
               ) : phase === "listening" ? (
-                <Mic className="w-10 h-10 text-primary-foreground" />
+                <Mic className="w-10 h-10 text-jarvis" />
               ) : (
-                <MicOff className="w-10 h-10 text-primary-foreground/70" />
+                <MicOff className="w-10 h-10 text-jarvis/70" />
               )}
             </div>
           </button>
