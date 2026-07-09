@@ -249,6 +249,88 @@ function WaveBars({
   );
 }
 
+/**
+ * Scrolling live waveform — rolling buffer of mic amplitudes rendered as
+ * vertical bars. Bars slide right→left every frame; newest sample lands
+ * at the right edge. Height maps to loudness. Purely visual, driven by
+ * `level` (0..1) from the shared analyser.
+ */
+function LiveWaveform({ level, paused }: { level: number; paused: boolean }) {
+  const BARS = 40;
+  const bufferRef = useRef<number[]>(Array(BARS).fill(0.05));
+  const [, force] = useState(0);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (reduced) return;
+    let raf = 0;
+    const tick = () => {
+      const buf = bufferRef.current;
+      // Shift left, push newest sample (or a whisper of noise when paused).
+      const sample = paused
+        ? 0.04 + Math.random() * 0.02
+        : Math.max(0.05, Math.min(1, level * 1.4));
+      for (let i = 0; i < BARS - 1; i++) buf[i] = buf[i + 1];
+      buf[BARS - 1] = sample;
+      force((n) => (n + 1) & 0xffff);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [level, paused, reduced]);
+
+  const H = 24;
+  const W = BARS * 3; // 2px bar + 1px gap
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width={W}
+      height={H}
+      className="shrink-0"
+      aria-hidden="true"
+    >
+      {bufferRef.current.map((v, i) => {
+        const barH = Math.max(2, v * H);
+        const x = i * 3;
+        const y = (H - barH) / 2;
+        // Fade older samples slightly for depth.
+        const ageOpacity = 0.35 + (i / BARS) * 0.65;
+        return (
+          <rect
+            key={i}
+            x={x}
+            y={y}
+            width={2}
+            height={barH}
+            rx={1}
+            className={paused ? "fill-amber-400/70" : "fill-emerald-400"}
+            opacity={ageOpacity}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+/** MM:SS elapsed timer since `startedAt` (or "--:--" when null). */
+function RecTimer({ startedAt, paused }: { startedAt: number | null; paused: boolean }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (startedAt == null || paused) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [startedAt, paused]);
+  if (startedAt == null) return null;
+  const secs = Math.floor((now - startedAt) / 1000);
+  const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+  const ss = String(secs % 60).padStart(2, "0");
+  return (
+    <span className="font-mono text-[11px] tabular-nums text-foreground/80">
+      {mm}:{ss}
+    </span>
+  );
+}
+
 function JarvisPage() {
   const navigate = useNavigate();
 
@@ -267,6 +349,7 @@ function JarvisPage() {
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
+  const [recStartedAt, setRecStartedAt] = useState<number | null>(null);
   const [playPaused, setPlayPaused] = useState(false);
 
   // --- TTS settings ---
@@ -586,6 +669,7 @@ function JarvisPage() {
 
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        setRecStartedAt(null);
         const blob = new Blob(chunksRef.current, { type: mime });
         if (blob.size < 1500) {
           toast.error("Recording too short");
@@ -615,6 +699,7 @@ function JarvisPage() {
       };
 
       rec.start();
+      setRecStartedAt(Date.now());
       setPhase("listening");
     } catch (e) {
       console.error(e);
@@ -652,6 +737,7 @@ function JarvisPage() {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         setPhase("idle");
         setRecPaused(false);
+        setRecStartedAt(null);
       };
       mediaRef.current.stop();
     }
@@ -1132,24 +1218,52 @@ function JarvisPage() {
 
           {/* Active playback / listening strips — inline above composer */}
           {(phase === "listening" || phase === "speaking") && (
-            <div className="shrink-0 flex justify-center px-4 sm:px-6 pb-2">
+            <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
               {phase === "listening" && (
-                <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
-                  {recPaused ? (
-                    <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full">
-                      <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
+                  {/* REC indicator + timer + live waveform */}
+                  <div
+                    className={`glass-pill flex items-center gap-3 rounded-full px-3 py-1.5 border ${
+                      recPaused ? "border-amber-400/40" : "border-emerald-400/40"
+                    }`}
+                    role="status"
+                    aria-live="polite"
+                    aria-label={recPaused ? "Recording paused" : "Recording in progress"}
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          recPaused
+                            ? "bg-amber-400"
+                            : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)] motion-safe:animate-pulse"
+                        }`}
+                      />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/80">
+                        {recPaused ? "Paused" : "Rec"}
+                      </span>
+                    </span>
+                    <LiveWaveform level={micLevel} paused={recPaused} />
+                    <RecTimer startedAt={recStartedAt} paused={recPaused} />
+                  </div>
+
+                  {/* Controls */}
+                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1">
+                    {recPaused ? (
+                      <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full">
+                        <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full">
+                        <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full">
+                      <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
                     </Button>
-                  ) : (
-                    <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full">
-                      <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                    <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground">
+                      Cancel
                     </Button>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full">
-                    <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground">
-                    Cancel
-                  </Button>
+                  </div>
                 </div>
               )}
               {phase === "speaking" && (
