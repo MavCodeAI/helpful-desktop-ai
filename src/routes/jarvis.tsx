@@ -1108,8 +1108,6 @@ function JarvisPage() {
           // round-trip we'd otherwise spend discovering the format is rejected.
           // If AudioContext.decodeAudioData can't parse the blob (rare), fall
           // back to shipping the original bytes and let the retry path handle it.
-          let uploadBlob: Blob = blob;
-          let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
           try {
             uploadBlob = await transcodeToWav(blob);
             uploadName = "recording.wav";
