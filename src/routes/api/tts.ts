@@ -9,46 +9,65 @@
  * client just wants a playable file, and MP3 keeps the browser code trivial.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 
-/** JSON body accepted by this endpoint. */
-interface TTSBody {
-  /** The text JARVIS should speak. Required. */
-  text?: string;
-  /** Optional voice id (e.g. "onyx", "alloy"). Defaults to "onyx". */
-  voice?: string;
-  /** Optional speech speed (0.25–4.0). Defaults to 1.0. */
-  speed?: number;
-}
+/**
+ * TTS body schema.
+ *
+ * - `text` is capped at 4096 chars — the OpenAI TTS model's own hard limit.
+ * - `voice` restricted to the supported set so a bad value fails fast
+ *   client-side (400) instead of returning an opaque upstream error.
+ * - `speed` clamped to the model's supported range.
+ */
+const ttsBodySchema = z.object({
+  text: z.string().trim().min(1, "Nothing to say").max(4096, "Text too long for one utterance"),
+  voice: z.enum(["onyx", "alloy", "echo", "fable", "nova", "shimmer"]).optional(),
+  speed: z.number().min(0.25).max(4).optional(),
+});
 
 export const Route = createFileRoute("/api/tts")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { text, voice, speed } = (await request.json()) as TTSBody;
-        if (!text || !text.trim()) return new Response("text required", { status: 400 });
+        let raw: unknown;
+        try {
+          raw = await request.json();
+        } catch {
+          return new Response("Invalid JSON body", { status: 400 });
+        }
+
+        const parsed = ttsBodySchema.safeParse(raw);
+        if (!parsed.success) {
+          const issue = parsed.error.issues[0];
+          return new Response(issue?.message || "Invalid TTS request", { status: 400 });
+        }
+        const { text, voice, speed } = parsed.data;
 
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!key) return new Response("Voice service is not configured", { status: 500 });
 
-        // Clamp speed to the model's supported range.
-        const safeSpeed = Math.min(4, Math.max(0.25, speed ?? 1));
-
-        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "openai/gpt-4o-mini-tts",
-            input: text,
-            voice: voice || "onyx",
-            speed: safeSpeed,
-            response_format: "mp3",
-            instructions:
-              "Speak calmly, precisely, and with a subtle refined British accent, like a sophisticated AI butler.",
-          }),
-        });
+        let upstream: Response;
+        try {
+          upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "openai/gpt-4o-mini-tts",
+              input: text,
+              voice: voice || "onyx",
+              speed: speed ?? 1,
+              response_format: "mp3",
+              instructions:
+                "Speak calmly, precisely, and with a subtle refined British accent, like a sophisticated AI butler.",
+            }),
+          });
+        } catch (e) {
+          console.error("[/api/tts] upstream fetch failed", e);
+          return new Response("Cannot reach voice service — please retry.", { status: 502 });
+        }
 
         if (!upstream.ok) {
           const t = await upstream.text().catch(() => "");
