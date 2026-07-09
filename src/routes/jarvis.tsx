@@ -1810,7 +1810,7 @@ function JarvisPage() {
                 if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
                 setScrolledUp(false);
               }}
-              className="absolute right-6 bottom-6 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+              className="absolute right-4 sm:right-6 bottom-4 sm:bottom-6 flex items-center gap-1.5 glass-pill rounded-full min-h-11 sm:min-h-0 px-4 sm:px-3.5 py-2 sm:py-1.5 text-sm sm:text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
               aria-label="Scroll to latest message"
             >
               <ArrowDown className="w-3.5 h-3.5" /> New reply
