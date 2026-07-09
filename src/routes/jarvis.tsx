@@ -900,9 +900,9 @@ function JarvisPage() {
             </button>
           </div>
 
-          {/* Mic indicator below the orb (idle state only) */}
+          {/* Mic indicator — sits outside the orb's visual radius */}
           {phase === "idle" && (
-            <Mic className="w-6 h-6 text-jarvis drop-shadow-[0_0_10px_var(--jarvis-glow)]" aria-hidden="true" />
+            <Mic className="w-6 h-6 text-jarvis drop-shadow-[0_0_10px_var(--jarvis-glow)] mt-24 sm:mt-40 [@media(max-height:640px)]:mt-14" aria-hidden="true" />
           )}
 
 
