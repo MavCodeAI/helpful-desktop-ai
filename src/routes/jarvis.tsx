@@ -435,7 +435,10 @@ function JarvisPage() {
           body: JSON.stringify({ messages: next }),
           signal: controller.signal,
         });
-        if (!res.ok || !res.body) throw new Error(await res.text());
+        if (!res.ok || !res.body) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`${res.status} ${body}`);
+        }
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
