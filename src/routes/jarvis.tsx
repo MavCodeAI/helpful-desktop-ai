@@ -655,6 +655,7 @@ function JarvisPage() {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         setPhase("idle");
         setRecPaused(false);
+        setRecStartedAt(null);
       };
       mediaRef.current.stop();
     }
