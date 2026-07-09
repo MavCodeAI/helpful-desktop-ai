@@ -107,7 +107,7 @@ function LicenseGate() {
             JARVIS
           </h1>
           <p className="mt-3 text-sm text-muted-foreground tracking-wider uppercase">
-            Desktop AI Assistant
+            Voice AI Assistant
           </p>
         </div>
 
