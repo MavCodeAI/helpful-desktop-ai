@@ -905,7 +905,7 @@ function JarvisPage() {
             },
           });
 
-          setPhase("idle");
+          dispatch({ type: "ERROR", message: detail.title });
         } finally {
           trace.ms = Math.round(performance.now() - sttT0);
           pushSttLog(trace);
