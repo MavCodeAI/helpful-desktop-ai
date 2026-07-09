@@ -209,7 +209,7 @@ function WaveBars({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active, level, profile.phaseStep, profile.levelLerp, profile.barLerp, profile.barSpread]);
+  }, [active, level, reduced, profile.phaseStep, profile.levelLerp, profile.barLerp, profile.barSpread]);
 
   const intensity = smoothLevelRef.current;
   const topStop = profile.top(intensity);
