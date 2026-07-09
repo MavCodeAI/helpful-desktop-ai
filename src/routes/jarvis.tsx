@@ -533,7 +533,7 @@ function JarvisPage() {
     async (text: string) => {
       const t0 = performance.now();
       try {
-        setPhase("speaking");
+        dispatch({ type: "START_SPEAKING" });
         setPlayPaused(false);
         lastSpokenRef.current = text;
 
