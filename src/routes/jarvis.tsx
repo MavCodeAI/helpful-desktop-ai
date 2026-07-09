@@ -970,22 +970,22 @@ function JarvisPage() {
 
       <div className="flex-1 relative">
         <div className="pointer-events-none absolute inset-0 bg-grid-jarvis opacity-40" aria-hidden="true" />
-        <div className="relative flex-1 grid lg:grid-cols-[minmax(320px,440px)_minmax(0,1fr)] lg:gap-8 xl:gap-12 items-stretch min-h-full px-4 sm:px-6 lg:px-10 pt-6 lg:pt-10 pb-6 gap-6">
+        <div className="relative flex-1 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-[minmax(300px,400px)_minmax(0,1fr)] xl:grid-cols-[minmax(340px,440px)_minmax(0,1fr)] gap-4 md:gap-5 lg:gap-8 xl:gap-12 items-stretch min-h-full px-4 sm:px-6 lg:px-8 xl:px-10 pt-4 md:pt-6 lg:pt-8 xl:pt-10 pb-4 md:pb-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
-        {/* LEFT COLUMN — orb + status panel */}
-        <aside className="flex flex-col items-center lg:items-stretch lg:justify-center gap-5 lg:gap-8 lg:sticky lg:top-8 lg:self-start">
+        {/* LEFT COLUMN — orb + status panel. Below lg: horizontal row on md to save vertical space. */}
+        <aside className="flex flex-col items-center gap-3 md:flex-row md:justify-center md:items-center md:gap-6 lg:flex-col lg:items-stretch lg:justify-center lg:gap-8 lg:sticky lg:top-6 lg:self-start">
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
 
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
-        <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5 mt-2 sm:mt-16 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
+        <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-4 lg:gap-5 mt-0 lg:mt-8 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
           <button
             type="button"
             onClick={handleMicClick}
             aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-            className="group relative flex items-center justify-center w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] lg:w-[380px] lg:h-[380px] xl:w-[420px] xl:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
+            className="group relative flex items-center justify-center w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] md:w-[220px] md:h-[220px] lg:w-[340px] lg:h-[340px] xl:w-[400px] xl:h-[400px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
           >
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
@@ -1036,7 +1036,7 @@ function JarvisPage() {
         </aside>
 
         {/* RIGHT COLUMN — premium chat console */}
-        <section className="jarvis-panel rounded-2xl lg:rounded-3xl p-3 sm:p-5 lg:p-6 flex flex-col min-h-[360px] sm:min-h-[420px] lg:min-h-[calc(100dvh-9rem)] pb-[env(safe-area-inset-bottom)]">
+        <section className="jarvis-panel rounded-2xl lg:rounded-3xl p-3 sm:p-5 lg:p-6 flex flex-col min-h-[340px] md:min-h-[380px] lg:min-h-[calc(100dvh-8rem)] pb-[env(safe-area-inset-bottom)]">
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
         <div className="relative z-10 w-full flex-1 flex flex-col gap-3">
           <div className="relative w-full flex-1 flex flex-col">
