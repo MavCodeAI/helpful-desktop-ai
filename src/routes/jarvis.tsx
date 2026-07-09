@@ -1070,6 +1070,9 @@ function JarvisPage() {
         const sttController = new AbortController();
         abortRef.current = sttController;
         const sttT0 = performance.now();
+        // Hoisted so the catch below can report exactly what was uploaded.
+        let uploadBlob: Blob = blob;
+        let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
         try {
           // POST the recording; on ANY "unsupported/corrupted" rejection
           // (415 from our proxy, or 400 from upstream with codes like
