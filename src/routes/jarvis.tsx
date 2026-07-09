@@ -31,6 +31,7 @@ import {
   Trash2,
   ArrowDown,
   SendHorizontal,
+  Loader2,
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
@@ -71,7 +72,7 @@ import {
   type Thread,
   type ChatMsg,
 } from "@/lib/chat-history";
-import { HologramSafe } from "@/components/HologramSafe";
+// HologramSafe removed — orb visuals are now inline in the preview-parity cluster below.
 import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -141,6 +142,109 @@ export const Route = createFileRoute("/jarvis")({
 });
 
 type Phase = "idle" | "listening" | "thinking" | "speaking";
+
+/** Preview-parity color language: each phase has a hue that drives the orb,
+ *  rings, glow, side buttons, caption tint, and message role labels. */
+const PHASE_HUE: Record<Phase, number> = {
+  idle: 258,       // violet — resting
+  listening: 180,  // cyan   — user speaking
+  thinking: 48,    // amber  — connecting / composing
+  speaking: 258,   // violet — assistant replying
+};
+const PHASE_CAPTION: Record<Phase, string> = {
+  idle: "TAP TO SPEAK",
+  listening: "LISTENING",
+  thinking: "THINKING",
+  speaking: "SPEAKING",
+};
+
+/** Animated bars used inside the orb while listening. Purely visual, driven
+ *  by shared mic amplitude. */
+function OrbWaveBars({ level, hue }: { level: number; hue: number }) {
+  const [, force] = useState(0);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (reduced) return;
+    let raf = 0;
+    const tick = () => { force((n) => (n + 1) & 0xffff); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced]);
+  const bars = 7;
+  const now = Date.now() / 140;
+  return (
+    <div className="flex items-center gap-1.5" aria-hidden="true">
+      {Array.from({ length: bars }).map((_, i) => {
+        const wave = Math.abs(Math.sin(now + i * 0.7));
+        const h = 8 + wave * (12 + level * 50);
+        return (
+          <span
+            key={i}
+            className="rounded-full"
+            style={{
+              width: 3,
+              height: `${h}px`,
+              background: `hsl(${hue} 95% 75%)`,
+              boxShadow: `0 0 8px hsl(${hue} 95% 65% / 0.8)`,
+              opacity: 0.4 + wave * 0.6,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Small circular button that flanks the orb (mic on the left, stop on the
+ *  right). Mic variant paints a mic-level arc around itself. */
+function OrbSideButton({
+  icon, hue, level, onClick, ariaLabel, showArc, muted, disabled,
+}: {
+  icon: React.ReactNode; hue: number; level: number;
+  onClick: () => void; ariaLabel: string;
+  showArc?: boolean; muted?: boolean; disabled?: boolean;
+}) {
+  const size = 48;
+  const arcActive = showArc && level > 0.01;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className="relative grid place-items-center rounded-full outline-none transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      style={{ width: size, height: size }}
+    >
+      {showArc && (
+        <svg className="absolute -inset-1" viewBox="0 0 56 56" fill="none" aria-hidden>
+          <circle
+            cx="28" cy="28" r="26"
+            stroke={`hsl(${hue} 90% 60% / ${arcActive ? 0.9 : 0.3})`}
+            strokeWidth="1.5"
+            strokeDasharray={`${34 + level * 80} 180`}
+            strokeLinecap="round"
+            transform="rotate(120 28 28)"
+            style={{ filter: `drop-shadow(0 0 4px hsl(${hue} 90% 60% / 0.6))` }}
+          />
+        </svg>
+      )}
+      <div
+        className="grid place-items-center rounded-full backdrop-blur"
+        style={{
+          width: size, height: size,
+          background: muted
+            ? "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))"
+            : `linear-gradient(180deg, hsl(${hue} 40% 20% / 0.55), hsl(${hue} 30% 10% / 0.55))`,
+          border: `1px solid hsl(${hue} 50% 60% / ${muted ? 0.15 : 0.35})`,
+          color: muted ? "rgba(255,255,255,0.85)" : `hsl(${hue} 90% 85%)`,
+          boxShadow: muted ? "none" : `0 0 18px hsl(${hue} 80% 50% / 0.25)`,
+        }}
+      >
+        {icon}
+      </div>
+    </button>
+  );
+}
 
 /**
  * Scrolling live waveform — rolling buffer of mic amplitudes rendered as
@@ -1363,75 +1467,147 @@ function JarvisPage() {
       <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-5 pb-2">
         <div className="w-full max-w-3xl flex flex-col min-h-0 relative">
           <div className="glass-card rounded-[24px] sm:rounded-[32px] flex flex-col min-h-0 flex-1 overflow-hidden">
-            {/* Orb + status — hero identity, sits INSIDE the shell at top */}
-            <div
-              className={`flex flex-col items-center shrink-0 transition-all duration-500 px-4 sm:px-6 ${
-                messages.length === 0 && !partial && !lastFailed
-                  ? "gap-4 sm:gap-5 pt-6 sm:pt-8 pb-3"
-                  : "gap-2 pt-4 sm:pt-5 pb-3"
-              }`}
-            >
-              <button
-                type="button"
-                ref={micButtonRef}
-                onClick={handleMicClick}
-                aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-                aria-keyshortcuts={phase === "idle" ? "Space" : "Escape"}
-                title={phase === "idle" ? "Hold Space to talk" : "Press Esc to cancel"}
-                className={`group relative flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-500 motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite] ${
-                  messages.length === 0 && !partial && !lastFailed
-                    ? "w-[96px] h-[96px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px]"
-                    : "w-[52px] h-[52px] sm:w-[60px] sm:h-[60px]"
-                }`}
-              >
+            {/* Orb cluster — preview-parity: side buttons flanking a color-coded orb.
+                Hue changes per phase (violet/cyan/amber). Business logic untouched. */}
+            {(() => {
+              const hue = PHASE_HUE[phase];
+              const isEmpty = messages.length === 0 && !partial && !lastFailed;
+              const showSides = !isEmpty || phase !== "idle";
+              // Core size adapts: hero-large in empty idle, compact once conversing.
+              const core = isEmpty ? 160 : 88;
+              const innerRing = core + 40;
+              const outerRing = core + 90;
+              const orbScale =
+                phase === "listening" ? 1 + Math.min(0.18, micLevel * 0.5)
+                : phase === "speaking" ? 1.04
+                : 1;
+
+              // Stop button routes per phase.
+              const stopHandler = () => {
+                if (phase === "listening") cancelRecording();
+                else if (phase === "thinking") stopGenerating();
+                else if (phase === "speaking") stopPlayback();
+              };
+              const stopDisabled = phase === "idle";
+
+              return (
                 <div
-                  className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
-                    phase === "idle"
-                      ? "opacity-70 group-hover:opacity-95"
-                      : phase === "speaking"
-                        ? "opacity-100"
-                        : "opacity-90"
-                  } ${reduced ? "opacity-40" : ""}`}
-                  aria-hidden="true"
-                >
-                  <HologramSafe level={reduced ? 0 : micLevel} />
-                </div>
-              </button>
-
-              {/* Visual status chip — decorative, updates instantly. The
-                  screen-reader announcement is handled by a separate,
-                  debounced live region below to prevent overlap on rapid
-                  phase changes (e.g. thinking-stage cycling). */}
-              <div
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1"
-                aria-hidden="true"
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    phase === "idle"
-                      ? "bg-jarvis/70"
-                      : phase === "listening"
-                        ? "bg-emerald-400 motion-safe:animate-pulse"
-                        : phase === "speaking"
-                          ? "bg-jarvis motion-safe:animate-pulse"
-                          : "bg-amber-400 motion-safe:animate-pulse"
+                  className={`flex flex-col items-center shrink-0 transition-all duration-500 px-4 sm:px-6 ${
+                    isEmpty ? "gap-4 sm:gap-5 pt-6 sm:pt-8 pb-3" : "gap-2 pt-4 sm:pt-5 pb-3"
                   }`}
-                />
-                <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">
-                  {statusLabel}
-                </span>
-              </div>
+                >
+                  <div className="relative flex items-center justify-center gap-6 sm:gap-10">
+                    {/* Left mic side button */}
+                    {showSides && (
+                      <OrbSideButton
+                        icon={<Mic className="h-4 w-4" />}
+                        hue={hue}
+                        level={phase === "listening" ? micLevel : 0}
+                        showArc
+                        onClick={handleMicClick}
+                        ariaLabel={phase === "idle" ? "Start listening" : "Toggle mic"}
+                      />
+                    )}
 
-              {/* Debounced live region for assistive tech. */}
-              <div
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-                className="sr-only"
-              >
-                {announcedLabel}
-              </div>
-            </div>
+                    {/* Center orb — kept as the primary interactive target */}
+                    <button
+                      type="button"
+                      ref={micButtonRef}
+                      onClick={handleMicClick}
+                      aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+                      aria-keyshortcuts={phase === "idle" ? "Space" : "Escape"}
+                      title={phase === "idle" ? "Hold Space to talk" : "Press Esc to cancel"}
+                      className="group relative grid place-items-center rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform duration-300 motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.97]"
+                      style={{ width: outerRing, height: outerRing }}
+                    >
+                      {/* Outer soft glow */}
+                      <div
+                        className="absolute inset-0 rounded-full blur-3xl transition-opacity duration-500"
+                        style={{
+                          opacity: phase === "idle" ? 0.35 : 0.55,
+                          background: `radial-gradient(closest-side, hsl(${hue} 90% 60% / 0.55), transparent 70%)`,
+                        }}
+                        aria-hidden="true"
+                      />
+                      {/* Outer thin ring */}
+                      <div
+                        className="absolute rounded-full border transition-colors duration-500"
+                        style={{
+                          width: outerRing, height: outerRing,
+                          borderColor: `hsl(${hue} 90% 65% / ${phase === "idle" ? 0.25 : 0.55})`,
+                          boxShadow: `0 0 40px hsl(${hue} 90% 55% / ${phase === "idle" ? 0.15 : 0.35}) inset`,
+                        }}
+                        aria-hidden="true"
+                      />
+                      {/* Inner ring */}
+                      <div
+                        className="absolute rounded-full border transition-colors duration-500"
+                        style={{
+                          width: innerRing, height: innerRing,
+                          borderColor: `hsl(${hue} 90% 70% / ${phase === "idle" ? 0.35 : 0.75})`,
+                          boxShadow: `0 0 26px hsl(${hue} 90% 60% / ${phase === "idle" ? 0.2 : 0.45}) inset, 0 0 18px hsl(${hue} 90% 60% / 0.22)`,
+                        }}
+                        aria-hidden="true"
+                      />
+                      {/* Core disc */}
+                      <div
+                        className="relative rounded-full transition-transform duration-150 ease-out"
+                        style={{
+                          width: core, height: core,
+                          transform: `scale(${reduced ? 1 : orbScale})`,
+                          background: `radial-gradient(circle at 50% 42%, hsl(${hue} 95% 72% / 0.55) 0%, hsl(${hue} 85% 45% / 0.45) 45%, hsl(${hue} 80% 20% / 0.35) 100%)`,
+                          boxShadow: `inset 0 0 60px hsl(${hue} 100% 70% / 0.35), inset 0 -25px 60px hsl(${hue} 90% 20% / 0.6), 0 0 60px hsl(${hue} 90% 55% / 0.4)`,
+                        }}
+                      >
+                        {/* Phase-specific center content */}
+                        <div className="absolute inset-0 grid place-items-center" aria-hidden="true">
+                          {phase === "idle" && (
+                            <Mic className="text-white/85" style={{ width: core * 0.28, height: core * 0.28 }} />
+                          )}
+                          {phase === "thinking" && (
+                            <Loader2
+                              className="motion-safe:animate-spin"
+                              style={{ width: core * 0.32, height: core * 0.32, color: `hsl(${hue} 90% 75%)` }}
+                            />
+                          )}
+                          {phase === "listening" && <OrbWaveBars level={micLevel} hue={hue} />}
+                          {phase === "speaking" && (
+                            <Volume2 style={{ width: core * 0.36, height: core * 0.36, color: `hsl(${hue} 90% 82%)` }} />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Right stop side button */}
+                    {showSides && (
+                      <OrbSideButton
+                        icon={<Square className="h-3.5 w-3.5 fill-current" />}
+                        hue={hue}
+                        level={0}
+                        onClick={stopHandler}
+                        ariaLabel="Stop"
+                        muted
+                        disabled={stopDisabled}
+                      />
+                    )}
+                  </div>
+
+                  {/* Caption — hue-tinted tracked label (preview parity) */}
+                  <div
+                    className="text-[10px] sm:text-[11px] tracking-[0.35em] font-mono select-none"
+                    style={{ color: `hsl(${hue} 30% 68%)` }}
+                    aria-hidden="true"
+                  >
+                    {phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}
+                  </div>
+
+                  {/* Debounced live region for assistive tech. */}
+                  <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+                    {announcedLabel}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Transcript — scrolls; empty state renders welcome + chips inline */}
             <div
@@ -1496,7 +1672,10 @@ function JarvisPage() {
                   key={i}
                   className={`flex flex-col motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] ${m.role === "user" ? "items-end" : "items-start"}`}
                 >
-                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
+                    style={{ color: m.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
+                  >
                     {m.role === "user" ? "You" : "Jarvis"}
                   </span>
                   <div
@@ -1512,7 +1691,10 @@ function JarvisPage() {
               ))}
               {partial && (
                 <div className="flex flex-col items-start">
-                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
+                    style={{ color: "hsl(258 90% 75%)" }}
+                  >
                     Jarvis
                   </span>
                   <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
