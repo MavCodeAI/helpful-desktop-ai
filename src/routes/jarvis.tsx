@@ -922,7 +922,16 @@ function JarvisPage() {
       dispatch({ type: "START_LISTENING" });
     } catch (e) {
       console.error(e);
-      toast.error("Microphone access denied — enable it in browser settings.");
+      const info = classifyMicError(e);
+      // Long-duration toast so the fix instructions stay readable; the
+      // Voice-settings sheet has a matching banner for the "denied" case
+      // so the user can find the instructions again after the toast fades.
+      toast.error(info.title, {
+        description: info.description,
+        duration: info.kind === "denied" ? 10000 : 6000,
+      });
+      if (info.kind === "denied") setMicPermission("denied");
+      dispatch({ type: "CANCEL" });
     }
   };
 
