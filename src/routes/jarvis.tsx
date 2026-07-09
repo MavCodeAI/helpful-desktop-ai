@@ -108,6 +108,7 @@ function JarvisPage() {
   const audioUrlRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Auto-scroll transcript to bottom as new tokens stream in
   useEffect(() => {
