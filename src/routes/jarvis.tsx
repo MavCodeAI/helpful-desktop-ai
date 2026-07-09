@@ -734,7 +734,11 @@ function JarvisPage() {
           ? `Speed: ${patch.speed.toFixed(2)}×`
           : patch.volume !== undefined
             ? `Volume: ${Math.round(patch.volume * 100)}%`
-            : "Settings saved";
+            : patch.micSensitivity !== undefined
+              ? `Mic sensitivity: ${patch.micSensitivity.toFixed(2)}×`
+              : patch.autoAdaptivePace !== undefined
+                ? `Auto-adaptive pace: ${patch.autoAdaptivePace ? "On" : "Off"}`
+                : "Settings saved";
     toast.success("Saved", { description: label, duration: 1400 });
   };
 
