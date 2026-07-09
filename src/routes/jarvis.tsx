@@ -605,8 +605,18 @@ function JarvisPage() {
       <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
-        {/* Top zone — mic button sits centered over the orb, kept solid for visibility */}
+        {/* Top zone — orb wraps the mic button so they read as one unit */}
         <div className="relative z-10 flex flex-col items-center gap-5 mt-6 sm:mt-16">
+          {/* Orb sits behind the button, matching its center */}
+          <div className="relative flex items-center justify-center">
+            <div
+              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] transition-opacity duration-500 ${
+                phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
+              }`}
+              aria-hidden="true"
+            >
+              <HologramSafe level={micLevel} />
+            </div>
           <button
             onClick={handleMicClick}
             className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
