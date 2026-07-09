@@ -774,7 +774,9 @@ function JarvisPage() {
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
       {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
+      <header className="relative flex items-center justify-between px-6 py-4 backdrop-blur-md bg-background/40 border-b border-jarvis/10">
+        <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-jarvis/50 to-transparent" aria-hidden="true" />
+
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
           <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
@@ -966,8 +968,15 @@ function JarvisPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 [@media(max-height:640px)]:pt-2 [@media(max-height:640px)]:pb-2 [@media(max-height:640px)]:gap-2 relative gap-6">
+      <div className="flex-1 relative">
+        <div className="pointer-events-none absolute inset-0 bg-grid-jarvis opacity-40" aria-hidden="true" />
+        <div className="relative flex-1 grid lg:grid-cols-[minmax(320px,440px)_minmax(0,1fr)] lg:gap-8 xl:gap-12 items-stretch min-h-full px-4 sm:px-6 lg:px-10 pt-6 lg:pt-10 pb-6 gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
+
+        {/* LEFT COLUMN — orb + status panel */}
+        <aside className="flex flex-col items-center lg:items-stretch lg:justify-center gap-5 lg:gap-8 lg:sticky lg:top-8 lg:self-start">
+        {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
+            the orb + mic shrink so all three zones stay on one screen. */}
 
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
@@ -1005,6 +1014,17 @@ function JarvisPage() {
 
         </div>
 
+        {/* Status metadata rail — visible identity for the assistant */}
+        <div className="hidden lg:flex flex-col gap-3 text-center">
+          <div className="inline-flex items-center justify-center gap-2 mx-auto rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
+            <span className={`w-1.5 h-1.5 rounded-full ${phase === "idle" ? "bg-jarvis/70" : phase === "listening" ? "bg-emerald-400 motion-safe:animate-pulse" : phase === "speaking" ? "bg-jarvis motion-safe:animate-pulse" : "bg-amber-400 motion-safe:animate-pulse"}`} />
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{statusLabel}</span>
+          </div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
+            Voice · <span className="text-jarvis/80">{tts.voice.split("-").pop() || "auto"}</span>
+          </div>
+        </div>
+
         {/* Middle zone — only idle-state replay affordance now; active controls live above the composer. */}
         <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
           {phase === "idle" && lastSpokenRef.current && (
@@ -1013,15 +1033,20 @@ function JarvisPage() {
             </Button>
           )}
         </div>
+        </aside>
 
-
+        {/* RIGHT COLUMN — premium chat console */}
+        <section className="jarvis-panel rounded-3xl p-4 sm:p-6 flex flex-col min-h-[520px] lg:min-h-[calc(100dvh-9rem)]">
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
-        <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3">
-          <div className="relative w-full">
+        <div className="relative z-10 w-full flex-1 flex flex-col gap-3">
+          <div className="relative w-full flex-1 flex flex-col">
 
           <div
             ref={transcriptRef}
-            className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
+            role="log"
+            aria-label="Conversation"
+            aria-live="polite"
+            className="w-full flex-1 space-y-5 min-h-[220px] max-h-[calc(100dvh-22rem)] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-4 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
               <p className="text-center text-sm text-muted-foreground italic">
@@ -1125,7 +1150,7 @@ function JarvisPage() {
               if (phase === "thinking") stopGenerating();
               else handleTextSend();
             }}
-            className="mt-3 flex items-end gap-2 rounded-2xl border border-jarvis/25 bg-background/70 backdrop-blur-md p-2 focus-within:border-jarvis/60 transition-colors"
+            className="mt-4 flex items-end gap-2 rounded-2xl border border-jarvis/30 bg-background/60 backdrop-blur-xl p-2 shadow-[0_0_0_1px_oklch(0.78_0.16_215/0.05),0_20px_40px_-20px_oklch(0.05_0.03_240/0.6)] focus-within:border-jarvis/70 focus-within:shadow-[0_0_0_1px_oklch(0.78_0.16_215/0.4),0_0_40px_-10px_oklch(0.78_0.16_215/0.3)] transition-all"
           >
             {/* Mic button — inline, leading position */}
             <button
@@ -1242,7 +1267,9 @@ function JarvisPage() {
           </div>
           </div>
         </div>
+        </section>
 
+        </div>
       </div>
     </main>
   );
