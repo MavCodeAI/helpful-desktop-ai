@@ -14,27 +14,24 @@ import { createFileRoute } from "@tanstack/react-router";
 interface TTSBody {
   /** The text JARVIS should speak. Required. */
   text?: string;
-  /** Optional voice id (e.g. "onyx", "alloy"). Defaults to "onyx" for a deeper butler tone. */
+  /** Optional voice id (e.g. "onyx", "alloy"). Defaults to "onyx". */
   voice?: string;
+  /** Optional speech speed (0.25–4.0). Defaults to 1.0. */
+  speed?: number;
 }
 
 export const Route = createFileRoute("/api/tts")({
   server: {
     handlers: {
-      /**
-       * POST handler.
-       *
-       * Request:  `{ text: string, voice?: string }`
-       * Response: `audio/mpeg` binary stream, or plain-text error with
-       *           upstream status on failure.
-       */
       POST: async ({ request }) => {
-        const { text, voice } = (await request.json()) as TTSBody;
-        // Empty input would still cost a gateway call — reject fast.
+        const { text, voice, speed } = (await request.json()) as TTSBody;
         if (!text || !text.trim()) return new Response("text required", { status: 400 });
 
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+
+        // Clamp speed to the model's supported range.
+        const safeSpeed = Math.min(4, Math.max(0.25, speed ?? 1));
 
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
           method: "POST",
@@ -46,8 +43,8 @@ export const Route = createFileRoute("/api/tts")({
             model: "openai/gpt-4o-mini-tts",
             input: text,
             voice: voice || "onyx",
+            speed: safeSpeed,
             response_format: "mp3",
-            // `instructions` steers prosody without needing SSML.
             instructions:
               "Speak calmly, precisely, and with a subtle refined British accent, like a sophisticated AI butler.",
           }),
