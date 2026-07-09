@@ -519,11 +519,12 @@ function JarvisPage() {
           {/* TTS settings drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <Settings className="w-4 h-4 mr-1.5" /> Voice
+              <Button variant="ghost" size="sm" aria-label="Voice settings" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+                <Settings className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Voice</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[340px]">
+            <SheetContent side="right" className="w-[85vw] sm:w-[340px]">
+
               <SheetHeader>
                 <SheetTitle className="font-display tracking-widest text-jarvis">Voice Settings</SheetTitle>
               </SheetHeader>
