@@ -1689,7 +1689,6 @@ function JarvisPage() {
               </div>
             )}
 
-            {/* Composer removed — voice-only interaction */}
           </div>
 
           {/* RIGHT — preview-style chat rail (dark cards) */}
