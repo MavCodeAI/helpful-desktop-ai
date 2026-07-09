@@ -930,7 +930,9 @@ function JarvisPage() {
         description: info.description,
         duration: info.kind === "denied" ? 10000 : 6000,
       });
-      if (info.kind === "denied") setMicPermission("denied");
+      // No manual permission-state update needed — `useMicPermission()`
+      // subscribes to `permissions.query({name:'microphone'}).onchange`,
+      // so a denied prompt flips `micPerm` automatically on the next tick.
       dispatch({ type: "CANCEL" });
     }
   };
