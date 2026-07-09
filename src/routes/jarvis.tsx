@@ -772,7 +772,7 @@ function JarvisPage() {
   }[phase];
 
   return (
-    <main className="min-h-dvh flex flex-col relative overflow-hidden">
+    <main className="flex flex-col relative overflow-hidden" style={{ height: "100dvh", minHeight: "560px" }}>
       {/* Aurora ambient background — the signature Liquid Glass look */}
       <div className="aurora-field" aria-hidden="true">
         <div className="aurora-accent" style={{ width: "40vmax", height: "40vmax", left: "30%", top: "40%", background: "radial-gradient(circle, var(--aurora-c), transparent 60%)" }} />
@@ -985,7 +985,7 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="glass-card rounded-[28px] sm:rounded-[32px] flex-1 min-h-[200px] overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+            className="glass-card rounded-[24px] sm:rounded-[32px] flex-1 min-h-[120px] sm:min-h-[200px] overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
               <div className="flex flex-col items-center text-center gap-6 py-6 sm:py-10 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
@@ -1097,7 +1097,7 @@ function JarvisPage() {
       {/* ==================================================================
           BOTTOM DOCK — orb (mic) + composer pill + hints
           ================================================================== */}
-      <div className="relative z-30 w-full flex flex-col items-center gap-3 px-3 sm:px-6 pt-4 pb-4 sm:pb-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}>
+      <div className="relative z-30 w-full flex flex-col items-center gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-4 pb-3 sm:pb-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}>
         {/* Active playback / listening strips */}
         {phase === "listening" && (
           <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
@@ -1144,7 +1144,7 @@ function JarvisPage() {
           ref={micButtonRef}
           onClick={handleMicClick}
           aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-          className="group relative flex items-center justify-center w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] [@media(max-height:640px)]:w-[90px] [@media(max-height:640px)]:h-[90px] rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite]"
+          className="group relative flex items-center justify-center w-[88px] h-[88px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px] rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite]"
         >
           <div
             className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
@@ -1232,7 +1232,7 @@ function JarvisPage() {
         </form>
 
         {/* Keyboard shortcut hints — subtle */}
-        <div className="hidden sm:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
+        <div className="hidden md:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
           <span className="inline-flex items-center gap-1">
             <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Space</kbd>
             hold to talk
