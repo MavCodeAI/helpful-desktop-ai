@@ -887,8 +887,7 @@ function JarvisPage() {
           toast.error(friendlyError(e, "Transcription failed"));
           setPhase("idle");
         } finally {
-          // Release the reader so a mid-stream abort doesn't leak the socket.
-          if (sttReader) sttReader.cancel().catch(() => {});
+          // Reader cleanup lives inside readSttResponse's finally block.
           // Only clear abortRef if it still points at OUR controller — sendToChat
           // may have overwritten it with its own controller for the LLM stream.
           if (abortRef.current === sttController) abortRef.current = null;
