@@ -732,6 +732,12 @@ function JarvisPage() {
             </div>
           )}
 
+          {phase === "thinking" && (
+            <Button variant="outline" size="sm" onClick={stopGenerating}>
+              <Square className="w-4 h-4 mr-1.5" /> Stop generating
+            </Button>
+          )}
+
           {phase === "idle" && lastSpokenRef.current && (
             <Button variant="ghost" size="sm" onClick={restartPlayback}>
               <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
