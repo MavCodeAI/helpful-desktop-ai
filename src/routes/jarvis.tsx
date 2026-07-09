@@ -875,7 +875,7 @@ function JarvisPage() {
                 size="icon"
                 aria-label="Conversation history"
                 title="History"
-                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 rounded-full"
+                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 h-11 w-11 rounded-full"
               >
                 <History className="w-4 h-4" />
               </Button>
@@ -930,7 +930,7 @@ function JarvisPage() {
                 size="icon"
                 aria-label="Voice settings"
                 title="Voice"
-                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 rounded-full"
+                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 h-11 w-11 rounded-full"
               >
                 <Settings className="w-4 h-4" />
               </Button>
@@ -1015,7 +1015,7 @@ function JarvisPage() {
               <Button
                 variant="ghost"
                 aria-label="Account menu"
-                className="min-h-11 min-w-11 rounded-full p-0 hover:bg-jarvis/10"
+                className="min-h-11 min-w-11 h-11 w-11 rounded-full p-0 hover:bg-jarvis/10"
               >
                 <Avatar className="h-9 w-9 border border-jarvis/40">
                   <AvatarFallback className="bg-jarvis/15 text-jarvis text-xs font-mono tracking-wider">
