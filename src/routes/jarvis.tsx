@@ -790,6 +790,21 @@ function JarvisPage() {
     abortRef.current?.abort();
   };
 
+  /**
+   * Hard-cancel any in-flight SSE stream (STT transcription OR assistant tokens)
+   * and clear partial transcripts safely. Used by the visible Cancel pill.
+   * Aborting the controller triggers the reader's AbortError path, which
+   * releases the reader in `finally` — no socket leak.
+   */
+  const cancelStream = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setRtUserPartial("");
+    setRtAsstPartial("");
+    setPartial("");
+    setPhase("idle");
+  };
+
 
   /* ---------- Recording controls ---------- */
 
