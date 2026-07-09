@@ -1364,8 +1364,10 @@ function JarvisPage() {
                       : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
                   } disabled:shadow-none`}
                   aria-label="Send message"
+                  aria-keyshortcuts="Enter"
+                  title="Send message (Enter)"
                 >
-                  <SendHorizontal className="w-4 h-4" />
+                  <SendHorizontal className="w-4 h-4" aria-hidden="true" />
                 </Button>
               )}
             </form>
