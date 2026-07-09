@@ -105,7 +105,7 @@ import { OrbSideButton } from "@/features/jarvis-ui/OrbSideButton";
 import { LiveWaveform } from "@/features/jarvis-ui/LiveWaveform";
 import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
-import { MarkdownMessage } from "@/features/jarvis-ui/MarkdownMessage";
+import { MarkdownMessage, prefetchMarkdown } from "@/features/jarvis-ui/MarkdownMessage";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -243,6 +243,13 @@ function JarvisPage() {
   }, [partial, rtUserPartial, rtAsstPartial, messages, scrolledUp]);
 
   // Track whether the user has scrolled up; if so, show a "scroll to bottom" pill.
+  // Idle-prefetch the markdown chunk so the first assistant bubble
+  // renders formatted text without a Suspense fallback flicker. Fires
+  // once per mount; a no-op on subsequent mounts.
+  useEffect(() => {
+    prefetchMarkdown();
+  }, []);
+
   useEffect(() => {
     const el = transcriptRef.current;
     if (!el) return;
