@@ -353,9 +353,15 @@ function LiveWaveform({ level, paused }: { level: number; paused: boolean }) {
  *
  * Purely visual; the actual STT capture always proceeds regardless.
  */
-function VolumeMeter({ level, peak }: { level: number; peak: number }) {
-  const pct = Math.max(0, Math.min(1, level)) * 100;
-  const peakPct = Math.max(0, Math.min(1, peak)) * 100;
+function VolumeMeter({ level, peak, sensitivity = 1 }: { level: number; peak: number; sensitivity?: number }) {
+  // Sensitivity scales the raw signal BEFORE zone classification, so raising
+  // it lets a quiet mic still register "Good" while lowering it prevents a
+  // loud room from constantly showing "Clipping". The bar reflects the
+  // scaled value the user actually sees.
+  const scaledLevel = Math.max(0, Math.min(1, level * sensitivity));
+  const scaledPeak = Math.max(0, Math.min(1, peak * sensitivity));
+  const pct = scaledLevel * 100;
+  const peakPct = scaledPeak * 100;
   const zone =
     peak < 0.05 ? "silent" :
     level < 0.15 ? "quiet" :
