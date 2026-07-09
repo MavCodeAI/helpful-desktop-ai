@@ -965,6 +965,7 @@ function JarvisPage() {
         // silently complete and auto-send.
         const sttController = new AbortController();
         abortRef.current = sttController;
+        const sttT0 = performance.now();
         try {
           const fd = new FormData();
           const ext = mime.includes("mp4") ? "mp4" : "webm";
@@ -980,6 +981,9 @@ function JarvisPage() {
           // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
           // src/lib/stt-stream.test.ts for delta/final-commit tests.
           const finalText = await readSttResponse(res, (acc) => setRtUserPartial(acc));
+          // Measured from POST send to final-transcript resolution — covers
+          // upload + model inference + streaming completion.
+          setSttMs(Math.round(performance.now() - sttT0));
 
           const text = finalText.trim();
           if (!text) {
