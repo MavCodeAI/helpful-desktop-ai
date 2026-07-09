@@ -1710,8 +1710,8 @@ function JarvisPage() {
             <div className="flex-1 min-h-0" />
 
 
-            {/* Listening / speaking strips */}
-            {(phase === "listening" || phase === "speaking") && (
+            {/* Listening / thinking / speaking strips */}
+            {(phase === "listening" || phase === "thinking" || phase === "speaking") && (
               <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
                 {phase === "listening" && (
                   <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
