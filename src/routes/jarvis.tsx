@@ -1691,7 +1691,10 @@ function JarvisPage() {
               ))}
               {partial && (
                 <div className="flex flex-col items-start">
-                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
+                    style={{ color: "hsl(258 90% 75%)" }}
+                  >
                     Jarvis
                   </span>
                   <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
