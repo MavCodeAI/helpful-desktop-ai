@@ -15,7 +15,7 @@
  * "speaking".
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useReducer, useMemo } from "react";
 import {
   Mic,
   MicOff,
@@ -95,6 +95,8 @@ import {
   THINKING_STAGES,
   PHASE_HUE,
   PHASE_CAPTION,
+  voiceReducer,
+  INITIAL_VOICE_STATE,
   type Phase,
 } from "@/features/voice/phase-machine";
 import { OrbWaveBars } from "@/features/jarvis-ui/OrbWaveBars";
@@ -129,7 +131,17 @@ function JarvisPage() {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
 
   // --- Chat phase + streaming ---
-  const [phase, setPhase] = useState<Phase>("idle");
+  // Backed by the pure `voiceReducer` (src/features/voice/phase-machine.ts)
+  // so every phase transition is testable. `setPhase` keeps the existing
+  // call-site ergonomics — internally dispatches SET_PHASE. New code paths
+  // should prefer semantic events (`dispatch({ type: "START_LISTENING" })`)
+  // so invalid transitions become tested no-ops instead of silent jumps.
+  const [voiceState, dispatch] = useReducer(voiceReducer, INITIAL_VOICE_STATE);
+  const phase = voiceState.phase;
+  const setPhase = useCallback((p: Phase) => dispatch({ type: "SET_PHASE", phase: p }), []);
+  // Keep `dispatch` reachable to satisfy TS unused-var checks and document
+  // the migration surface for future refactors.
+  useMemo(() => dispatch, []);
   const [partial, setPartial] = useState("");
 
   // Voice interaction mode: push-to-talk, auto-VAD, or realtime streaming.
