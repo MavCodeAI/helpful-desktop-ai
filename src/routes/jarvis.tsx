@@ -808,10 +808,8 @@ function JarvisPage() {
           </div>
           <div className="flex flex-col leading-none min-w-0">
             <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">JARVIS</span>
-            <span className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground mt-0.5 hidden sm:inline">
-              Voice Intelligence
-            </span>
           </div>
+
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
