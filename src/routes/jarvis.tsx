@@ -35,7 +35,10 @@ import {
   Activity,
 } from "lucide-react";
 import { loadVoiceMode, saveVoiceMode, type VoiceMode } from "@/lib/voice-mode";
-import { RealtimeClient, RealtimeError } from "@/lib/realtime-client";
+// Type-only import — the runtime module is dynamically imported inside
+// connectRealtime() so it's not bundled into the initial jarvis chunk.
+// Non-realtime users (PTT / Auto-VAD) never pay the WebRTC code cost.
+import type { RealtimeClient } from "@/lib/realtime-client";
 import { readSttResponse } from "@/lib/stt-stream";
 import { useMicPermission } from "@/hooks/useMicPermission";
 import { useQuotaCooldown } from "@/hooks/useQuotaCooldown";
@@ -1175,6 +1178,9 @@ function JarvisPage() {
   const connectRealtime = useCallback(async () => {
     if (realtimeRef.current) return;
     setPhase("thinking");
+    // Dynamic import — first realtime click pays the load cost (~10-15 KB),
+    // every subsequent click hits the module cache.
+    const { RealtimeClient, RealtimeError } = await import("@/lib/realtime-client");
     const client = new RealtimeClient();
     realtimeRef.current = client;
     client.on((e) => {
