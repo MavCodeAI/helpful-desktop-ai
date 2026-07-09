@@ -626,9 +626,20 @@ function JarvisPage() {
   /* ---------- Orb tap dispatch ---------- */
 
   const handleMicClick = () => {
-    if (phase === "listening") stopListening();
-    else if (phase === "idle") startListening();
-    else if (phase === "speaking") stopPlayback();
+    haptic(12);
+    if (phase === "listening") {
+      stopListening();
+    } else if (phase === "idle") {
+      startListening();
+    } else if (phase === "speaking") {
+      // Barge-in: stop TTS AND immediately start listening — feels seamless.
+      stopPlayback();
+      // stopPlayback flips phase to idle synchronously → startListening's guard passes.
+      // Use a microtask so state settles first.
+      queueMicrotask(() => startListening());
+    } else if (phase === "thinking") {
+      stopGenerating();
+    }
   };
 
   /* ---------- Thread actions ---------- */
