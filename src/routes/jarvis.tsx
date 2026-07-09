@@ -225,6 +225,7 @@ function JarvisPage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [partial, setPartial] = useState("");
   const [composerText, setComposerText] = useState("");
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
