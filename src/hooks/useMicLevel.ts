@@ -42,7 +42,7 @@ export interface MicStatus {
 
 
 
-export function useMicLevel(active: boolean): MicStatus {
+export function useMicLevel(active: boolean, deviceId?: string | null): MicStatus {
   const [level, setLevel] = useState(0);
   const [peak, setPeak] = useState(0);
   const [latencyMs, setLatencyMs] = useState(0);
