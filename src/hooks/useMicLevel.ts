@@ -29,6 +29,10 @@ export interface MicStatus {
 
 export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
+  // Reflects whether the pipeline is truly live (stream open + RAF ticking).
+  // Distinct from `active` (intent): stays false while permission resolves,
+  // when tab is hidden, or after any failure.
+  const [live, setLive] = useState(false);
   // Track visibility so the effect re-runs when the tab hides/returns.
   const [visible, setVisible] = useState(typeof document === "undefined" ? true : !document.hidden);
 
