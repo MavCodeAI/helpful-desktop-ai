@@ -451,15 +451,7 @@ function JarvisPage() {
 
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
-      {/* Volumetric energy orb — background, dimmed when idle so UI stays readable. */}
-      <div
-        className={`absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(60vw,340px)] aspect-square transition-opacity duration-500 ${
-          phase === "idle" ? "opacity-40" : phase === "speaking" ? "opacity-90" : "opacity-70"
-        }`}
-        aria-hidden="true"
-      >
-        <HologramSafe level={micLevel} />
-      </div>
+      {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
@@ -613,8 +605,18 @@ function JarvisPage() {
       <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
-        {/* Top zone — mic button sits centered over the orb, kept solid for visibility */}
+        {/* Top zone — orb wraps the mic button so they read as one unit */}
         <div className="relative z-10 flex flex-col items-center gap-5 mt-6 sm:mt-16">
+          {/* Orb sits behind the button, matching its center */}
+          <div className="relative flex items-center justify-center">
+            <div
+              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[280px] h-[280px] sm:w-[420px] sm:h-[420px] transition-opacity duration-500 ${
+                phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
+              }`}
+              aria-hidden="true"
+            >
+              <HologramSafe level={micLevel} />
+            </div>
           <button
             onClick={handleMicClick}
             className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -638,6 +640,9 @@ function JarvisPage() {
               )}
             </div>
           </button>
+          </div>
+
+
 
           {/* Status pill — solid background so text is readable over orb */}
           <div
