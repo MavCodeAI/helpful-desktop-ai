@@ -78,8 +78,6 @@ import {
 } from "@/lib/chat-history";
 // HologramSafe removed — orb visuals are now inline in the preview-parity cluster below.
 import { useMicLevel } from "@/hooks/useMicLevel";
-import { useAudioInputDevices } from "@/hooks/useAudioInputDevices";
-import { useMicDeviceId } from "@/hooks/useMicDeviceId";
 import { toast } from "sonner";
 // Markdown is lazy-loaded via MarkdownMessage — keeps ~180 KB of
 // react-markdown/remark/mdast/micromark out of the initial jarvis chunk.
@@ -102,7 +100,7 @@ import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
 import { MarkdownMessage, prefetchMarkdown } from "@/features/jarvis-ui/MarkdownMessage";
 import { classifyMicError } from "@/lib/mic-permission";
-
+import { MicPermissionBanner } from "@/features/jarvis-ui/MicPermissionBanner";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -724,7 +722,6 @@ function JarvisPage() {
       // so the round-trip to Whisper feels noticeably snappier.
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          ...(activeMicIdRef.current ? { deviceId: { exact: activeMicIdRef.current } } : {}),
           channelCount: 1,
           sampleRate: 16000,
           echoCancellation: true,
@@ -1146,22 +1143,7 @@ function JarvisPage() {
   // Live mic amplitude → volumetric orb density.
   // Passive analyser runs while page is mounted; the recording MediaRecorder
   // uses its own independent stream, so both can coexist.
-  // Persisted mic-device selection. Validated against the live device list
-  // below — a stale id (permissions cleared, mic unplugged) falls back to
-  // the OS default rather than hard-failing getUserMedia with NotFoundError.
-  const [savedMicId, setSavedMicId] = useMicDeviceId();
-  const micDevices = useAudioInputDevices();
-  const activeMicId =
-    savedMicId && micDevices.devices.some((d) => d.deviceId === savedMicId)
-      ? savedMicId
-      : null;
-  const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license, activeMicId);
-  // Mirror activeMicId into a ref so stable callbacks (startListening) read
-  // the latest selection without needing to re-create on every device change.
-  const activeMicIdRef = useRef<string | null>(activeMicId);
-  useEffect(() => {
-    activeMicIdRef.current = activeMicId;
-  }, [activeMicId]);
+  const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license);
 
   /* ---------- Auto-VAD (mode === "vad") ---------- */
   //
@@ -1821,54 +1803,6 @@ function JarvisPage() {
                     inline meter here IS the test mode: it renders live,
                     unconditionally, and nothing captured here is sent to
                     the assistant. */}
-                {/* ---------- Input device ---------- */}
-                {/* Uses enumerateDevices(). Labels stay empty until the user
-                    has granted mic permission at least once — the hint
-                    below explains that so the "Microphone" placeholder
-                    doesn't look broken. */}
-                <div className="pt-4 border-t border-white/5">
-                  <label
-                    htmlFor="mic-device-select"
-                    className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block"
-                  >
-                    Input device
-                  </label>
-                  {micDevices.supported ? (
-                    <>
-                      <Select
-                        value={activeMicId ?? "__default__"}
-                        onValueChange={(v) => setSavedMicId(v === "__default__" ? null : v)}
-                      >
-                        <SelectTrigger id="mic-device-select" aria-label="Microphone input device">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__default__">System default</SelectItem>
-                          {micDevices.devices.map((d, i) => (
-                            <SelectItem key={d.deviceId || `mic-${i}`} value={d.deviceId}>
-                              {d.label || `Microphone ${i + 1}`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {!micDevices.hasLabels && (
-                        <p className="mt-1 text-[10px] text-muted-foreground/70">
-                          Grant microphone access once to see device names.
-                        </p>
-                      )}
-                      {savedMicId && !activeMicId && (
-                        <p className="mt-1 text-[10px] text-amber-400/80">
-                          Previously selected mic isn't available — using system default.
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground/70">
-                      Device enumeration isn't supported in this browser.
-                    </p>
-                  )}
-                </div>
-
                 <div className="pt-4 border-t border-white/5">
                   <div className="flex justify-between mb-2">
                     <label className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -2168,8 +2102,14 @@ function JarvisPage() {
                               : "Push-to-talk · hold Space or tap the orb"}
                   </div>
 
-
-
+                  {/* Mic permission call-to-action / friendly-block banner.
+                      Only shown at idle so it never distracts mid-conversation.
+                      Handles both "prompt" (surface the native dialog) and
+                      "denied" (explain the fix + offer reload). Granted /
+                      unknown → renders nothing. */}
+                  {phase === "idle" && (
+                    <MicPermissionBanner state={micPerm} />
+                  )}
 
 
                   {/* Slow-thinking progress hint — reassures the user that

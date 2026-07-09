@@ -42,7 +42,7 @@ export interface MicStatus {
 
 
 
-export function useMicLevel(active: boolean, deviceId?: string | null): MicStatus {
+export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
   const [peak, setPeak] = useState(0);
   const [latencyMs, setLatencyMs] = useState(0);
@@ -156,7 +156,6 @@ export function useMicLevel(active: boolean, deviceId?: string | null): MicStatu
         // best-effort: browsers ignore what they don't support.
         const s = await navigator.mediaDevices.getUserMedia({
           audio: {
-            ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
             channelCount: 1,
             sampleRate: 16000,
             echoCancellation: true,
@@ -251,7 +250,7 @@ export function useMicLevel(active: boolean, deviceId?: string | null): MicStatu
       setLatencyMs(0);
       setLive(false);
     };
-  }, [active, visible, deviceId]);
+  }, [active, visible]);
 
   return { level, peak, active: live, latencyMs, error };
 }
