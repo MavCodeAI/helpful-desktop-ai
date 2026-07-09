@@ -38,6 +38,8 @@ export interface MicStatus {
 
 export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
+  const [peak, setPeak] = useState(0);
+  const [latencyMs, setLatencyMs] = useState(0);
   // Reflects whether the pipeline is truly live (stream open + RAF ticking).
   // Distinct from `active` (intent): stays false while permission resolves,
   // when tab is hidden, or after any failure.
@@ -78,6 +80,8 @@ export function useMicLevel(active: boolean): MicStatus {
   useEffect(() => {
     if (!active || !visible) {
       setLevel(0);
+      setPeak(0);
+      setLatencyMs(0);
       setLive(false);
       return;
     }
@@ -89,6 +93,9 @@ export function useMicLevel(active: boolean): MicStatus {
     let source: MediaStreamAudioSourceNode | null = null;
     let analyser: AnalyserNode | null = null;
     let smoothed = 0;
+    // Peak-hold: decays every frame so the marker slowly drops back after a
+    // loud burst instead of snapping — much more useful for reading loudness.
+    let heldPeak = 0;
 
     /** Fully release every resource this effect touched. Idempotent. */
     const teardown = () => {
@@ -132,7 +139,21 @@ export function useMicLevel(active: boolean): MicStatus {
 
     (async () => {
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Tight input constraints — mono @ 16 kHz cuts payload ~4×, hardware
+        // AEC/NS keeps SNR clean, and `latency: 0` hints the browser to
+        // request the smallest input buffer it will grant. All values are
+        // best-effort: browsers ignore what they don't support.
+        const s = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            // @ts-expect-error — non-standard but honoured by Chrome/Edge.
+            latency: 0,
+          },
+        });
         if (cancelled) {
           // Effect cleaned up before permission resolved — release immediately.
           s.getTracks().forEach((t) => t.stop());
@@ -143,7 +164,9 @@ export function useMicLevel(active: boolean): MicStatus {
         const AudioCtx =
           window.AudioContext ||
           (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        ctx = new AudioCtx();
+        // "interactive" latency hint = smallest render quantum the platform
+        // will allow. Meaningfully lower baseLatency on Chrome vs default.
+        ctx = new AudioCtx({ latencyHint: "interactive" });
 
         // Some browsers (Safari) start the context suspended until a user
         // gesture; resume best-effort so getByteTimeDomainData isn't flat.
@@ -153,22 +176,39 @@ export function useMicLevel(active: boolean): MicStatus {
 
         source = ctx.createMediaStreamSource(stream);
         analyser = ctx.createAnalyser();
-        analyser.fftSize = 512;
+        // 256 samples @ ~48 kHz ≈ 5.3 ms window — half the visual lag of
+        // fftSize=512 without hurting the RMS estimate at speech frequencies.
+        analyser.fftSize = 256;
         source.connect(analyser);
+
+        // baseLatency is a fraction of a second reported by the platform.
+        // Round to ms once at startup — it doesn't change per frame.
+        setLatencyMs(Math.round((ctx.baseLatency || 0) * 1000));
 
         const data = new Uint8Array(analyser.fftSize);
         const loop = () => {
           if (cancelled || !analyser) return;
           analyser.getByteTimeDomainData(data);
           let sum = 0;
+          let frameMax = 0;
           for (let i = 0; i < data.length; i++) {
             const v = (data[i] - 128) / 128;
             sum += v * v;
+            const abs = v < 0 ? -v : v;
+            if (abs > frameMax) frameMax = abs;
           }
           const rms = Math.sqrt(sum / data.length);
           const target = Math.min(1, rms * 3);
-          smoothed = smoothed * 0.75 + target * 0.25;
+          // Snappier smoothing (0.55/0.45) — noticeably less UI lag while
+          // still filtering per-frame RMS jitter.
+          smoothed = smoothed * 0.55 + target * 0.45;
           setLevel(smoothed);
+
+          const instantPeak = Math.min(1, frameMax);
+          // Attack instantly, release ~15%/frame (~0.25s to fall from full).
+          heldPeak = Math.max(instantPeak, heldPeak * 0.85);
+          setPeak(heldPeak);
+
           raf = requestAnimationFrame(loop);
         };
         raf = requestAnimationFrame(loop);
@@ -184,9 +224,12 @@ export function useMicLevel(active: boolean): MicStatus {
       cancelled = true;
       teardown();
       setLevel(0);
+      setPeak(0);
+      setLatencyMs(0);
       setLive(false);
     };
   }, [active, visible]);
 
-  return { level, active: live };
+  return { level, peak, active: live, latencyMs };
 }
+
