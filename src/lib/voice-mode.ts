@@ -13,8 +13,15 @@ export type VoiceMode = "ptt" | "vad" | "realtime";
 const KEY = "jarvis.voice.mode.v1";
 
 export function loadVoiceMode(): VoiceMode {
-  // Auto-VAD is the only supported mode right now.
-  return "vad";
+  // Default to push-to-talk so the mic never auto-starts on load.
+  if (typeof window === "undefined") return "ptt";
+  try {
+    const v = localStorage.getItem(KEY);
+    if (v === "ptt" || v === "vad" || v === "realtime") return v;
+  } catch {
+    /* non-fatal */
+  }
+  return "ptt";
 }
 
 export function saveVoiceMode(mode: VoiceMode): void {
