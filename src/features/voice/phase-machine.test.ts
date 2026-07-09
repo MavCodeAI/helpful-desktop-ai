@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
+import type { VoiceState } from "./phase-machine";
 import {
   INITIAL_VOICE_STATE,
   voiceReducer,
@@ -34,7 +35,7 @@ describe("voiceReducer", () => {
   });
 
   it("pause/resume playback keeps phase = speaking", () => {
-    let s = { ...INITIAL_VOICE_STATE, phase: "speaking" as const };
+    let s: VoiceState = { ...INITIAL_VOICE_STATE, phase: "speaking" };
     s = voiceReducer(s, { type: "PAUSE_PLAYBACK" });
     expect(s.playPaused).toBe(true);
     s = voiceReducer(s, { type: "RESUME_PLAYBACK" });
@@ -51,7 +52,7 @@ describe("voiceReducer", () => {
   });
 
   it("CANCEL from any phase returns to idle", () => {
-    const speaking = { ...INITIAL_VOICE_STATE, phase: "speaking" as const, playPaused: true };
+    const speaking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "speaking", playPaused: true };
     expect(voiceReducer(speaking, { type: "CANCEL" })).toEqual(INITIAL_VOICE_STATE);
   });
 
