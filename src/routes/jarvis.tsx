@@ -1621,7 +1621,7 @@ function JarvisPage() {
               );
             })()}
 
-            {/* Spacer to push composer to bottom (preview-parity: no welcome/chips) */}
+            {/* Spacer to push controls to bottom (preview-parity: no welcome/chips) */}
             <div className="flex-1 min-h-0" />
 
 
@@ -1834,13 +1834,6 @@ function JarvisPage() {
               Space
             </kbd>
             hold to talk
-          </span>
-          <span className="opacity-40">•</span>
-          <span className="inline-flex items-center gap-1">
-            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
-              Enter
-            </kbd>
-            send
           </span>
           <span className="opacity-40">•</span>
           <span className="inline-flex items-center gap-1">
