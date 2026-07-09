@@ -85,6 +85,12 @@ intentionally deferred.
     `react-markdown` + `remark-gfm` chunks before the first LLM reply
     arrives. Bundle stays split, but users almost never see the
     `<Suspense>` fallback in practice.
+17. **`/jarvis` route preloaded from `/`.** License gate mounts →
+    `router.preloadRoute({ to: "/jarvis" })` warms the ~189 KB jarvis
+    chunk + shared Radix deps in the background while the user types
+    their key. Post-activate navigation is instant instead of blocking
+    on JS download. Uses the TanStack manifest so no build-time hashes
+    leak into source.
 
 ## Deferred (each safe on its own)
 

@@ -11,7 +11,7 @@
  *   2. On submit, validate locally (mock) and either save + redirect or
  *      show a toast error.
  */
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/")({
 
 function LicenseGate() {
   const navigate = useNavigate();
+  const router = useRouter();
 
   // Controlled input for the license field.
   const [key, setKey] = useState("");
@@ -49,6 +50,16 @@ function LicenseGate() {
   useEffect(() => {
     if (getLicense()) navigate({ to: "/jarvis" });
   }, [navigate]);
+
+  // Warm the /jarvis route chunk (component + loader deps) while the user
+  // is typing their license key. TanStack Router resolves the correct
+  // hashed chunk from the manifest, so no build-time filenames leak here.
+  // Cost: one background HTTP/2 stream during idle input; benefit: the
+  // navigation after "Activate" is instant instead of blocking on ~189 KB
+  // of jarvis JS + ~150 KB of Radix Sheet/Dropdown/Sonner shared deps.
+  useEffect(() => {
+    void router.preloadRoute({ to: "/jarvis" }).catch(() => {});
+  }, [router]);
 
   /**
    * Handle "Activate" click / Enter key.
