@@ -411,7 +411,7 @@ function JarvisPage() {
       } catch (e) {
         console.error(e);
         setPhase("idle");
-        toast.error("Voice playback failed");
+        toast.error(friendlyError(e, "Voice playback failed"));
       }
     },
     [tts]
