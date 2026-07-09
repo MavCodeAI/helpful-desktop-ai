@@ -921,6 +921,7 @@ function JarvisPage() {
       mediaRef.current.onstop = () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         mediaRef.current = null;
+        setRtUserPartial("");
         setPhase("idle");
         setRecPaused(false);
         setRecStartedAt(null);
