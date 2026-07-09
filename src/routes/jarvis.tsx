@@ -1467,7 +1467,7 @@ function JarvisPage() {
       <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-5 pb-2">
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 relative">
           {/* LEFT — orb stage, welcome, strips, composer */}
-          <div className="lg:col-span-8 glass-card rounded-[24px] sm:rounded-[32px] flex flex-col min-h-0 overflow-hidden">
+          <div className="lg:col-span-8 flex flex-col min-h-0 overflow-hidden">
             {/* Orb cluster — preview-parity: side buttons flanking a color-coded orb. */}
             {(() => {
               const hue = PHASE_HUE[phase];
