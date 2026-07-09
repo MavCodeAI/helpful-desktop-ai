@@ -114,11 +114,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: some browser extensions (e.g. Porda AdBlocker)
+    // inject className / attributes onto <html> before React hydrates. That's
+    // a mismatch React can't reconcile, but it's benign — the extension owns
+    // that attribute. Suppressing here silences the noisy console error
+    // without hiding real hydration bugs elsewhere in the tree.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
