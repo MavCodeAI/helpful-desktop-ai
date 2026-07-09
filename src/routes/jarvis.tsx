@@ -1821,6 +1821,54 @@ function JarvisPage() {
                     inline meter here IS the test mode: it renders live,
                     unconditionally, and nothing captured here is sent to
                     the assistant. */}
+                {/* ---------- Input device ---------- */}
+                {/* Uses enumerateDevices(). Labels stay empty until the user
+                    has granted mic permission at least once — the hint
+                    below explains that so the "Microphone" placeholder
+                    doesn't look broken. */}
+                <div className="pt-4 border-t border-white/5">
+                  <label
+                    htmlFor="mic-device-select"
+                    className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block"
+                  >
+                    Input device
+                  </label>
+                  {micDevices.supported ? (
+                    <>
+                      <Select
+                        value={activeMicId ?? "__default__"}
+                        onValueChange={(v) => setSavedMicId(v === "__default__" ? null : v)}
+                      >
+                        <SelectTrigger id="mic-device-select" aria-label="Microphone input device">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__default__">System default</SelectItem>
+                          {micDevices.devices.map((d, i) => (
+                            <SelectItem key={d.deviceId || `mic-${i}`} value={d.deviceId}>
+                              {d.label || `Microphone ${i + 1}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {!micDevices.hasLabels && (
+                        <p className="mt-1 text-[10px] text-muted-foreground/70">
+                          Grant microphone access once to see device names.
+                        </p>
+                      )}
+                      {savedMicId && !activeMicId && (
+                        <p className="mt-1 text-[10px] text-amber-400/80">
+                          Previously selected mic isn't available — using system default.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground/70">
+                      Device enumeration isn't supported in this browser.
+                    </p>
+                  )}
+                </div>
+
                 <div className="pt-4 border-t border-white/5">
                   <div className="flex justify-between mb-2">
                     <label className="text-xs uppercase tracking-widest text-muted-foreground">
