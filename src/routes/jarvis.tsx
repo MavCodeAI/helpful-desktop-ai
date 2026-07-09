@@ -2047,6 +2047,31 @@ function JarvisPage() {
                         TTS round-trip, and the *effective* pace (adaptive if
                         enabled). Splitting STT/TTS makes it obvious where
                         delay actually comes from — network, model, or both. */}
+                    {/* Mic permission dot + quota cooldown countdown. Both
+                        are silent when everything is healthy; they only
+                        appear when there's something the user should know. */}
+                    {(micPerm === "denied" || micPerm === "prompt" || cooldown.active) && (
+                      <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-medium">
+                        {micPerm === "denied" && (
+                          <span className="glass-pill flex items-center gap-1.5 rounded-full px-2 py-0.5 text-destructive" title="Microphone blocked in browser settings">
+                            <span className="h-1.5 w-1.5 rounded-full bg-destructive" aria-hidden="true" />
+                            Mic blocked
+                          </span>
+                        )}
+                        {micPerm === "prompt" && (
+                          <span className="glass-pill flex items-center gap-1.5 rounded-full px-2 py-0.5 text-foreground/60" title="Browser will ask for microphone permission">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                            Mic will prompt
+                          </span>
+                        )}
+                        {cooldown.active && (
+                          <span className="glass-pill flex items-center gap-1.5 rounded-full px-2 py-0.5 text-amber-400" title={cooldown.reason === "quota" ? "AI credits exhausted — retry when the timer ends" : "Rate limit — retry when the timer ends"}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 motion-safe:animate-pulse" aria-hidden="true" />
+                            {cooldown.reason === "quota" ? "Credits cooldown" : "Rate cooldown"} · {cooldown.secondsLeft}s
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-mono tabular-nums text-foreground/60">
                       <span title="Audio input latency (browser-reported)">
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">In</span>
