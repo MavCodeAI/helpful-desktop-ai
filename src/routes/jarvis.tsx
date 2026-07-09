@@ -897,13 +897,6 @@ function JarvisPage() {
                   <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
                 </>
               )}
-              <div className="absolute inset-0 flex items-center justify-center">
-                {phase === "thinking" ? (
-                  <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-jarvis motion-safe:animate-spin" />
-                ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                  <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
-                ) : null}
-              </div>
             </button>
           </div>
 
