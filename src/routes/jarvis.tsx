@@ -129,6 +129,24 @@ function friendlyError(e: unknown, fallback: string): string {
 }
 
 /**
+ * One STT attempt's diagnostic trace. Captured from the recorder pipeline
+ * and rendered in the diagnostics sheet so failures are self-explaining.
+ */
+type SttAttempt = {
+  ts: number;
+  origMime: string;
+  origBytes: number;
+  preTranscode: "ok" | "failed" | "skipped";
+  sentMime: string;
+  sentBytes: number;
+  firstStatus: number | "network-error";
+  retryReason: string | null;
+  finalStatus: number | "ok" | "aborted" | "network-error";
+  ms: number;
+  errorBody?: string;
+};
+
+/**
  * Map an STT failure (server text + HTTP status) into a structured toast:
  * { title, cause, next } — so the user sees exactly what broke and what to do.
  * Server-side reasons come from /api/stt (short blob, unsupported mime, etc).
