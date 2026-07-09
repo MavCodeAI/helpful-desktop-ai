@@ -450,9 +450,14 @@ function JarvisPage() {
   }[phase];
 
   return (
-    <main className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Volumetric energy orb — centered, contained (not full-screen). */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(70vw,420px)] aspect-square">
+    <main className="min-h-dvh flex flex-col relative overflow-hidden">
+      {/* Volumetric energy orb — background, dimmed when idle so UI stays readable. */}
+      <div
+        className={`absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(60vw,340px)] aspect-square transition-opacity duration-500 ${
+          phase === "idle" ? "opacity-40" : phase === "speaking" ? "opacity-90" : "opacity-70"
+        }`}
+        aria-hidden="true"
+      >
         <HologramSafe level={micLevel} />
       </div>
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
@@ -460,15 +465,16 @@ function JarvisPage() {
           <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
           <span className="font-display tracking-[0.3em] text-sm text-jarvis">JARVIS</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <History className="w-4 h-4 mr-1.5" /> History
+              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+                <History className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">History</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[320px] flex flex-col">
+            <SheetContent side="left" className="w-[85vw] sm:w-[320px] flex flex-col">
+
               <SheetHeader>
                 <SheetTitle className="font-display tracking-widest text-jarvis">Conversations</SheetTitle>
               </SheetHeader>
@@ -513,11 +519,12 @@ function JarvisPage() {
           {/* TTS settings drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <Settings className="w-4 h-4 mr-1.5" /> Voice
+              <Button variant="ghost" size="sm" aria-label="Voice settings" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+                <Settings className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Voice</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[340px]">
+            <SheetContent side="right" className="w-[85vw] sm:w-[340px]">
+
               <SheetHeader>
                 <SheetTitle className="font-display tracking-widest text-jarvis">Voice Settings</SheetTitle>
               </SheetHeader>
@@ -595,18 +602,22 @@ function JarvisPage() {
             variant="ghost"
             size="sm"
             onClick={signOut}
-            className="text-muted-foreground hover:text-foreground"
+            aria-label="Sign out"
+            className="text-muted-foreground hover:text-foreground px-2 sm:px-3"
           >
-            <LogOut className="w-4 h-4 mr-1.5" /> Sign out
+            <LogOut className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Sign out</span>
           </Button>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative">
-        <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-2xl">
+      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
+        <h1 className="sr-only">JARVIS Voice Assistant</h1>
+
+        {/* Top zone — mic button sits centered over the orb, kept solid for visibility */}
+        <div className="relative z-10 flex flex-col items-center gap-5 mt-6 sm:mt-16">
           <button
             onClick={handleMicClick}
-            className="relative w-48 h-48 rounded-full border border-jarvis/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-[2px]"
+            className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={statusLabel}
           >
             {phase === "listening" && !recPaused && (
@@ -617,24 +628,33 @@ function JarvisPage() {
             )}
             <div className="absolute inset-0 flex items-center justify-center">
               {phase === "thinking" ? (
-                <Loader2 className="w-10 h-10 text-jarvis animate-spin" />
+                <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
               ) : phase === "speaking" ? (
-                <Volume2 className="w-10 h-10 text-jarvis" />
+                <Volume2 className="w-12 h-12 text-jarvis" />
               ) : phase === "listening" ? (
-                <Mic className="w-10 h-10 text-jarvis" />
+                <Mic className="w-12 h-12 text-jarvis" />
               ) : (
-                <MicOff className="w-10 h-10 text-jarvis/70" />
+                <Mic className="w-12 h-12 text-jarvis" />
               )}
             </div>
           </button>
 
-          <p className="text-sm uppercase tracking-[0.3em] text-jarvis/80 jarvis-text-glow">
-            {statusLabel}
-          </p>
+          {/* Status pill — solid background so text is readable over orb */}
+          <div
+            className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-jarvis/25"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-jarvis">
+              {statusLabel}
+            </p>
+          </div>
+        </div>
 
-          {/* Voice control cluster — visible only in listening/speaking phases */}
+        {/* Middle zone — control clusters */}
+        <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
           {phase === "listening" && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {recPaused ? (
                 <Button variant="outline" size="sm" onClick={resumeRecording}>
                   <Play className="w-4 h-4 mr-1.5" /> Resume
@@ -654,7 +674,7 @@ function JarvisPage() {
           )}
 
           {phase === "speaking" && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {playPaused ? (
                 <Button variant="outline" size="sm" onClick={resumePlayback}>
                   <Play className="w-4 h-4 mr-1.5" /> Resume
@@ -674,38 +694,37 @@ function JarvisPage() {
           )}
 
           {phase === "idle" && lastSpokenRef.current && (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={restartPlayback}>
-                <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
-              </Button>
+            <Button variant="ghost" size="sm" onClick={restartPlayback}>
+              <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
+            </Button>
+          )}
+        </div>
+
+        {/* Bottom zone — transcript pinned to the bottom */}
+        <div className="relative z-10 w-full max-w-2xl space-y-3 max-h-[240px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4">
+          {messages.length === 0 && !partial && (
+            <p className="text-center text-sm text-muted-foreground italic">
+              Say hello to begin — tap the mic and speak.
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`text-sm ${m.role === "user" ? "text-foreground" : "text-jarvis"}`}
+            >
+              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">
+                {m.role === "user" ? "You" : "Jarvis"}
+              </span>
+              {m.content}
+            </div>
+          ))}
+          {partial && (
+            <div className="text-sm text-jarvis">
+              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">Jarvis</span>
+              {partial}
+              <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
             </div>
           )}
-
-          <div className="w-full space-y-3 max-h-[280px] overflow-y-auto rounded-xl border border-jarvis/15 bg-card/40 backdrop-blur-sm p-4">
-            {messages.length === 0 && !partial && (
-              <p className="text-center text-sm text-muted-foreground italic">
-                Say hello to begin.
-              </p>
-            )}
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`text-sm ${m.role === "user" ? "text-foreground" : "text-jarvis"}`}
-              >
-                <span className="text-xs uppercase tracking-widest opacity-60 mr-2">
-                  {m.role === "user" ? "You" : "Jarvis"}
-                </span>
-                {m.content}
-              </div>
-            ))}
-            {partial && (
-              <div className="text-sm text-jarvis">
-                <span className="text-xs uppercase tracking-widest opacity-60 mr-2">Jarvis</span>
-                {partial}
-                <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </main>
