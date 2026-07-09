@@ -237,6 +237,15 @@ function JarvisPage() {
   const [composerText, setComposerText] = useState("");
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Voice interaction mode: push-to-talk, auto-VAD, or realtime streaming.
+  const [mode, setMode] = useState<VoiceMode>(() => loadVoiceMode());
+  // Realtime session state — only meaningful when mode === "realtime".
+  const [realtimeOn, setRealtimeOn] = useState(false);
+  const realtimeRef = useRef<RealtimeClient | null>(null);
+  // Live transcript captions during realtime (user + assistant).
+  const [rtUserPartial, setRtUserPartial] = useState("");
+  const [rtAsstPartial, setRtAsstPartial] = useState("");
+
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
   const [recStartedAt, setRecStartedAt] = useState<number | null>(null);
