@@ -408,6 +408,8 @@ function JarvisPage() {
         audio.onended = () => {
           setPhase("idle");
           setPlayPaused(false);
+          haptic(8);
+          toast.success("Ready for your next message", { duration: 1500 });
         };
         await audio.play();
       } catch (e) {
