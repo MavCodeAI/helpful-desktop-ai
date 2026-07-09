@@ -358,6 +358,46 @@ function JarvisPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
+  /**
+   * Push-to-talk: hold Space to start listening, release to send.
+   * Ignored while the user is typing in an input/textarea/contenteditable,
+   * during auto-repeat, or when any modifier is held (Cmd/Ctrl/Alt/Meta).
+   */
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null) => {
+      const t = el as HTMLElement | null;
+      if (!t) return false;
+      const tag = t.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
+    };
+    const onDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || e.repeat) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (isEditable(e.target)) return;
+      if (phaseRef2.current !== "idle") return;
+      e.preventDefault();
+      spaceHeldRef.current = true;
+      startListening();
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      if (!spaceHeldRef.current) return;
+      spaceHeldRef.current = false;
+      if (isEditable(e.target)) return;
+      e.preventDefault();
+      if (phaseRef2.current === "listening") stopListening();
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+
   /* ---------- TTS settings ---------- */
 
   const updateTts = (patch: Partial<TTSSettings>) => {
