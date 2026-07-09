@@ -42,6 +42,7 @@ type ImplProps = {
   align?: "start" | "center" | "end";
   contentClassName?: string;
   render: (parts: DropdownMenuParts) => ReactNode;
+  onClose: () => void;
 };
 
 const DropdownImpl: ComponentType<ImplProps> = lazy(async () => {
@@ -53,9 +54,14 @@ const DropdownImpl: ComponentType<ImplProps> = lazy(async () => {
     Separator: m.DropdownMenuSeparator,
   };
   return {
-    default: function Impl({ triggerButton, align, contentClassName, render }: ImplProps) {
+    default: function Impl({ triggerButton, align, contentClassName, render, onClose }: ImplProps) {
       return (
-        <m.DropdownMenu defaultOpen>
+        <m.DropdownMenu
+          defaultOpen
+          onOpenChange={(o) => {
+            if (!o) onClose();
+          }}
+        >
           <m.DropdownMenuTrigger asChild>{triggerButton}</m.DropdownMenuTrigger>
           <parts.Content align={align} className={contentClassName}>
             {render(parts)}
