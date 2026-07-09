@@ -840,18 +840,32 @@ function JarvisPage() {
             </SheetContent>
           </Sheet>
 
-          <span className="text-xs font-mono text-muted-foreground hidden md:inline">
-            {license}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={signOut}
-            aria-label="Sign out"
-            className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3"
-          >
-            <LogOut className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Sign out</span>
-          </Button>
+          {/* Account menu — replaces the raw license chip with a proper avatar dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                aria-label="Account menu"
+                className="min-h-11 min-w-11 rounded-full p-0 hover:bg-jarvis/10"
+              >
+                <Avatar className="h-9 w-9 border border-jarvis/40">
+                  <AvatarFallback className="bg-jarvis/15 text-jarvis text-xs font-mono tracking-wider">
+                    {(license?.slice(0, 2) || "JV").toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                Licensed as
+                <div className="mt-1 font-mono text-foreground truncate">{license}</div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+                <LogOut className="w-4 h-4 mr-2" /> Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
