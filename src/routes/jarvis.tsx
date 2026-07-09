@@ -1218,24 +1218,52 @@ function JarvisPage() {
 
           {/* Active playback / listening strips — inline above composer */}
           {(phase === "listening" || phase === "speaking") && (
-            <div className="shrink-0 flex justify-center px-4 sm:px-6 pb-2">
+            <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
               {phase === "listening" && (
-                <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
-                  {recPaused ? (
-                    <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full">
-                      <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
+                  {/* REC indicator + timer + live waveform */}
+                  <div
+                    className={`glass-pill flex items-center gap-3 rounded-full px-3 py-1.5 border ${
+                      recPaused ? "border-amber-400/40" : "border-emerald-400/40"
+                    }`}
+                    role="status"
+                    aria-live="polite"
+                    aria-label={recPaused ? "Recording paused" : "Recording in progress"}
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          recPaused
+                            ? "bg-amber-400"
+                            : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)] motion-safe:animate-pulse"
+                        }`}
+                      />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/80">
+                        {recPaused ? "Paused" : "Rec"}
+                      </span>
+                    </span>
+                    <LiveWaveform level={micLevel} paused={recPaused} />
+                    <RecTimer startedAt={recStartedAt} paused={recPaused} />
+                  </div>
+
+                  {/* Controls */}
+                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1">
+                    {recPaused ? (
+                      <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full">
+                        <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full">
+                        <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full">
+                      <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
                     </Button>
-                  ) : (
-                    <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full">
-                      <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                    <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground">
+                      Cancel
                     </Button>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full">
-                    <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground">
-                    Cancel
-                  </Button>
+                  </div>
                 </div>
               )}
               {phase === "speaking" && (
