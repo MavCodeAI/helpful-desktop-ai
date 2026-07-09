@@ -1154,6 +1154,9 @@ function JarvisPage() {
           </div>
         </div>
 
+        {/* Voice-mode segmented control — desktop/tablet only (see md: gate). */}
+        <VoiceModeToggle mode={mode} onChange={changeMode} disabled={phase !== "idle"} />
+
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
           {/* Mic activity — reflects the true state of the useMicLevel hook,
               not user intent. Green pulses with input, dim when hook is down
