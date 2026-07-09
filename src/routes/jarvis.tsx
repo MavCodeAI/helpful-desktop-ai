@@ -985,7 +985,7 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="glass-card rounded-[28px] sm:rounded-[32px] flex-1 min-h-[200px] overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+            className="glass-card rounded-[24px] sm:rounded-[32px] flex-1 min-h-[120px] sm:min-h-[200px] overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
               <div className="flex flex-col items-center text-center gap-6 py-6 sm:py-10 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
