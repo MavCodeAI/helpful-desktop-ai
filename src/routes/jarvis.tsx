@@ -665,12 +665,10 @@ function JarvisPage() {
             <div className="absolute inset-0 flex items-center justify-center">
               {phase === "thinking" ? (
                 <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
-              ) : phase === "speaking" ? (
-                <Volume2 className="w-12 h-12 text-jarvis" />
-              ) : phase === "listening" ? (
-                <Mic className="w-12 h-12 text-jarvis" />
+              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
+                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} />
               ) : (
-                <Mic className="w-12 h-12 text-jarvis" />
+                <Mic className="w-11 h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
               )}
             </div>
           </button>
