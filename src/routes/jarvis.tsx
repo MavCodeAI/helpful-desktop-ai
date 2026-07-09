@@ -1219,17 +1219,21 @@ function JarvisPage() {
         } catch (e) {
           // User-initiated cancel (Escape / stopGenerating) — silent teardown.
           if ((e as { name?: string })?.name === "AbortError") {
+            trace.finalStatus = "aborted";
             setRtUserPartial("");
             setPhase("idle");
             return;
+          }
+          // Distinguish a network drop (TypeError from fetch) from an HTTP error.
+          const isNetErr = (e as { name?: string })?.name === "TypeError";
+          if (isNetErr) {
+            trace.finalStatus = "network-error";
+            if (trace.firstStatus === 0) trace.firstStatus = "network-error";
           }
           console.error(e);
           setRtUserPartial("");
           const ex = e as { sttStatus?: number; sttBody?: string; name?: string };
           const detail = sttErrorDetail(ex.sttStatus ?? null, ex.sttBody ?? "", e);
-          // Attach the actually-uploaded MIME + byte count so the user sees
-          // immediately whether the browser captured audio, what container
-          // was sent, and how big it was.
           const sentType = uploadBlob.type || "unknown";
           const originalType = mime || "unknown";
           const fileLine =
@@ -1242,9 +1246,8 @@ function JarvisPage() {
           });
           setPhase("idle");
         } finally {
-          // Reader cleanup lives inside readSttResponse's finally block.
-          // Only clear abortRef if it still points at OUR controller — sendToChat
-          // may have overwritten it with its own controller for the LLM stream.
+          trace.ms = Math.round(performance.now() - sttT0);
+          pushSttLog(trace);
           if (abortRef.current === sttController) abortRef.current = null;
         }
       };
