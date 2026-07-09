@@ -204,7 +204,7 @@ function TypingDots({ hue, label }: { hue: number; label?: string }) {
   const glow = `hsl(${hue} 90% 60% / 0.55)`;
   return (
     <div
-      className="flex items-center gap-1.5"
+      className="flex items-center gap-2 sm:gap-1.5 py-1"
       role="status"
       aria-live="polite"
       aria-label={label ?? "Loading"}
@@ -212,7 +212,7 @@ function TypingDots({ hue, label }: { hue: number; label?: string }) {
       {[0, 160, 320].map((delay) => (
         <span
           key={delay}
-          className={`inline-block w-1.5 h-1.5 rounded-full ${
+          className={`inline-block w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${
             reduced ? "motion-safe:animate-pulse" : "motion-safe:animate-bounce"
           }`}
           style={{
@@ -1656,18 +1656,18 @@ function JarvisPage() {
 
                     <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1" role="group" aria-label="Recording controls">
                       {recPaused ? (
-                        <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full" aria-label="Resume recording" title="Resume recording">
+                        <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-11 sm:h-8 rounded-full px-3" aria-label="Resume recording" title="Resume recording">
                           <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full" aria-label="Pause recording" title="Pause recording">
+                        <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-11 sm:h-8 rounded-full px-3" aria-label="Pause recording" title="Pause recording">
                           <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full" aria-label="Stop recording and send" aria-keyshortcuts="Space" title="Send (release Space)">
+                      <Button variant="ghost" size="sm" onClick={stopListening} className="h-11 sm:h-8 rounded-full px-3" aria-label="Stop recording and send" aria-keyshortcuts="Space" title="Send (release Space)">
                         <SendHorizontal className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Send
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground" aria-label="Cancel recording and discard audio" aria-keyshortcuts="Escape" title="Cancel (Esc)">
+                      <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-11 sm:h-8 rounded-full px-3 text-muted-foreground" aria-label="Cancel recording and discard audio" aria-keyshortcuts="Escape" title="Cancel (Esc)">
                         Cancel
                       </Button>
                     </div>
@@ -1676,18 +1676,18 @@ function JarvisPage() {
                 {phase === "speaking" && (
                   <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]" role="group" aria-label="Playback controls">
                     {playPaused ? (
-                      <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8 rounded-full" aria-label="Resume playback" title="Resume playback">
+                      <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Resume playback" title="Resume playback">
                         <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8 rounded-full" aria-label="Pause playback" title="Pause playback">
+                      <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Pause playback" title="Pause playback">
                         <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8 rounded-full" aria-label="Restart playback from beginning" title="Restart">
+                    <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Restart playback from beginning" title="Restart">
                       <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8 rounded-full" aria-label="Stop playback" aria-keyshortcuts="Escape" title="Stop (Esc)">
+                    <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Stop playback" aria-keyshortcuts="Escape" title="Stop (Esc)">
                       <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Stop
                     </Button>
                   </div>
@@ -1787,7 +1787,7 @@ function JarvisPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-7 text-xs"
+                      className="h-10 sm:h-7 text-xs px-3"
                       onClick={() => {
                         const t = lastFailed;
                         setLastFailed(null);
@@ -1810,7 +1810,7 @@ function JarvisPage() {
                 if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
                 setScrolledUp(false);
               }}
-              className="absolute right-6 bottom-6 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+              className="absolute right-4 sm:right-6 bottom-4 sm:bottom-6 flex items-center gap-1.5 glass-pill rounded-full min-h-11 sm:min-h-0 px-4 sm:px-3.5 py-2 sm:py-1.5 text-sm sm:text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
               aria-label="Scroll to latest message"
             >
               <ArrowDown className="w-3.5 h-3.5" /> New reply
