@@ -775,10 +775,38 @@ function JarvisPage() {
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
       {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-jarvis motion-safe:animate-pulse" />
-          <span className="font-display tracking-[0.3em] text-sm text-jarvis">JARVIS</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Hex logo mark — geometric identity, not generic Sparkles */}
+          <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              <defs>
+                <linearGradient id="jarvis-mark-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="var(--jarvis)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--jarvis)" stopOpacity="0.4" />
+                </linearGradient>
+              </defs>
+              <polygon
+                points="16,2 29,9 29,23 16,30 3,23 3,9"
+                fill="none"
+                stroke="url(#jarvis-mark-grad)"
+                strokeWidth="1.5"
+              />
+              <polygon
+                points="16,8 24,12.5 24,19.5 16,24 8,19.5 8,12.5"
+                fill="url(#jarvis-mark-grad)"
+                opacity="0.25"
+              />
+              <circle cx="16" cy="16" r="2.5" fill="var(--jarvis)" className="motion-safe:animate-pulse" />
+            </svg>
+          </div>
+          <div className="flex flex-col leading-none min-w-0">
+            <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">JARVIS</span>
+            <span className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground mt-0.5 hidden sm:inline">
+              Voice Intelligence
+            </span>
+          </div>
         </div>
+
         <div className="flex items-center gap-1 sm:gap-2">
           {/* History drawer */}
           <Sheet>
