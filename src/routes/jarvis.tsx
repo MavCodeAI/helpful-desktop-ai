@@ -152,7 +152,7 @@ const PHASE_HUE: Record<Phase, number> = {
   speaking: 258,   // violet — assistant replying
 };
 const PHASE_CAPTION: Record<Phase, string> = {
-  idle: "TAP TO SPEAK",
+  idle: "TAP TO START",
   listening: "LISTENING",
   thinking: "THINKING",
   speaking: "SPEAKING",
