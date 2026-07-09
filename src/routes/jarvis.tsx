@@ -1232,7 +1232,7 @@ function JarvisPage() {
         </form>
 
         {/* Keyboard shortcut hints — subtle */}
-        <div className="hidden sm:flex [@media(max-height:720px)]:sm:hidden items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
+        <div className="hidden md:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
           <span className="inline-flex items-center gap-1">
             <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Space</kbd>
             hold to talk
