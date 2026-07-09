@@ -1129,6 +1129,8 @@ function JarvisPage() {
             try {
               const wav = await transcodeToWav(blob);
               toast.message("Retrying with a different audio format…", { duration: 2500 });
+              uploadBlob = wav;
+              uploadName = "recording.wav";
               res = await postAudio(wav, "recording.wav");
               if (!res.ok) peekBody = await res.clone().text().catch(() => "");
             } catch (transcodeErr) {
