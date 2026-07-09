@@ -123,6 +123,9 @@ export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
     case "START_SPEAKING":
       if (state.phase === "speaking") return state;
       return { phase: "speaking", recPaused: false, playPaused: false, error: null };
+    case "REALTIME_LIVE":
+      if (state.phase === "listening") return state;
+      return { phase: "listening", recPaused: false, playPaused: false, error: null };
     case "ERROR":
       return { ...INITIAL_VOICE_STATE, error: event.message };
     default:
