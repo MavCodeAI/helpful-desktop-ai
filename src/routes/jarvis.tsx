@@ -773,9 +773,14 @@ function JarvisPage() {
 
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
-      {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
-      <header className="relative flex items-center justify-between px-6 py-4 backdrop-blur-md bg-background/40 border-b border-jarvis/10">
-        <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-jarvis/50 to-transparent" aria-hidden="true" />
+      {/* Aurora ambient background — the signature Liquid Glass look */}
+      <div className="aurora-field" aria-hidden="true">
+        <div className="aurora-accent" style={{ width: "40vmax", height: "40vmax", left: "30%", top: "40%", background: "radial-gradient(circle, var(--aurora-c), transparent 60%)" }} />
+      </div>
+
+      {/* Floating glass header pill — centered top, doesn't take vertical space */}
+      <header className="relative z-40 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
+
 
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
