@@ -1462,27 +1462,25 @@ function JarvisPage() {
       <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
       {/* ==================================================================
-          UNIFIED CHAT SHELL — orb (top) + transcript (mid) + composer (bottom)
+          PREVIEW-PARITY SHELL — orb + composer (left), chat rail (right)
           ================================================================== */}
       <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-5 pb-2">
-        <div className="w-full max-w-3xl flex flex-col min-h-0 relative">
-          <div className="glass-card rounded-[24px] sm:rounded-[32px] flex flex-col min-h-0 flex-1 overflow-hidden">
-            {/* Orb cluster — preview-parity: side buttons flanking a color-coded orb.
-                Hue changes per phase (violet/cyan/amber). Business logic untouched. */}
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 relative">
+          {/* LEFT — orb stage, welcome, strips, composer */}
+          <div className="lg:col-span-8 glass-card rounded-[24px] sm:rounded-[32px] flex flex-col min-h-0 overflow-hidden">
+            {/* Orb cluster — preview-parity: side buttons flanking a color-coded orb. */}
             {(() => {
               const hue = PHASE_HUE[phase];
               const isEmpty = messages.length === 0 && !partial && !lastFailed;
               const showSides = !isEmpty || phase !== "idle";
-              // Core size adapts: hero-large in empty idle, compact once conversing.
-              const core = isEmpty ? 160 : 88;
+              const core = isEmpty ? 200 : 140;
               const innerRing = core + 40;
-              const outerRing = core + 90;
+              const outerRing = core + 100;
               const orbScale =
                 phase === "listening" ? 1 + Math.min(0.18, micLevel * 0.5)
                 : phase === "speaking" ? 1.04
                 : 1;
 
-              // Stop button routes per phase.
               const stopHandler = () => {
                 if (phase === "listening") cancelRecording();
                 else if (phase === "thinking") stopGenerating();
@@ -1493,11 +1491,10 @@ function JarvisPage() {
               return (
                 <div
                   className={`flex flex-col items-center shrink-0 transition-all duration-500 px-4 sm:px-6 ${
-                    isEmpty ? "gap-4 sm:gap-5 pt-6 sm:pt-8 pb-3" : "gap-2 pt-4 sm:pt-5 pb-3"
+                    isEmpty ? "gap-6 pt-10 sm:pt-14 pb-4" : "gap-3 pt-6 pb-3"
                   }`}
                 >
-                  <div className="relative flex items-center justify-center gap-6 sm:gap-10">
-                    {/* Left mic side button */}
+                  <div className="relative flex items-center justify-center gap-8 sm:gap-14">
                     {showSides && (
                       <OrbSideButton
                         icon={<Mic className="h-4 w-4" />}
@@ -1509,7 +1506,6 @@ function JarvisPage() {
                       />
                     )}
 
-                    {/* Center orb — kept as the primary interactive target */}
                     <button
                       type="button"
                       ref={micButtonRef}
@@ -1520,7 +1516,6 @@ function JarvisPage() {
                       className="group relative grid place-items-center rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform duration-300 motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.97]"
                       style={{ width: outerRing, height: outerRing }}
                     >
-                      {/* Outer soft glow */}
                       <div
                         className="absolute inset-0 rounded-full blur-3xl transition-opacity duration-500"
                         style={{
@@ -1529,7 +1524,6 @@ function JarvisPage() {
                         }}
                         aria-hidden="true"
                       />
-                      {/* Outer thin ring */}
                       <div
                         className="absolute rounded-full border transition-colors duration-500"
                         style={{
@@ -1539,7 +1533,6 @@ function JarvisPage() {
                         }}
                         aria-hidden="true"
                       />
-                      {/* Inner ring */}
                       <div
                         className="absolute rounded-full border transition-colors duration-500"
                         style={{
@@ -1549,7 +1542,6 @@ function JarvisPage() {
                         }}
                         aria-hidden="true"
                       />
-                      {/* Core disc */}
                       <div
                         className="relative rounded-full transition-transform duration-150 ease-out"
                         style={{
@@ -1559,7 +1551,6 @@ function JarvisPage() {
                           boxShadow: `inset 0 0 60px hsl(${hue} 100% 70% / 0.35), inset 0 -25px 60px hsl(${hue} 90% 20% / 0.6), 0 0 60px hsl(${hue} 90% 55% / 0.4)`,
                         }}
                       >
-                        {/* Phase-specific center content */}
                         <div className="absolute inset-0 grid place-items-center" aria-hidden="true">
                           {phase === "idle" && (
                             <Mic className="text-white/85" style={{ width: core * 0.28, height: core * 0.28 }} />
@@ -1578,7 +1569,6 @@ function JarvisPage() {
                       </div>
                     </button>
 
-                    {/* Right stop side button */}
                     {showSides && (
                       <OrbSideButton
                         icon={<Square className="h-3.5 w-3.5 fill-current" />}
@@ -1592,7 +1582,6 @@ function JarvisPage() {
                     )}
                   </div>
 
-                  {/* Caption — hue-tinted tracked label (preview parity) */}
                   <div
                     className="text-[10px] sm:text-[11px] tracking-[0.35em] font-mono select-none"
                     style={{ color: `hsl(${hue} 30% 68%)` }}
@@ -1601,7 +1590,6 @@ function JarvisPage() {
                     {phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}
                   </div>
 
-                  {/* Debounced live region for assistive tech. */}
                   <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
                     {announcedLabel}
                   </div>
@@ -1609,140 +1597,58 @@ function JarvisPage() {
               );
             })()}
 
-            {/* Transcript — scrolls; empty state renders welcome + chips inline */}
-            <div
-              ref={transcriptRef}
-              role="log"
-              aria-label="Conversation"
-              aria-live="polite"
-              className="flex-1 min-h-0 overflow-y-auto space-y-5 scroll-smooth px-4 sm:px-6 pb-4 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
-            >
-              {messages.length === 0 && !partial && !lastFailed && (
-                <div className="min-h-full flex flex-col items-center justify-center text-center gap-5 py-6 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
-                  <div className="space-y-2 max-w-md">
-                    <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-[1.1]">
-                      <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
-                        Good to see you.
-                      </span>
-                    </h2>
-                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                      Talk, type, or hold{" "}
-                      <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">
-                        Space
-                      </kbd>{" "}
-                      to speak.
-                    </p>
-                  </div>
-                  <div className="w-full space-y-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
-                      Try asking
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {[
-                        { text: "What can you do?", featured: true },
-                        { text: "Summarise today's news", featured: false },
-                        { text: "Help me draft an email", featured: false },
-                        { text: "Explain quantum computing simply", featured: false },
-                        { text: "Give me a 5-minute workout", featured: false },
-                      ].map(({ text, featured }) => (
-                        <button
-                          key={text}
-                          type="button"
-                          onClick={() => {
-                            setComposerText("");
-                            void sendToChat(text);
-                          }}
-                          disabled={phase !== "idle"}
-                          className={`rounded-full text-xs sm:text-[13px] px-4 min-h-11 min-w-11 inline-flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
-                            featured
-                              ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
-                              : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
-                          }`}
-                        >
-                          {text}
-                        </button>
-                      ))}
-                    </div>
+            {/* Empty-state welcome + suggestion chips (below orb, left column) */}
+            {messages.length === 0 && !partial && !lastFailed && (
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center gap-5 px-4 sm:px-6 pb-4 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
+                <div className="space-y-2 max-w-md">
+                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-[1.1]">
+                    <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
+                      Good to see you.
+                    </span>
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Talk, type, or hold{" "}
+                    <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">Space</kbd>{" "}
+                    to speak.
+                  </p>
+                </div>
+                <div className="w-full space-y-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">Try asking</div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      { text: "What can you do?", featured: true },
+                      { text: "Summarise today's news", featured: false },
+                      { text: "Help me draft an email", featured: false },
+                      { text: "Explain quantum computing simply", featured: false },
+                      { text: "Give me a 5-minute workout", featured: false },
+                    ].map(({ text, featured }) => (
+                      <button
+                        key={text}
+                        type="button"
+                        onClick={() => { setComposerText(""); void sendToChat(text); }}
+                        disabled={phase !== "idle"}
+                        className={`rounded-full text-xs sm:text-[13px] px-4 min-h-11 inline-flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
+                          featured
+                            ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
+                            : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
+                        }`}
+                      >
+                        {text}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`flex flex-col motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] ${m.role === "user" ? "items-end" : "items-start"}`}
-                >
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
-                    style={{ color: m.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
-                  >
-                    {m.role === "user" ? "You" : "Jarvis"}
-                  </span>
-                  <div
-                    className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed space-y-2 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
-                      m.role === "user"
-                        ? "glass-pill text-foreground rounded-tr-md"
-                        : "bg-transparent text-foreground/90 rounded-tl-md"
-                    }`}
-                  >
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                  </div>
-                </div>
-              ))}
-              {rtUserPartial && (
-                <div className="flex flex-col items-end">
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
-                    style={{ color: "hsl(180 90% 65%)" }}
-                  >
-                    You · Listening
-                  </span>
-                  <div className="max-w-[85%] rounded-3xl rounded-tr-md px-4 py-3 text-sm leading-relaxed glass-pill text-foreground/90 italic">
-                    {rtUserPartial}
-                    <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
-                  </div>
-                </div>
-              )}
-              {(partial || rtAsstPartial) && (
-                <div className="flex flex-col items-start">
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
-                    style={{ color: "hsl(258 90% 75%)" }}
-                  >
-                    Jarvis{rtAsstPartial ? " · Speaking" : ""}
-                  </span>
-                  <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
-                    <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
-                  </div>
-                </div>
-              )}
+            {/* Spacer to push composer to bottom when non-empty */}
+            {!(messages.length === 0 && !partial && !lastFailed) && <div className="flex-1 min-h-0" />}
 
-              {lastFailed && phase === "idle" && (
-                <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
-                  <span className="text-destructive">Last message failed to send.</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      const t = lastFailed;
-                      setLastFailed(null);
-                      void sendToChat(t);
-                    }}
-                  >
-                    <RotateCcw className="w-3 h-3 mr-1" /> Retry
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Active playback / listening strips — inline above composer */}
+            {/* Listening / speaking strips */}
             {(phase === "listening" || phase === "speaking") && (
               <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
                 {phase === "listening" && (
                   <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
-                    {/* REC indicator + timer + live waveform */}
                     <div
                       className={`glass-pill flex items-center gap-3 rounded-full px-3 py-1.5 border ${
                         recPaused ? "border-amber-400/40" : "border-emerald-400/40"
@@ -1767,112 +1673,40 @@ function JarvisPage() {
                       <RecTimer startedAt={recStartedAt} paused={recPaused} />
                     </div>
 
-                    {/* Controls */}
-                    <div
-                      className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1"
-                      role="group"
-                      aria-label="Recording controls"
-                    >
+                    <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1" role="group" aria-label="Recording controls">
                       {recPaused ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={resumeRecording}
-                          className="h-8 rounded-full"
-                          aria-label="Resume recording"
-                          aria-pressed={false}
-                          title="Resume recording"
-                        >
+                        <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full" aria-label="Resume recording" title="Resume recording">
                           <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                         </Button>
                       ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={pauseRecording}
-                          className="h-8 rounded-full"
-                          aria-label="Pause recording"
-                          aria-pressed={false}
-                          title="Pause recording"
-                        >
+                        <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full" aria-label="Pause recording" title="Pause recording">
                           <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={stopListening}
-                        className="h-8 rounded-full"
-                        aria-label="Stop recording and send"
-                        aria-keyshortcuts="Space"
-                        title="Send (release Space)"
-                      >
+                      <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full" aria-label="Stop recording and send" aria-keyshortcuts="Space" title="Send (release Space)">
                         <SendHorizontal className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Send
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={cancelRecording}
-                        className="h-8 rounded-full text-muted-foreground"
-                        aria-label="Cancel recording and discard audio"
-                        aria-keyshortcuts="Escape"
-                        title="Cancel (Esc)"
-                      >
+                      <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground" aria-label="Cancel recording and discard audio" aria-keyshortcuts="Escape" title="Cancel (Esc)">
                         Cancel
                       </Button>
                     </div>
                   </div>
                 )}
                 {phase === "speaking" && (
-                  <div
-                    className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]"
-                    role="group"
-                    aria-label="Playback controls"
-                  >
+                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]" role="group" aria-label="Playback controls">
                     {playPaused ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={resumePlayback}
-                        className="h-8 rounded-full"
-                        aria-label="Resume playback"
-                        aria-pressed={false}
-                        title="Resume playback"
-                      >
+                      <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8 rounded-full" aria-label="Resume playback" title="Resume playback">
                         <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                       </Button>
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={pausePlayback}
-                        className="h-8 rounded-full"
-                        aria-label="Pause playback"
-                        aria-pressed={false}
-                        title="Pause playback"
-                      >
+                      <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8 rounded-full" aria-label="Pause playback" title="Pause playback">
                         <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={restartPlayback}
-                      className="h-8 rounded-full"
-                      aria-label="Restart playback from beginning"
-                      title="Restart"
-                    >
+                    <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8 rounded-full" aria-label="Restart playback from beginning" title="Restart">
                       <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={stopPlayback}
-                      className="h-8 rounded-full"
-                      aria-label="Stop playback"
-                      aria-keyshortcuts="Escape"
-                      title="Stop (Esc)"
-                    >
+                    <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8 rounded-full" aria-label="Stop playback" aria-keyshortcuts="Escape" title="Stop (Esc)">
                       <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Stop
                     </Button>
                   </div>
@@ -1880,7 +1714,7 @@ function JarvisPage() {
               </div>
             )}
 
-            {/* Composer — inside the same shell, separated by a subtle divider */}
+            {/* Composer */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1898,11 +1732,6 @@ function JarvisPage() {
                     e.preventDefault();
                     handleTextSend();
                   } else if (e.key === "Escape" && phase === "idle" && composerText) {
-                    // When idle and the user has a draft, Escape clears it in
-                    // place and keeps focus so they can start over immediately.
-                    // (The global Escape handler only fires when phase is
-                    // listening/speaking/thinking, so this branch owns the
-                    // idle-draft case.)
                     e.preventDefault();
                     e.stopPropagation();
                     setComposerText("");
@@ -1926,15 +1755,7 @@ function JarvisPage() {
               />
 
               {phase === "thinking" ? (
-                <Button
-                  type="submit"
-                  size="icon"
-                  variant="destructive"
-                  className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full"
-                  aria-label="Stop generating response"
-                  aria-keyshortcuts="Escape"
-                  title="Stop generating (Esc)"
-                >
+                <Button type="submit" size="icon" variant="destructive" className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full" aria-label="Stop generating response" aria-keyshortcuts="Escape" title="Stop generating (Esc)">
                   <Square className="w-4 h-4" aria-hidden="true" />
                 </Button>
               ) : (
@@ -1958,6 +1779,86 @@ function JarvisPage() {
             </form>
           </div>
 
+          {/* RIGHT — preview-style chat rail (dark cards) */}
+          <aside
+            ref={transcriptRef}
+            role="log"
+            aria-label="Conversation"
+            aria-live="polite"
+            className="lg:col-span-4 flex flex-col gap-3 min-h-0 max-h-full overflow-y-auto pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+          >
+            {messages.length === 0 && !partial && !rtUserPartial && !rtAsstPartial && !lastFailed ? (
+              <div
+                className="rounded-2xl border border-dashed p-6 text-center text-xs text-white/40"
+                style={{ borderColor: `hsl(${PHASE_HUE[phase]} 40% 40% / 0.25)` }}
+              >
+                Conversation will stream here.
+              </div>
+            ) : (
+              <>
+                {messages.map((m, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
+                  >
+                    <div
+                      className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase"
+                      style={{ color: m.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
+                    >
+                      {m.role === "user" ? "You" : "Jarvis"}
+                    </div>
+                    <div className="text-sm leading-relaxed text-white/90 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground space-y-2">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+
+                {rtUserPartial && (
+                  <div className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl">
+                    <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(180 90% 65%)" }}>
+                      You · Listening
+                    </div>
+                    <div className="text-sm leading-relaxed text-white/80 italic">
+                      {rtUserPartial}
+                      <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
+                    </div>
+                  </div>
+                )}
+
+                {(partial || rtAsstPartial) && (
+                  <div className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl">
+                    <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(258 90% 75%)" }}>
+                      Jarvis{rtAsstPartial ? " · Speaking" : ""}
+                    </div>
+                    <div className="text-sm leading-relaxed text-white/90 [&_p]:my-1 space-y-2">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
+                      <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
+                    </div>
+                  </div>
+                )}
+
+                {lastFailed && phase === "idle" && (
+                  <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
+                    <span className="text-destructive">Last message failed to send.</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        const t = lastFailed;
+                        setLastFailed(null);
+                        void sendToChat(t);
+                      }}
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" /> Retry
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </aside>
+
           {/* Scroll-to-bottom pill */}
           {scrolledUp && (
             <button
@@ -1966,7 +1867,7 @@ function JarvisPage() {
                 if (el) el.scrollTop = el.scrollHeight;
                 setScrolledUp(false);
               }}
-              className="absolute left-1/2 -translate-x-1/2 bottom-24 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
+              className="absolute right-6 bottom-6 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
               aria-label="Scroll to latest message"
             >
               <ArrowDown className="w-3.5 h-3.5" /> New reply
@@ -1974,6 +1875,7 @@ function JarvisPage() {
           )}
         </div>
       </div>
+
 
       {/* ==================================================================
           BOTTOM RAIL — hints + SR-only live region (composer merged into shell)
