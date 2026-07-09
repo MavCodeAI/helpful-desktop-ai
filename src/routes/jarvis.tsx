@@ -1684,9 +1684,6 @@ function JarvisPage() {
                     <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Restart playback from beginning" title="Restart">
                       <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Stop playback" aria-keyshortcuts="Escape" title="Stop (Esc)">
-                      <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Stop
-                    </Button>
                   </div>
                 )}
               </div>
