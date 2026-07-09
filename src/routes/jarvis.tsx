@@ -1806,42 +1806,87 @@ function JarvisPage() {
           >
             {messages.length === 0 && !partial && !rtUserPartial && !rtAsstPartial && !lastFailed && phase === "idle" ? null : (
               <>
-                {messages.map((m, i) => (
-                  <div
-                    key={i}
-                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
-                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
-                  >
-                    <div
-                      className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase"
-                      style={{ color: m.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
-                    >
-                      {m.role === "user" ? "You" : "Assistant"}
-                    </div>
-                    <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] sm:[&_code]:text-xs [&_code]:break-words [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:break-all [&_a]:text-jarvis">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                    </div>
-                  </div>
-                ))}
+                {(() => {
+                  /**
+                   * Unified render list. The pending "You" bubble (while STT
+                   * streams) shares the SAME stable key as the trailing user
+                   * message once sendToChat commits it — so React reuses the
+                   * same DOM node during the partial→final swap. No unmount,
+                   * no fade-in slide, no caret jump.
+                   */
+                  type Item =
+                    | { key: string; kind: "msg"; role: "user" | "assistant"; content: string; animate: boolean }
+                    | { key: string; kind: "pending-user"; text: string };
 
-                {(phase === "listening" || rtUserPartial) && (
-                  <div
-                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
-                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
-                  >
-                    <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(180 90% 65%)" }}>
-                      You
-                    </div>
-                    {rtUserPartial ? (
-                      <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/80 italic break-words [overflow-wrap:anywhere] hyphens-auto">
-                        {rtUserPartial}
-                        <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
+                  const items: Item[] = messages.map((m, i) => ({
+                    key: `slot-${i}`,
+                    kind: "msg" as const,
+                    role: m.role,
+                    content: m.content,
+                    // User bubbles never animate on mount — that translate-slide
+                    // is what caused the caret jump when a pending bubble was
+                    // replaced. Assistant bubbles still fade in for polish.
+                    animate: m.role === "assistant",
+                  }));
+
+                  const showPending = phase === "listening" || rtUserPartial.length > 0;
+                  if (showPending) {
+                    items.push({
+                      key: `slot-${messages.length}`,
+                      kind: "pending-user",
+                      text: rtUserPartial,
+                    });
+                  }
+
+                  return items.map((it) => {
+                    if (it.kind === "msg") {
+                      return (
+                        <div
+                          key={it.key}
+                          className={`min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl ${it.animate ? "motion-safe:animate-fade-in" : ""}`}
+                          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
+                        >
+                          <div
+                            className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase"
+                            style={{ color: it.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
+                          >
+                            {it.role === "user" ? "You" : "Assistant"}
+                          </div>
+                          <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] sm:[&_code]:text-xs [&_code]:break-words [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:break-all [&_a]:text-jarvis">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{it.content}</ReactMarkdown>
+                          </div>
+                        </div>
+                      );
+                    }
+                    // pending-user — same shell as a committed "You" msg so
+                    // that swapping to the msg variant is a no-op class-wise.
+                    return (
+                      <div
+                        key={it.key}
+                        className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl"
+                        style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
+                      >
+                        <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(180 90% 65%)" }}>
+                          You
+                        </div>
+                        {it.text ? (
+                          <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto">
+                            {it.text}
+                            {/* Caret is inside the text flow with a fixed
+                                width so removing it doesn't reflow the line. */}
+                            <span
+                              className="inline-block w-[2px] h-4 bg-cyan-400/80 ml-1 align-middle motion-safe:animate-pulse transition-opacity duration-150"
+                              aria-hidden="true"
+                            />
+                          </div>
+                        ) : (
+                          <TypingDots hue={PHASE_HUE.listening} label="Listening" />
+                        )}
                       </div>
-                    ) : (
-                      <TypingDots hue={PHASE_HUE.listening} label="Listening" />
-                    )}
-                  </div>
-                )}
+                    );
+                  });
+                })()}
+
 
                 {phase === "thinking" && !partial && !rtAsstPartial && !rtUserPartial && (
                   <div
