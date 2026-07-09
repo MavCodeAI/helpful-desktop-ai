@@ -186,7 +186,15 @@ export function useMicLevel(active: boolean): MicStatus {
         setLatencyMs(Math.round((ctx.baseLatency || 0) * 1000));
 
         const data = new Uint8Array(analyser.fftSize);
-        const loop = () => {
+        // Throttle React state updates to ~20 Hz (every ~50 ms). The RAF loop
+        // still ticks at display rate so the smoothing/peak-hold math sees
+        // every frame, but `setState` — and every child re-render it causes
+        // (VolumeMeter, LiveWaveform, OrbWaveBars) — fires at 20 fps.
+        // Saves meaningful CPU/battery on mobile with no perceptual loss:
+        // a bar animating at 20 fps looks identical to 60 fps.
+        const UI_INTERVAL_MS = 50;
+        let lastUiTs = 0;
+        const loop = (ts: number) => {
           if (cancelled || !analyser) return;
           analyser.getByteTimeDomainData(data);
           let sum = 0;
@@ -199,15 +207,16 @@ export function useMicLevel(active: boolean): MicStatus {
           }
           const rms = Math.sqrt(sum / data.length);
           const target = Math.min(1, rms * 3);
-          // Snappier smoothing (0.55/0.45) — noticeably less UI lag while
-          // still filtering per-frame RMS jitter.
           smoothed = smoothed * 0.55 + target * 0.45;
-          setLevel(smoothed);
 
           const instantPeak = Math.min(1, frameMax);
-          // Attack instantly, release ~15%/frame (~0.25s to fall from full).
           heldPeak = Math.max(instantPeak, heldPeak * 0.85);
-          setPeak(heldPeak);
+
+          if (ts - lastUiTs >= UI_INTERVAL_MS) {
+            lastUiTs = ts;
+            setLevel(smoothed);
+            setPeak(heldPeak);
+          }
 
           raf = requestAnimationFrame(loop);
         };
