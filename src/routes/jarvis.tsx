@@ -486,10 +486,12 @@ function JarvisPage() {
           return;
         }
         console.error(e);
-        toast.error("JARVIS is unavailable");
+        toast.error(friendlyError(e, "JARVIS is unavailable"));
         setPhase("idle");
       } finally {
         abortRef.current = null;
+        // Return focus to the mic so keyboard users can immediately talk again.
+        setTimeout(() => micButtonRef.current?.focus(), 0);
       }
     },
     [messages, speak]
