@@ -85,157 +85,21 @@ import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-/** Respect the OS reduced-motion setting — kills orb/wave/ring animations. */
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const on = () => setReduced(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-  return reduced;
-}
-
-/** Best-effort haptic feedback; silently no-ops where unsupported. */
-function haptic(ms = 10) {
-  try {
-    navigator.vibrate?.(ms);
-  } catch {
-    /* not supported */
-  }
-}
-
-/**
- * Convert a failed fetch (thrown Error / non-ok Response text) into a
- * user-facing reason. Gateway returns 429 (rate limit) and 402 (credits
- * exhausted) verbatim; network drops surface as TypeError.
- */
-function friendlyError(e: unknown, fallback: string): string {
-  const err = e as { message?: string; name?: string };
-  const msg = (err?.message || "").toLowerCase();
-  if (!navigator.onLine) return "You're offline — check your connection.";
-  if (err?.name === "TypeError" || msg.includes("failed to fetch"))
-    return "Network error — please retry.";
-  if (msg.includes("429") || msg.includes("rate"))
-    return "Rate limit reached — slow down and retry.";
-  if (msg.includes("402") || msg.includes("credit"))
-    return "AI credits exhausted — top up in your workspace.";
-  if (msg.includes("401") || msg.includes("unauthorized"))
-    return "Session expired — please sign in again.";
-  return fallback;
-}
-
-/**
- * One STT attempt's diagnostic trace. Captured from the recorder pipeline
- * and rendered in the diagnostics sheet so failures are self-explaining.
- */
-type SttAttempt = {
-  ts: number;
-  origMime: string;
-  origBytes: number;
-  preTranscode: "ok" | "failed" | "skipped";
-  sentMime: string;
-  sentBytes: number;
-  firstStatus: number | "network-error";
-  retryReason: string | null;
-  finalStatus: number | "ok" | "aborted" | "network-error";
-  ms: number;
-  errorBody?: string;
-};
-
-/**
- * Map an STT failure (server text + HTTP status) into a structured toast:
- * { title, cause, next } — so the user sees exactly what broke and what to do.
- * Server-side reasons come from /api/stt (short blob, unsupported mime, etc).
- */
-function sttErrorDetail(
-  status: number | null,
-  raw: string,
-  networkErr?: unknown,
-): { title: string; cause: string; next: string } {
-  const body = (raw || "").trim();
-  const low = body.toLowerCase();
-
-  if (!navigator.onLine) return {
-    title: "You're offline",
-    cause: "Browser reports no network connection.",
-    next: "Reconnect Wi-Fi / data, then tap the orb to retry.",
-  };
-  if (networkErr && (networkErr as { name?: string }).name === "TypeError") return {
-    title: "Network error",
-    cause: "Couldn't reach the transcription server.",
-    next: "Check your connection and retry in a moment.",
-  };
-
-  if (status === 402 || low.includes("credit")) return {
-    title: "AI credits exhausted",
-    cause: "The Lovable AI workspace is out of credits.",
-    next: "Top up credits in Settings → Plans & credits, then retry.",
-  };
-  if (status === 429 || low.includes("rate")) return {
-    title: "Rate limited",
-    cause: "Too many transcription requests in a short window.",
-    next: "Wait a few seconds and try again.",
-  };
-  if (status === 401 || low.includes("unauthorized")) return {
-    title: "Session expired",
-    cause: "Your login token is no longer valid.",
-    next: "Sign in again, then retry.",
-  };
-  if (status === 413 || low.includes("too long") || low.includes("25 mb")) return {
-    title: "Recording too long",
-    cause: "Audio exceeds the 25 MB upstream cap.",
-    next: "Speak in shorter turns (under ~10 minutes).",
-  };
-  if (low.includes("too short")) return {
-    title: "Recording too short",
-    cause: body.match(/\d+/) ? `Only ${body.match(/\d+/)?.[0]} bytes captured.` : "Almost no audio was captured.",
-    next: "Hold the orb (or Space) and speak for at least 1 second.",
-  };
-  if (low.includes("unsupported audio")) return {
-    title: "Unsupported audio format",
-    cause: body.replace(/^.*?:\s*/, "Browser sent: ") || "Browser codec is not accepted upstream.",
-    next: "Reload the page — a different codec will be negotiated.",
-  };
-  if (low.includes("audio file required") || low.includes("invalid form")) return {
-    title: "Recording didn't reach the server",
-    cause: body || "The upload was empty or malformed.",
-    next: "Retry once — if it repeats, reload the page.",
-  };
-  if (status === 500 && low.includes("not configured")) return {
-    title: "Voice service not configured",
-    cause: "LOVABLE_API_KEY is missing on the server.",
-    next: "Ask the project owner to enable Lovable AI.",
-  };
-  if (status === 502) return {
-    title: "Transcription service unreachable",
-    cause: "Gateway timed out or refused the connection.",
-    next: "Retry in a few seconds.",
-  };
-  if (status && status >= 500) return {
-    title: "Transcription server error",
-    cause: body || `Upstream returned ${status}.`,
-    next: "Retry — if it keeps failing, check server logs.",
-  };
-  return {
-    title: "Transcription failed",
-    cause: body || (status ? `HTTP ${status}` : "Unknown error"),
-    next: "Retry, or reload the page if it persists.",
-  };
-}
-
-/** Cycle short verbs during the "thinking" phase so it feels alive. */
-const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
-
-/**
- * Hard cap on a single composed message. Mirrors the server's zod schema
- * in /api/chat so we can reject over-long input in the UI with a friendly
- * toast instead of round-tripping to a 400.
- */
-
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { haptic } from "@/lib/haptic";
+import { friendlyError, sttErrorDetail, type SttAttempt } from "@/lib/friendly-error";
+import {
+  THINKING_STAGES,
+  PHASE_HUE,
+  PHASE_CAPTION,
+  type Phase,
+} from "@/features/voice/phase-machine";
+import { OrbWaveBars } from "@/features/jarvis-ui/OrbWaveBars";
+import { TypingDots } from "@/features/jarvis-ui/TypingDots";
+import { OrbSideButton } from "@/features/jarvis-ui/OrbSideButton";
+import { LiveWaveform } from "@/features/jarvis-ui/LiveWaveform";
+import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
+import { RecTimer } from "@/features/jarvis-ui/RecTimer";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -247,23 +111,6 @@ export const Route = createFileRoute("/jarvis")({
     ],
   }),
 });
-
-type Phase = "idle" | "listening" | "thinking" | "speaking";
-
-/** Preview-parity color language: each phase has a hue that drives the orb,
- *  rings, glow, side buttons, caption tint, and message role labels. */
-const PHASE_HUE: Record<Phase, number> = {
-  idle: 200,       // cyan  — resting (perfect1 aesthetic)
-  listening: 195,  // bright cyan — user speaking
-  thinking: 48,    // amber — connecting / composing (kept as state cue)
-  speaking: 210,   // deeper cyan — assistant replying
-};
-const PHASE_CAPTION: Record<Phase, string> = {
-  idle: "TAP TO START",
-  listening: "LISTENING",
-  thinking: "THINKING",
-  speaking: "SPEAKING",
-};
 
 /** Animated bars used inside the orb while listening. Purely visual, driven
  *  by shared mic amplitude. */
