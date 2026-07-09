@@ -904,16 +904,11 @@ function JarvisPage() {
 
 
 
-          {/* Status pill — solid background so text is readable over orb */}
-          <div
-            className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-jarvis/25"
-            role="status"
-            aria-live="polite"
-          >
-            <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-jarvis">
-              {statusLabel}
-            </p>
-          </div>
+          {/* SR-only status for assistive tech (visible pill removed) */}
+          <p className="sr-only" role="status" aria-live="polite">
+            {statusLabel}
+          </p>
+
         </div>
 
         {/* Middle zone — control clusters */}
