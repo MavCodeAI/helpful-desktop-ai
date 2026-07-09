@@ -1185,7 +1185,7 @@ function JarvisPage() {
     setRealtimeOn(false);
     setRtUserPartial("");
     setRtAsstPartial("");
-    setPhase("idle");
+    dispatch({ type: "CANCEL" });
   }, []);
 
   const connectRealtime = useCallback(async () => {
