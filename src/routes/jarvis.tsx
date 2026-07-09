@@ -241,6 +241,8 @@ function JarvisPage() {
   // once per mount; a no-op on subsequent mounts.
   useEffect(() => {
     prefetchMarkdown();
+    prefetchSheet();
+    prefetchDropdownMenu();
   }, []);
 
   useEffect(() => {
