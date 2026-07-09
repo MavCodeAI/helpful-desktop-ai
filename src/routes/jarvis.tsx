@@ -1504,9 +1504,13 @@ function JarvisPage() {
 
           {/* History drawer */}
 
-          <Sheet>
-            <SheetTrigger asChild>
+          <LazySheet
+            side="left"
+            title="Conversations"
+            contentClassName="w-[85vw] sm:w-[320px] flex flex-col"
+            trigger={(p) => (
               <Button
+                {...p}
                 variant="ghost"
                 size="icon"
                 aria-label="Conversation history"
@@ -1515,14 +1519,8 @@ function JarvisPage() {
               >
                 <History className="w-4 h-4" />
               </Button>
-            </SheetTrigger>
-
-            <SheetContent side="left" className="w-[85vw] sm:w-[320px] flex flex-col">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">
-                  Conversations
-                </SheetTitle>
-              </SheetHeader>
+            )}
+          >
               <Button onClick={newConversation} className="mt-4" variant="outline">
                 <Plus className="w-4 h-4 mr-1.5" /> New conversation
               </Button>
@@ -1555,8 +1553,8 @@ function JarvisPage() {
                   </div>
                 ))}
               </div>
-            </SheetContent>
-          </Sheet>
+          </LazySheet>
+
 
           {/* STT diagnostics drawer — rolling log of the last 10 transcription
               attempts (pre-transcode result, HTTP status, retry reason). Lets
