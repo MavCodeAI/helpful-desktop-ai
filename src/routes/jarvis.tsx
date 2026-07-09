@@ -1262,6 +1262,9 @@ function JarvisPage() {
             <span className="font-display tracking-[0.25em] text-sm text-jarvis whitespace-nowrap">
               JARVIS
             </span>
+            <span className="mt-0.5 text-[9px] uppercase tracking-[0.35em] text-muted-foreground/70 whitespace-nowrap">
+              Voice only
+            </span>
           </div>
         </div>
 
