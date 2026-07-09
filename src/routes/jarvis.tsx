@@ -86,8 +86,8 @@ import {
 // HologramSafe removed — orb visuals are now inline in the preview-parity cluster below.
 import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+// Markdown is lazy-loaded via MarkdownMessage — keeps ~180 KB of
+// react-markdown/remark/mdast/micromark out of the initial jarvis chunk.
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { haptic } from "@/lib/haptic";
 import { friendlyError, sttErrorDetail, type SttAttempt } from "@/lib/friendly-error";
