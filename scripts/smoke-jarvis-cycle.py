@@ -103,10 +103,11 @@ async def main() -> int:
         await page.wait_for_timeout(800)
         await page.screenshot(path=str(SHOTS / "cycle-1-idle.png"))
 
-        # The orb button carries aria-label "Voice input" — start listening.
-        orb = page.get_by_role("button", name="Voice input")
+        # The orb button's aria-label starts with the status label and
+        # contains "tap orb to …" — match by that stable substring.
+        orb = page.get_by_role("button", name=re.compile("tap orb to"))
         if await orb.count() == 0:
-            print("SMOKE FAILED: could not find orb button (aria-label 'Voice input')")
+            print("SMOKE FAILED: could not find orb button (aria-label 'tap orb to …')")
             await browser.close()
             return 1
 
