@@ -1100,15 +1100,27 @@ function JarvisPage() {
             );
           };
 
-          const ext = mime.includes("mp4") ? "mp4" : "webm";
-          let res = await postAudio(blob, `recording.${ext}`);
+          // Pre-transcode to 16 kHz mono WAV up front — universally decodable,
+          // sidesteps all browser codec quirks, and eliminates the wasted first
+          // round-trip we'd otherwise spend discovering the format is rejected.
+          // If AudioContext.decodeAudioData can't parse the blob (rare), fall
+          // back to shipping the original bytes and let the retry path handle it.
+          let uploadBlob: Blob = blob;
+          let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
+          try {
+            uploadBlob = await transcodeToWav(blob);
+            uploadName = "recording.wav";
+          } catch (preErr) {
+            console.warn("[stt] pre-transcode failed, sending original blob", preErr);
+          }
+          let res = await postAudio(uploadBlob, uploadName);
           let peekBody = "";
           if (!res.ok) {
             // Peek the body once so we can both decide-to-retry and, if we
             // don't retry, still surface the original error text below.
             peekBody = await res.clone().text().catch(() => "");
           }
-          if (!res.ok && needsTranscodeRetry(res.status, peekBody)) {
+          if (!res.ok && needsTranscodeRetry(res.status, peekBody) && uploadName !== "recording.wav") {
             console.warn("[stt] upstream rejected format — retrying with WAV transcode", {
               status: res.status,
               body: peekBody.slice(0, 200),
