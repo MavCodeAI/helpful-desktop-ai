@@ -66,11 +66,15 @@ intentionally deferred.
     `CANCEL`, `SET_PHASE`), so the banner auto-dismisses on recovery.
     Complements toasts (fire-and-forget) with a persistent a11y surface.
 
-## Deferred (each safe on its own)
+14. **Realtime bridged into `voiceReducer`.** New `REALTIME_LIVE` event
+    (any → listening) models "we're live on the wire" — distinct from
+    `START_LISTENING` (idle-only, user-initiated). Last 2 `setPhase`
+    holdouts (L1202 connect, L1281 sync effect) now dispatch semantic
+    events. **Every phase transition in the codebase is a named,
+    tested event.** setPhase adapter kept as a public seam but unused
+    in-repo.
 
-- **Realtime state machine unification.** The 2 remaining `setPhase`
-  calls (jarvis.tsx L1202, L1281) belong to `RealtimeClient` — fold them
-  into `voiceReducer` only if we merge the two state machines.
+## Deferred (each safe on its own)
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
   `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.

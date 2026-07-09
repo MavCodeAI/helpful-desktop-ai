@@ -1199,7 +1199,7 @@ function JarvisPage() {
     client.on((e) => {
       if (e.type === "connected") {
         setRealtimeOn(true);
-        setPhase("listening");
+        dispatch({ type: "REALTIME_LIVE" });
         toast.success("Live connection open", { duration: 1500 });
       } else if (e.type === "disconnected") {
         setRealtimeOn(false);
@@ -1278,7 +1278,7 @@ function JarvisPage() {
   // when in realtime mode to avoid stepping on the other pipelines.
   useEffect(() => {
     if (mode !== "realtime") return;
-    setPhase(realtimeOn ? "listening" : "idle");
+    dispatch(realtimeOn ? { type: "REALTIME_LIVE" } : { type: "CANCEL" });
   }, [mode, realtimeOn]);
 
   // changeMode removed — Auto-VAD is the only supported mode.
