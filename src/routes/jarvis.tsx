@@ -673,6 +673,7 @@ function JarvisPage() {
 
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        mediaRef.current = null;
         setRecStartedAt(null);
         const blob = new Blob(chunksRef.current, { type: mime });
         if (blob.size < 1500) {
