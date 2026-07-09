@@ -1414,6 +1414,13 @@ function JarvisPage() {
             </kbd>
             send
           </span>
+          <span className="opacity-40">•</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
+              Esc
+            </kbd>
+            cancel
+          </span>
         </div>
 
         {/* SR-only live region — streamed chunks for assistive tech */}
