@@ -619,7 +619,6 @@ function JarvisPage() {
         }
       } catch (e: unknown) {
         if ((e as { name?: string })?.name === "AbortError") {
-          aborted = true;
           setPartial("");
           setMessages([
             ...next,
