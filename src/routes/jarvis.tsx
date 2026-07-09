@@ -1156,6 +1156,12 @@ function JarvisPage() {
       ? savedMicId
       : null;
   const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license, activeMicId);
+  // Mirror activeMicId into a ref so stable callbacks (startListening) read
+  // the latest selection without needing to re-create on every device change.
+  const activeMicIdRef = useRef<string | null>(activeMicId);
+  useEffect(() => {
+    activeMicIdRef.current = activeMicId;
+  }, [activeMicId]);
 
   /* ---------- Auto-VAD (mode === "vad") ---------- */
   //
