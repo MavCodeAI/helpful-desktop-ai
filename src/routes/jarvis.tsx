@@ -793,7 +793,7 @@ function JarvisPage() {
         toast.error(friendlyError(e, "Voice playback failed"));
       }
     },
-    [tts],
+    [tts, sttMs, ttsMs],
   );
 
   /* ---------- Chat (LLM streaming) ---------- */
