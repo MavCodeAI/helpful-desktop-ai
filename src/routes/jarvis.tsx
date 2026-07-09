@@ -808,20 +808,19 @@ function JarvisPage() {
           </div>
           <div className="flex flex-col leading-none min-w-0">
             <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">JARVIS</span>
-            <span className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground mt-0.5 hidden sm:inline">
-              Voice Intelligence
-            </span>
           </div>
+
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3">
-                <History className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">History</span>
+              <Button variant="ghost" size="icon" aria-label="Conversation history" title="History" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full">
+                <History className="w-4 h-4" />
               </Button>
             </SheetTrigger>
+
             <SheetContent side="left" className="w-[85vw] sm:w-[320px] flex flex-col">
 
               <SheetHeader>
@@ -868,10 +867,11 @@ function JarvisPage() {
           {/* TTS settings drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Voice settings" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3">
-                <Settings className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Voice</span>
+              <Button variant="ghost" size="icon" aria-label="Voice settings" title="Voice" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full">
+                <Settings className="w-4 h-4" />
               </Button>
             </SheetTrigger>
+
             <SheetContent side="right" className="w-[85vw] sm:w-[340px]">
 
               <SheetHeader>
@@ -985,49 +985,60 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="glass-card rounded-[24px] sm:rounded-[32px] flex-1 min-h-[120px] sm:min-h-[200px] overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+            className={`${
+              messages.length === 0 && !partial && !lastFailed
+                ? "bg-transparent border-0"
+                : "glass-card rounded-[24px] sm:rounded-[32px] p-4 sm:p-6"
+            } flex-1 min-h-[120px] sm:min-h-[200px] overflow-y-auto space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]`}
           >
             {messages.length === 0 && !partial && !lastFailed && (
-              <div className="flex flex-col items-center text-center gap-6 py-6 sm:py-10 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
+              <div className="flex flex-col items-center justify-center text-center gap-7 h-full py-4 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
                 <div className="space-y-3 max-w-md">
-                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-                    Hello, I'm <span className="bg-gradient-to-r from-[oklch(0.85_0.15_210)] via-[oklch(0.8_0.16_260)] to-[oklch(0.82_0.16_300)] bg-clip-text text-transparent">Jarvis</span>
+                  <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
+                    <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
+                      Good to see you.
+                    </span>
                   </h2>
                   <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                    Your voice-first intelligence. Talk, type, or hold{" "}
+                    Talk, type, or hold{" "}
                     <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">Space</kbd>{" "}
-                    to speak — I'll answer in real time.
+                    to speak.
                   </p>
                 </div>
                 <div className="w-full space-y-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
                     Try asking
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     {[
-                      "What can you do?",
-                      "Summarise today's news",
-                      "Help me draft an email",
-                      "Explain quantum computing simply",
-                      "Give me a 5-minute workout",
-                    ].map((s) => (
+                      { text: "What can you do?", featured: true },
+                      { text: "Summarise today's news", featured: false },
+                      { text: "Help me draft an email", featured: false },
+                      { text: "Explain quantum computing simply", featured: false },
+                      { text: "Give me a 5-minute workout", featured: false },
+                    ].map(({ text, featured }) => (
                       <button
-                        key={s}
+                        key={text}
                         type="button"
                         onClick={() => {
                           setComposerText("");
-                          void sendToChat(s);
+                          void sendToChat(text);
                         }}
                         disabled={phase !== "idle"}
-                        className="glass-pill rounded-full text-xs sm:text-[13px] px-3.5 py-1.5 text-foreground/85 hover:text-foreground hover:bg-white/[0.08] transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98]"
+                        className={`rounded-full text-xs sm:text-[13px] px-3.5 py-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
+                          featured
+                            ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
+                            : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
+                        }`}
                       >
-                        {s}
+                        {text}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
             )}
+
             {messages.map((m, i) => (
               <div
                 key={i}
@@ -1157,7 +1168,7 @@ function JarvisPage() {
         </button>
 
         {/* Status pill — always visible, compact */}
-        <div className="glass-pill inline-flex items-center gap-2 rounded-full px-3 py-1">
+        <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               phase === "idle"
@@ -1169,11 +1180,9 @@ function JarvisPage() {
                 : "bg-amber-400 motion-safe:animate-pulse"
             }`}
           />
-          <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/80">{statusLabel}</span>
-          <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
-            · {tts.voice.split("-").pop() || "auto"}
-          </span>
+          <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">{statusLabel}</span>
         </div>
+
 
         {/* Composer glass pill — text only, orb is the mic */}
         <form
@@ -1222,17 +1231,23 @@ function JarvisPage() {
             <Button
               type="submit"
               size="icon"
+              variant="ghost"
               disabled={phase !== "idle" || !composerText.trim()}
-              className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+              className={`shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full transition-all ${
+                composerText.trim()
+                  ? "bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110"
+                  : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
+              } disabled:shadow-none`}
               aria-label="Send message"
             >
               <SendHorizontal className="w-4 h-4" />
             </Button>
           )}
+
         </form>
 
         {/* Keyboard shortcut hints — subtle */}
-        <div className="hidden md:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
+        <div className="hidden md:flex items-center justify-center gap-3 text-[9px] uppercase tracking-[0.25em] text-muted-foreground/40">
           <span className="inline-flex items-center gap-1">
             <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Space</kbd>
             hold to talk
