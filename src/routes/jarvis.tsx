@@ -1195,15 +1195,22 @@ function JarvisPage() {
                     </div>
 
                     {/* Controls */}
-                    <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1">
+                    <div
+                      className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1"
+                      role="group"
+                      aria-label="Recording controls"
+                    >
                       {recPaused ? (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={resumeRecording}
                           className="h-8 rounded-full"
+                          aria-label="Resume recording"
+                          aria-pressed={false}
+                          title="Resume recording"
                         >
-                          <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                          <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                         </Button>
                       ) : (
                         <Button
@@ -1211,8 +1218,11 @@ function JarvisPage() {
                           size="sm"
                           onClick={pauseRecording}
                           className="h-8 rounded-full"
+                          aria-label="Pause recording"
+                          aria-pressed={false}
+                          title="Pause recording"
                         >
-                          <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                          <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                         </Button>
                       )}
                       <Button
@@ -1220,14 +1230,20 @@ function JarvisPage() {
                         size="sm"
                         onClick={stopListening}
                         className="h-8 rounded-full"
+                        aria-label="Stop recording and send"
+                        aria-keyshortcuts="Space"
+                        title="Send (release Space)"
                       >
-                        <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+                        <SendHorizontal className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Send
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={cancelRecording}
                         className="h-8 rounded-full text-muted-foreground"
+                        aria-label="Cancel recording and discard audio"
+                        aria-keyshortcuts="Escape"
+                        title="Cancel (Esc)"
                       >
                         Cancel
                       </Button>
