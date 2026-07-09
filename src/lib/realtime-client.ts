@@ -18,11 +18,41 @@ export type RealtimeEvent =
   | { type: "disconnected"; reason?: string }
   | { type: "user_transcript"; text: string; final: boolean }
   | { type: "assistant_transcript"; text: string; final: boolean }
-  | { type: "error"; message: string };
+  /**
+   * True end-to-end latency: milliseconds from the server VAD detecting the
+   * end of the user's utterance to the first assistant audio frame arriving.
+   * Includes network + model + first-audio TTFB — the number the user
+   * actually feels.
+   */
+  | { type: "e2e_latency"; ms: number }
+  | { type: "error"; message: string; status?: number; retryAfterSec?: number };
 
 export type RealtimeListener = (e: RealtimeEvent) => void;
 
 const REALTIME_MODEL = "gpt-4o-realtime-preview";
+
+export class RealtimeError extends Error {
+  status?: number;
+  retryAfterSec?: number;
+  constructor(message: string, status?: number, retryAfterSec?: number) {
+    super(message);
+    this.name = "RealtimeError";
+    this.status = status;
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
+function parseRetryAfter(res: Response): number | undefined {
+  const h = res.headers.get("retry-after");
+  if (!h) return undefined;
+  const asInt = parseInt(h, 10);
+  if (Number.isFinite(asInt) && asInt > 0) return asInt;
+  const asDate = Date.parse(h);
+  if (Number.isFinite(asDate)) {
+    return Math.max(1, Math.round((asDate - Date.now()) / 1000));
+  }
+  return undefined;
+}
 
 export class RealtimeClient {
   private pc: RTCPeerConnection | null = null;
@@ -35,6 +65,10 @@ export class RealtimeClient {
   // Cumulative transcript buffers (Realtime emits deltas).
   private userBuf = "";
   private asstBuf = "";
+
+  // Latency: timestamp when server VAD detected end of user speech, cleared
+  // after the first assistant audio frame arrives.
+  private speechStoppedAt = 0;
 
   on(l: RealtimeListener): () => void {
     this.listeners.add(l);
@@ -58,11 +92,16 @@ export class RealtimeClient {
     const tokRes = await fetch("/api/realtime-token", { method: "POST" });
     if (!tokRes.ok) {
       const txt = await tokRes.text().catch(() => "");
-      throw new Error(txt || `Failed to mint realtime token (${tokRes.status})`);
+      const retryAfter = parseRetryAfter(tokRes);
+      throw new RealtimeError(
+        txt || `Failed to mint realtime token (${tokRes.status})`,
+        tokRes.status,
+        retryAfter,
+      );
     }
     const session = await tokRes.json();
     const ephemeralKey: string | undefined = session?.client_secret?.value;
-    if (!ephemeralKey) throw new Error("Realtime session missing client_secret");
+    if (!ephemeralKey) throw new RealtimeError("Realtime session missing client_secret");
 
     // 2. Peer connection + remote audio sink.
     const pc = new RTCPeerConnection();
@@ -110,7 +149,11 @@ export class RealtimeClient {
     );
     if (!sdpRes.ok) {
       const txt = await sdpRes.text().catch(() => "");
-      throw new Error(txt || `Realtime SDP exchange failed (${sdpRes.status})`);
+      throw new RealtimeError(
+        txt || `Realtime SDP exchange failed (${sdpRes.status})`,
+        sdpRes.status,
+        parseRetryAfter(sdpRes),
+      );
     }
     const answerSdp = await sdpRes.text();
     await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
@@ -121,7 +164,7 @@ export class RealtimeClient {
       type?: string;
       delta?: string;
       transcript?: string;
-      error?: { message?: string };
+      error?: { message?: string; code?: string };
     };
     try {
       evt = JSON.parse(raw);
@@ -131,6 +174,20 @@ export class RealtimeClient {
     if (!evt.type) return;
 
     switch (evt.type) {
+      // Server VAD detected end of user speech → start the e2e latency clock.
+      case "input_audio_buffer.speech_stopped": {
+        this.speechStoppedAt = performance.now();
+        break;
+      }
+      // First assistant audio frame — close the loop.
+      case "response.audio.delta": {
+        if (this.speechStoppedAt > 0) {
+          const ms = Math.round(performance.now() - this.speechStoppedAt);
+          this.speechStoppedAt = 0;
+          this.emit({ type: "e2e_latency", ms });
+        }
+        break;
+      }
       // User speech transcribed incrementally.
       case "conversation.item.input_audio_transcription.delta": {
         if (typeof evt.delta === "string") this.userBuf += evt.delta;
@@ -143,7 +200,6 @@ export class RealtimeClient {
         this.userBuf = "";
         break;
       }
-      // Assistant reply streamed as text (audio is separate WebRTC track).
       case "response.audio_transcript.delta": {
         if (typeof evt.delta === "string") this.asstBuf += evt.delta;
         this.emit({ type: "assistant_transcript", text: this.asstBuf, final: false });

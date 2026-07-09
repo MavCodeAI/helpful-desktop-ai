@@ -33,9 +33,11 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
-import { RealtimeClient } from "@/lib/realtime-client";
+import { loadVoiceMode, saveVoiceMode, type VoiceMode } from "@/lib/voice-mode";
+import { RealtimeClient, RealtimeError } from "@/lib/realtime-client";
 import { readSttResponse } from "@/lib/stt-stream";
+import { useMicPermission } from "@/hooks/useMicPermission";
+import { useQuotaCooldown } from "@/hooks/useQuotaCooldown";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -469,6 +471,17 @@ function JarvisPage() {
   // delay coming from?" and "should I speak faster?" share one signal.
   const [sttMs, setSttMs] = useState(0);
   const [ttsMs, setTtsMs] = useState(0);
+  // True end-to-end latency for realtime: server-VAD speech_stopped → first
+  // assistant audio frame. Reflects what the user actually feels.
+  const [e2eMs, setE2eMs] = useState(0);
+
+  // Mic permission state (granted/denied/prompt/unknown) — surfaced as a
+  // small dot in the listening strip so the user knows why capture may fail.
+  const micPerm = useMicPermission();
+
+  // Countdown for 402 (quota) / 429 (rate) responses so the user sees exactly
+  // how long to wait, instead of a generic error toast repeated on each retry.
+  const cooldown = useQuotaCooldown();
 
   // --- Mic test overlay ---
   // Continuously renders a big meter without touching the STT pipeline, so
@@ -770,7 +783,11 @@ function JarvisPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, voice: tts.voice, speed: effectiveSpeed }),
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          await cooldown.startFromResponse(res);
+          throw new Error(body || `${res.status}`);
+        }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
 
@@ -825,6 +842,7 @@ function JarvisPage() {
         });
         if (!res.ok || !res.body) {
           const body = await res.text().catch(() => "");
+          await cooldown.startFromResponse(res);
           throw new Error(`${res.status} ${body}`);
         }
 
@@ -980,7 +998,11 @@ function JarvisPage() {
             body: fd,
             signal: sttController.signal,
           });
-          if (!res.ok) throw new Error(await res.text());
+          if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            await cooldown.startFromResponse(res);
+            throw new Error(body || `${res.status}`);
+          }
 
           // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
           // src/lib/stt-stream.test.ts for delta/final-commit tests.
@@ -1322,8 +1344,21 @@ function JarvisPage() {
           setMessages((m) => [...m, { role: "assistant", content: e.text.trim() }]);
           setRtAsstPartial("");
         }
+      } else if (e.type === "e2e_latency") {
+        // True end-to-end (speech_stopped → first assistant audio). Ignore
+        // absurd outliers — a stalled session can produce huge deltas.
+        if (e.ms > 0 && e.ms < 30_000) setE2eMs(e.ms);
       } else if (e.type === "error") {
         toast.error(e.message);
+        // In-session quota errors from the OpenAI Realtime service — start
+        // the cooldown and gracefully fall back to the sequential VAD
+        // pipeline so the user isn't stuck.
+        if (cooldown.startFromErrorMessage(e.message)) {
+          disconnectRealtime();
+          setMode("vad");
+          saveVoiceMode("vad");
+          toast.message("Switched to Auto voice while realtime cools down");
+        }
       }
     });
     try {
@@ -1331,11 +1366,23 @@ function JarvisPage() {
     } catch (err) {
       console.error("[realtime] connect failed", err);
       const msg = err instanceof Error ? err.message : "Realtime connection failed";
-      // 501 = OPENAI_API_KEY not configured — surface the friendly hint.
+      // 501 = OPENAI_API_KEY not configured; 402/429 = quota — either way,
+      // fall back to the sequential VAD pipeline so voice keeps working.
+      if (err instanceof RealtimeError) {
+        if (err.status === 402 || err.status === 429) {
+          cooldown.start(err.retryAfterSec ?? 30, err.status === 402 ? "quota" : "rate");
+        }
+      }
       toast.error(msg.length < 200 ? msg : "Realtime connection failed");
       disconnectRealtime();
+      // Auto-fallback per user's fallback preference (error-only trigger).
+      setMode("vad");
+      saveVoiceMode("vad");
+      toast.message("Switched to Auto voice", {
+        description: "Realtime is unavailable right now — using the standard pipeline.",
+      });
     }
-  }, [disconnectRealtime]);
+  }, [disconnectRealtime, cooldown]);
 
   // Teardown on unmount / mode change away from realtime.
   useEffect(() => {
@@ -2000,6 +2047,31 @@ function JarvisPage() {
                         TTS round-trip, and the *effective* pace (adaptive if
                         enabled). Splitting STT/TTS makes it obvious where
                         delay actually comes from — network, model, or both. */}
+                    {/* Mic permission dot + quota cooldown countdown. Both
+                        are silent when everything is healthy; they only
+                        appear when there's something the user should know. */}
+                    {(micPerm === "denied" || micPerm === "prompt" || cooldown.active) && (
+                      <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-medium">
+                        {micPerm === "denied" && (
+                          <span className="glass-pill flex items-center gap-1.5 rounded-full px-2 py-0.5 text-destructive" title="Microphone blocked in browser settings">
+                            <span className="h-1.5 w-1.5 rounded-full bg-destructive" aria-hidden="true" />
+                            Mic blocked
+                          </span>
+                        )}
+                        {micPerm === "prompt" && (
+                          <span className="glass-pill flex items-center gap-1.5 rounded-full px-2 py-0.5 text-foreground/60" title="Browser will ask for microphone permission">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                            Mic will prompt
+                          </span>
+                        )}
+                        {cooldown.active && (
+                          <span className="glass-pill flex items-center gap-1.5 rounded-full px-2 py-0.5 text-amber-400" title={cooldown.reason === "quota" ? "AI credits exhausted — retry when the timer ends" : "Rate limit — retry when the timer ends"}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 motion-safe:animate-pulse" aria-hidden="true" />
+                            {cooldown.reason === "quota" ? "Credits cooldown" : "Rate cooldown"} · {cooldown.secondsLeft}s
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-mono tabular-nums text-foreground/60">
                       <span title="Audio input latency (browser-reported)">
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">In</span>
@@ -2015,6 +2087,15 @@ function JarvisPage() {
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">TTS</span>
                         {ttsMs ? `${ttsMs}ms` : "—"}
                       </span>
+                      {e2eMs > 0 && (
+                        <>
+                          <span className="text-foreground/20">·</span>
+                          <span title="True end-to-end latency: you stopped speaking → first assistant audio (realtime only)">
+                            <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">E2E</span>
+                            {e2eMs}ms
+                          </span>
+                        </>
+                      )}
                       <span className="text-foreground/20">·</span>
                       <span title={tts.autoAdaptivePace ? "Speaking rate — auto-adapts to pipeline latency" : "Speaking rate"}>
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Pace</span>
