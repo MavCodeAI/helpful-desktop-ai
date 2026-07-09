@@ -617,6 +617,14 @@ function JarvisPage() {
   // How many ms we've been in "thinking" without a first token yet. Drives
   // the slow-response progress hint so the user knows we're not frozen.
   const [thinkElapsedMs, setThinkElapsedMs] = useState(0);
+  // Mobile tap-to-expand: reveal the full technical explanation of the
+  // active pipeline step. Auto-collapses after ~6s so it never lingers.
+  const [tipOpen, setTipOpen] = useState(false);
+  useEffect(() => {
+    if (!tipOpen) return;
+    const t = setTimeout(() => setTipOpen(false), 6000);
+    return () => clearTimeout(t);
+  }, [tipOpen]);
   const [lastFailed, setLastFailed] = useState<string | null>(null);
   const reduced = useReducedMotion();
 
@@ -2407,29 +2415,47 @@ function JarvisPage() {
                     )}
                   </div>
 
-                  <div
-                    className="text-[10px] sm:text-[11px] tracking-[0.35em] font-mono select-none"
-                    style={{ color: `hsl(${hue} 30% 68%)` }}
-                    aria-hidden="true"
-                    title={(() => {
-                      // Which backend service is doing the work right now.
-                      if (mode === "realtime") {
-                        return realtimeOn
-                          ? "OpenAI Realtime API — streaming voice-to-voice over WebRTC"
-                          : "Realtime mode — tap orb to connect";
-                      }
-                      if (phase === "listening") return "Whisper STT via Lovable AI Gateway";
-                      if (phase === "thinking") return "Chat LLM (Gemini) via Lovable AI Gateway";
-                      if (phase === "speaking") return "OpenAI TTS via Lovable AI Gateway";
-                      return "Push-to-talk — hold Space or tap orb";
-                    })()}
-                  >
-                    {phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}
-                  </div>
+                  {(() => {
+                    const techTip =
+                      mode === "realtime"
+                        ? realtimeOn
+                          ? "OpenAI Realtime API — streaming voice-to-voice over WebRTC. Audio flows both ways as PCM frames; no separate STT/LLM/TTS round-trips."
+                          : "Realtime mode — tap the orb to open a WebRTC session with OpenAI's Realtime API."
+                        : phase === "listening"
+                          ? "Whisper STT via Lovable AI Gateway. Mic → 16 kHz mono WAV → POST /api/stt → transcript."
+                          : phase === "thinking"
+                            ? "Chat LLM (Gemini via Lovable AI Gateway). Streaming SSE tokens from POST /api/chat into the transcript."
+                            : phase === "speaking"
+                              ? "OpenAI TTS via Lovable AI Gateway. POST /api/tts → MP3 stream → HTMLAudioElement."
+                              : "Push-to-talk pipeline idle. Hold Space or tap the orb to start recording.";
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setTipOpen((v) => !v)}
+                          aria-expanded={tipOpen}
+                          aria-label={`Pipeline info — ${techTip}`}
+                          title={techTip}
+                          className="text-[10px] sm:text-[11px] tracking-[0.35em] font-mono select-none inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 hover:bg-white/[0.05] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis/60"
+                          style={{ color: `hsl(${hue} 30% 68%)` }}
+                        >
+                          <span>{phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}</span>
+                          <span aria-hidden="true" className="opacity-60">ⓘ</span>
+                        </button>
+                        {tipOpen && (
+                          <div
+                            role="tooltip"
+                            className="glass-pill max-w-[22rem] rounded-xl border border-white/10 bg-black/60 backdrop-blur px-3 py-2 text-[11px] leading-snug text-foreground/85 text-center motion-safe:animate-fade-in"
+                            style={{ boxShadow: `0 8px 32px hsl(${hue} 60% 20% / 0.5)` }}
+                          >
+                            {techTip}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
-                  {/* Which "tool" (pipeline step) is active right now — plain-
-                      language subtitle so the user always knows what the app
-                      is doing behind the orb. */}
+                  {/* Plain-language subtitle — always visible. */}
                   <div
                     className="text-[10px] sm:text-[11px] text-foreground/50 motion-safe:animate-fade-in max-w-[22rem] text-center leading-snug"
                     aria-live="polite"
