@@ -450,9 +450,14 @@ function JarvisPage() {
   }[phase];
 
   return (
-    <main className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Volumetric energy orb — centered, contained (not full-screen). */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(70vw,420px)] aspect-square">
+    <main className="min-h-dvh flex flex-col relative overflow-hidden">
+      {/* Volumetric energy orb — background, dimmed when idle so UI stays readable. */}
+      <div
+        className={`absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(60vw,340px)] aspect-square transition-opacity duration-500 ${
+          phase === "idle" ? "opacity-40" : phase === "speaking" ? "opacity-90" : "opacity-70"
+        }`}
+        aria-hidden="true"
+      >
         <HologramSafe level={micLevel} />
       </div>
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
