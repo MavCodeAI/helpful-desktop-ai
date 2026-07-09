@@ -75,6 +75,15 @@ export type VoiceEvent =
    */
   | { type: "START_THINKING" }          // any → thinking
   | { type: "START_SPEAKING" }          // any → speaking
+  /**
+   * Realtime bridge — the WebRTC pipeline has its own connection state
+   * machine that lives in `RealtimeClient`, but the orb/caption still
+   * mirror the app-level phase. `REALTIME_LIVE` skips the strict
+   * `START_LISTENING` guard (which requires idle) because the transition
+   * is thinking → listening on connect. It's a distinct semantic ("we're
+   * live on the wire") not just "user tapped mic".
+   */
+  | { type: "REALTIME_LIVE" }           // any → listening
   | { type: "ERROR"; message: string }; // any → idle + error
 
 export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
