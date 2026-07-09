@@ -19,7 +19,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Mic,
   MicOff,
-  Loader2,
   LogOut,
   Volume2,
   Pause,
@@ -332,7 +331,22 @@ function JarvisPage() {
    * Push-to-talk: hold Space to start listening, release to send.
    * Ignored while the user is typing in an input/textarea/contenteditable,
    * during auto-repeat, or when any modifier is held (Cmd/Ctrl/Alt/Meta).
+   *
+   * We route every handler through `handlersRef` (updated each render, below)
+   * so the keyboard listener always calls the CURRENT `startListening`,
+   * `sendToChat`, etc. — never a stale first-render closure. Without this
+   * indirection, voice-triggered `sendToChat` would ship an empty message
+   * list to the server on every Space press after the first, wiping the
+   * conversation context.
    */
+  const handlersRef = useRef({
+    startListening: () => {},
+    stopListening: () => {},
+    cancelRecording: () => {},
+    stopPlayback: () => {},
+    stopGenerating: () => {},
+  });
+
   useEffect(() => {
     const isEditable = (el: EventTarget | null) => {
       const t = el as HTMLElement | null;
@@ -345,13 +359,13 @@ function JarvisPage() {
       if (e.key === "Escape") {
         if (phaseRef2.current === "listening") {
           e.preventDefault();
-          cancelRecording();
+          handlersRef.current.cancelRecording();
         } else if (phaseRef2.current === "speaking") {
           e.preventDefault();
-          stopPlayback();
+          handlersRef.current.stopPlayback();
         } else if (phaseRef2.current === "thinking") {
           e.preventDefault();
-          stopGenerating();
+          handlersRef.current.stopGenerating();
         }
         return;
       }
@@ -361,7 +375,7 @@ function JarvisPage() {
       if (phaseRef2.current !== "idle") return;
       e.preventDefault();
       spaceHeldRef.current = true;
-      startListening();
+      handlersRef.current.startListening();
     };
     const onUp = (e: KeyboardEvent) => {
       if (e.code !== "Space") return;
@@ -369,7 +383,7 @@ function JarvisPage() {
       spaceHeldRef.current = false;
       if (isEditable(e.target)) return;
       e.preventDefault();
-      if (phaseRef2.current === "listening") stopListening();
+      if (phaseRef2.current === "listening") handlersRef.current.stopListening();
     };
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
@@ -377,7 +391,6 @@ function JarvisPage() {
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------- TTS settings ---------- */
@@ -680,6 +693,14 @@ function JarvisPage() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.onended = null;
+      audioRef.current = null;
+    }
+    // Release the blob URL so it doesn't leak if the user navigates away
+    // before `speak()` runs again (which would have revoked it).
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
     }
     setPhase("idle");
     setPlayPaused(false);
@@ -695,7 +716,21 @@ function JarvisPage() {
     if (lastSpokenRef.current) await speak(lastSpokenRef.current);
   };
 
+  // Keep handlersRef pointing at the CURRENT versions of these functions so
+  // the keyboard listener (which was bound once on mount) never invokes
+  // stale first-render closures. Critical for voice PTT: without this,
+  // Space-hold recordings post-first-message would call render-0's
+  // sendToChat with empty history, wiping conversation context.
+  handlersRef.current = {
+    startListening,
+    stopListening,
+    cancelRecording,
+    stopPlayback,
+    stopGenerating,
+  };
+
   /* ---------- Orb tap dispatch ---------- */
+
 
   const handleMicClick = () => {
     haptic(12);
