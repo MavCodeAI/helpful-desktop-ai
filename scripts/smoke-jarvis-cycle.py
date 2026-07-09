@@ -24,6 +24,7 @@ import base64
 import struct
 import sys
 from pathlib import Path
+import re
 from playwright.async_api import async_playwright, Route
 
 SHOTS = Path(__file__).parent.parent / ".lovable" / "smoke-shots"
