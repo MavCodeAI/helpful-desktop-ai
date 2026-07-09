@@ -461,7 +461,7 @@ function JarvisPage() {
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3">
                 <History className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">History</span>
               </Button>
             </SheetTrigger>
