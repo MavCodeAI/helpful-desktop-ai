@@ -18,6 +18,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Mic,
+  MicOff,
   Loader2,
   LogOut,
   Volume2,
@@ -747,7 +748,7 @@ function JarvisPage() {
   // Live mic amplitude → volumetric orb density.
   // Passive analyser runs while page is mounted; the recording MediaRecorder
   // uses its own independent stream, so both can coexist.
-  const micLevel = useMicLevel(!!license);
+  const { level: micLevel, active: micActive } = useMicLevel(!!license);
 
   if (!license) return null;
 
@@ -818,6 +819,38 @@ function JarvisPage() {
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Mic activity — reflects the true state of the useMicLevel hook,
+              not user intent. Green pulses with input, dim when hook is down
+              (tab hidden, permission denied, not-yet-granted). */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-label={micActive ? "Microphone active" : "Microphone inactive"}
+            title={micActive ? "Mic active" : "Mic inactive"}
+            className={`inline-flex items-center gap-1.5 rounded-full glass-pill px-2 py-1 transition-colors ${
+              micActive ? "text-emerald-400" : "text-muted-foreground/60"
+            }`}
+          >
+            {micActive ? (
+              <Mic className="w-3.5 h-3.5" aria-hidden="true" />
+            ) : (
+              <MicOff className="w-3.5 h-3.5" aria-hidden="true" />
+            )}
+            <span
+              aria-hidden="true"
+              className={`w-1.5 h-1.5 rounded-full ${
+                micActive
+                  ? "bg-emerald-400 motion-safe:animate-pulse"
+                  : "bg-muted-foreground/40"
+              }`}
+              style={
+                micActive
+                  ? { transform: `scale(${1 + Math.min(micLevel * 1.5, 1.2)})` }
+                  : undefined
+              }
+            />
+          </div>
+
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>

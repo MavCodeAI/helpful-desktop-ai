@@ -17,8 +17,22 @@ import { useEffect, useRef, useState } from "react";
  *  - Idempotent cleanup: safe to call twice, safe under React StrictMode.
  *  - Tab-hidden = fully released mic, not just paused.
  */
-export function useMicLevel(active: boolean): number {
+export interface MicStatus {
+  /** Smoothed RMS amplitude, 0..1. Always 0 when the mic pipeline is down. */
+  level: number;
+  /** True once the mic stream is live, wired to the analyser, and the RAF
+   *  loop is producing samples. False while permission is pending, when the
+   *  tab is hidden, when `active` is false, or after any failure/teardown.
+   *  Use this to drive UI indicators — it reflects reality, not intent. */
+  active: boolean;
+}
+
+export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
+  // Reflects whether the pipeline is truly live (stream open + RAF ticking).
+  // Distinct from `active` (intent): stays false while permission resolves,
+  // when tab is hidden, or after any failure.
+  const [live, setLive] = useState(false);
   // Track visibility so the effect re-runs when the tab hides/returns.
   const [visible, setVisible] = useState(typeof document === "undefined" ? true : !document.hidden);
 
@@ -55,6 +69,7 @@ export function useMicLevel(active: boolean): number {
   useEffect(() => {
     if (!active || !visible) {
       setLevel(0);
+      setLive(false);
       return;
     }
 
@@ -148,8 +163,10 @@ export function useMicLevel(active: boolean): number {
           raf = requestAnimationFrame(loop);
         };
         raf = requestAnimationFrame(loop);
+        setLive(true);
       } catch (err) {
         console.warn("[useMicLevel] mic access failed:", err);
+        setLive(false);
         teardown();
       }
     })();
@@ -158,8 +175,9 @@ export function useMicLevel(active: boolean): number {
       cancelled = true;
       teardown();
       setLevel(0);
+      setLive(false);
     };
   }, [active, visible]);
 
-  return level;
+  return { level, active: live };
 }
