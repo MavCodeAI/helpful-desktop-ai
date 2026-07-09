@@ -163,8 +163,10 @@ export function useMicLevel(active: boolean): MicStatus {
           raf = requestAnimationFrame(loop);
         };
         raf = requestAnimationFrame(loop);
+        setLive(true);
       } catch (err) {
         console.warn("[useMicLevel] mic access failed:", err);
+        setLive(false);
         teardown();
       }
     })();
@@ -173,8 +175,9 @@ export function useMicLevel(active: boolean): MicStatus {
       cancelled = true;
       teardown();
       setLevel(0);
+      setLive(false);
     };
   }, [active, visible]);
 
-  return level;
+  return { level, active: live };
 }
