@@ -35,6 +35,10 @@ export const Route = createFileRoute("/api/stt")({
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Voice service is not configured", { status: 500 });
 
+        // 0. Optional streaming: /api/stt?stream=1 forwards SSE deltas so the
+        //    UI can render the transcript progressively as words arrive.
+        const wantStream = new URL(request.url).searchParams.get("stream") === "1";
+
         // 1. Parse multipart defensively — a bad body should be a 400.
         let inbound: FormData;
         try {
@@ -66,6 +70,7 @@ export const Route = createFileRoute("/api/stt")({
         const name = (file as File).name || "recording.webm";
         forward.append("file", blob, name);
         forward.append("model", "openai/gpt-4o-transcribe");
+        if (wantStream) forward.append("stream", "true");
 
         // 4. Call the upstream gateway — catch network drops separately.
         let upstream: Response;
@@ -83,9 +88,26 @@ export const Route = createFileRoute("/api/stt")({
           });
         }
 
+        if (!upstream.ok) {
+          const errText = await upstream.text().catch(() => "");
+          return new Response(errText || "STT failed", { status: upstream.status });
+        }
+
+        // 5a. Streaming: pipe the SSE body through unchanged so the client
+        //     can read `transcript.text.delta` / `transcript.text.done` events.
+        if (wantStream && upstream.body) {
+          return new Response(upstream.body, {
+            status: 200,
+            headers: {
+              "Content-Type": "text/event-stream",
+              "Cache-Control": "no-cache, no-transform",
+              "X-Accel-Buffering": "no",
+            },
+          });
+        }
+
+        // 5b. Non-streaming: forward JSON body as-is.
         const text = await upstream.text().catch(() => "");
-        if (!upstream.ok) return new Response(text || "STT failed", { status: upstream.status });
-        // Body is already JSON; forward as-is so the client can `res.json()`.
         return new Response(text, {
           status: 200,
           headers: { "Content-Type": "application/json" },
