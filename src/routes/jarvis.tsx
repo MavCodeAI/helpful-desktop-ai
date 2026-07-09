@@ -383,7 +383,7 @@ function JarvisPage() {
     const el = transcriptRef.current;
     if (!el || scrolledUp) return;
     el.scrollTop = el.scrollHeight;
-  }, [partial, messages, scrolledUp]);
+  }, [partial, rtUserPartial, rtAsstPartial, messages, scrolledUp]);
 
   // Track whether the user has scrolled up; if so, show a "scroll to bottom" pill.
   useEffect(() => {
