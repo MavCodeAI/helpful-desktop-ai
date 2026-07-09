@@ -542,7 +542,7 @@ function JarvisPage() {
           await sendToChat(text);
         } catch (e) {
           console.error(e);
-          toast.error("Transcription failed");
+          toast.error(friendlyError(e, "Transcription failed"));
           setPhase("idle");
         }
       };
@@ -551,7 +551,7 @@ function JarvisPage() {
       setPhase("listening");
     } catch (e) {
       console.error(e);
-      toast.error("Microphone access denied");
+      toast.error("Microphone access denied — enable it in browser settings.");
     }
   };
 
