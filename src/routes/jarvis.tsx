@@ -876,7 +876,7 @@ function JarvisPage() {
           if ((e as { name?: string })?.name === "AbortError") {
             trace.finalStatus = "aborted";
             setRtUserPartial("");
-            setPhase("idle");
+            dispatch({ type: "CANCEL" });
             return;
           }
           // Distinguish a network drop (TypeError from fetch) from an HTTP error.
