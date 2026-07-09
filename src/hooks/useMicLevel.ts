@@ -22,11 +22,34 @@ export function useMicLevel(active: boolean): number {
   // Track visibility so the effect re-runs when the tab hides/returns.
   const [visible, setVisible] = useState(typeof document === "undefined" ? true : !document.hidden);
 
+  // Debounce visibility flips: quickly toggling tabs (alt-tab spam, window
+  // switcher previews) would otherwise tear down and re-request the mic on
+  // every event, causing audible glitches, permission-prompt races, and a
+  // flickering OS mic indicator. We wait until the tab has settled in one
+  // state for `DEBOUNCE_MS` before re-running the pipeline effect. Hides
+  // apply almost-immediately (short delay) so we still release the mic
+  // promptly; returns wait longer to avoid restart storms.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const onVis = () => setVisible(!document.hidden);
+    const HIDE_MS = 150;
+    const SHOW_MS = 400;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onVis = () => {
+      if (timer != null) clearTimeout(timer);
+      const nextVisible = !document.hidden;
+      timer = setTimeout(
+        () => {
+          timer = null;
+          setVisible((prev) => (prev === nextVisible ? prev : nextVisible));
+        },
+        nextVisible ? SHOW_MS : HIDE_MS,
+      );
+    };
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      if (timer != null) clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
