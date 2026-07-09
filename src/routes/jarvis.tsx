@@ -610,11 +610,14 @@ function JarvisPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative">
-        <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-2xl">
+      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
+        <h1 className="sr-only">JARVIS Voice Assistant</h1>
+
+        {/* Top zone — mic button sits centered over the orb, kept solid for visibility */}
+        <div className="relative z-10 flex flex-col items-center gap-5 mt-6 sm:mt-16">
           <button
             onClick={handleMicClick}
-            className="relative w-48 h-48 rounded-full border border-jarvis/30 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-[2px]"
+            className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md shadow-[0_0_40px_-8px_theme(colors.jarvis.DEFAULT)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={statusLabel}
           >
             {phase === "listening" && !recPaused && (
@@ -625,24 +628,33 @@ function JarvisPage() {
             )}
             <div className="absolute inset-0 flex items-center justify-center">
               {phase === "thinking" ? (
-                <Loader2 className="w-10 h-10 text-jarvis animate-spin" />
+                <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
               ) : phase === "speaking" ? (
-                <Volume2 className="w-10 h-10 text-jarvis" />
+                <Volume2 className="w-12 h-12 text-jarvis" />
               ) : phase === "listening" ? (
-                <Mic className="w-10 h-10 text-jarvis" />
+                <Mic className="w-12 h-12 text-jarvis" />
               ) : (
-                <MicOff className="w-10 h-10 text-jarvis/70" />
+                <Mic className="w-12 h-12 text-jarvis" />
               )}
             </div>
           </button>
 
-          <p className="text-sm uppercase tracking-[0.3em] text-jarvis/80 jarvis-text-glow">
-            {statusLabel}
-          </p>
+          {/* Status pill — solid background so text is readable over orb */}
+          <div
+            className="px-4 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-jarvis/25"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-jarvis">
+              {statusLabel}
+            </p>
+          </div>
+        </div>
 
-          {/* Voice control cluster — visible only in listening/speaking phases */}
+        {/* Middle zone — control clusters */}
+        <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
           {phase === "listening" && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {recPaused ? (
                 <Button variant="outline" size="sm" onClick={resumeRecording}>
                   <Play className="w-4 h-4 mr-1.5" /> Resume
@@ -662,7 +674,7 @@ function JarvisPage() {
           )}
 
           {phase === "speaking" && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {playPaused ? (
                 <Button variant="outline" size="sm" onClick={resumePlayback}>
                   <Play className="w-4 h-4 mr-1.5" /> Resume
@@ -682,38 +694,37 @@ function JarvisPage() {
           )}
 
           {phase === "idle" && lastSpokenRef.current && (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={restartPlayback}>
-                <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
-              </Button>
+            <Button variant="ghost" size="sm" onClick={restartPlayback}>
+              <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
+            </Button>
+          )}
+        </div>
+
+        {/* Bottom zone — transcript pinned to the bottom */}
+        <div className="relative z-10 w-full max-w-2xl space-y-3 max-h-[240px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4">
+          {messages.length === 0 && !partial && (
+            <p className="text-center text-sm text-muted-foreground italic">
+              Say hello to begin — tap the mic and speak.
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={`text-sm ${m.role === "user" ? "text-foreground" : "text-jarvis"}`}
+            >
+              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">
+                {m.role === "user" ? "You" : "Jarvis"}
+              </span>
+              {m.content}
+            </div>
+          ))}
+          {partial && (
+            <div className="text-sm text-jarvis">
+              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">Jarvis</span>
+              {partial}
+              <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
             </div>
           )}
-
-          <div className="w-full space-y-3 max-h-[280px] overflow-y-auto rounded-xl border border-jarvis/15 bg-card/40 backdrop-blur-sm p-4">
-            {messages.length === 0 && !partial && (
-              <p className="text-center text-sm text-muted-foreground italic">
-                Say hello to begin.
-              </p>
-            )}
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`text-sm ${m.role === "user" ? "text-foreground" : "text-jarvis"}`}
-              >
-                <span className="text-xs uppercase tracking-widest opacity-60 mr-2">
-                  {m.role === "user" ? "You" : "Jarvis"}
-                </span>
-                {m.content}
-              </div>
-            ))}
-            {partial && (
-              <div className="text-sm text-jarvis">
-                <span className="text-xs uppercase tracking-widest opacity-60 mr-2">Jarvis</span>
-                {partial}
-                <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </main>
