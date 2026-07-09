@@ -195,6 +195,38 @@ function OrbWaveBars({ level, hue }: { level: number; hue: number }) {
   );
 }
 
+/** Three-dot typing/thinking indicator. Hue-driven to match preview caption
+ *  palette; bounces gently so it reads as "waiting" without being noisy.
+ *  Respects reduced motion (falls back to a soft pulse). */
+function TypingDots({ hue, label }: { hue: number; label?: string }) {
+  const reduced = useReducedMotion();
+  const color = `hsl(${hue} 85% 70%)`;
+  const glow = `hsl(${hue} 90% 60% / 0.55)`;
+  return (
+    <div
+      className="flex items-center gap-1.5"
+      role="status"
+      aria-live="polite"
+      aria-label={label ?? "Loading"}
+    >
+      {[0, 160, 320].map((delay) => (
+        <span
+          key={delay}
+          className={`inline-block w-1.5 h-1.5 rounded-full ${
+            reduced ? "motion-safe:animate-pulse" : "motion-safe:animate-bounce"
+          }`}
+          style={{
+            background: color,
+            boxShadow: `0 0 6px ${glow}`,
+            animationDelay: `${delay}ms`,
+            animationDuration: "1s",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /** Small circular button that flanks the orb (mic on the left, stop on the
  *  right). Mic variant paints a mic-level arc around itself. */
 function OrbSideButton({
@@ -1781,11 +1813,7 @@ function JarvisPage() {
                         <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
                     ) : (
-                      <div className="font-sans text-sm leading-relaxed text-white/60 flex items-center gap-1.5">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-300/80 motion-safe:animate-pulse" style={{ animationDelay: "0ms" }} />
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-300/80 motion-safe:animate-pulse" style={{ animationDelay: "180ms" }} />
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-300/80 motion-safe:animate-pulse" style={{ animationDelay: "360ms" }} />
-                      </div>
+                      <TypingDots hue={PHASE_HUE.listening} label="Listening" />
                     )}
                   </div>
                 )}
@@ -1798,11 +1826,8 @@ function JarvisPage() {
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(48 90% 70%)" }}>
                       Thinking
                     </div>
-                    <div className="font-sans text-sm leading-relaxed text-white/70 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "0ms" }} />
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "180ms" }} />
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "360ms" }} />
-                    </div>
+                    <TypingDots hue={PHASE_HUE.thinking} label="Thinking" />
+
                   </div>
                 )}
 
@@ -1820,11 +1845,8 @@ function JarvisPage() {
                         <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
                     ) : (
-                      <div className="font-sans text-sm leading-relaxed text-white/60 flex items-center gap-1.5">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-300/80 motion-safe:animate-pulse" style={{ animationDelay: "0ms" }} />
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-300/80 motion-safe:animate-pulse" style={{ animationDelay: "180ms" }} />
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-300/80 motion-safe:animate-pulse" style={{ animationDelay: "360ms" }} />
-                      </div>
+                      <TypingDots hue={PHASE_HUE.speaking} label="Speaking" />
+
                     )}
                   </div>
                 )}
