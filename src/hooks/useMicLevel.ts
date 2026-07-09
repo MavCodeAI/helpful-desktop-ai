@@ -69,6 +69,7 @@ export function useMicLevel(active: boolean): MicStatus {
   useEffect(() => {
     if (!active || !visible) {
       setLevel(0);
+      setLive(false);
       return;
     }
 
