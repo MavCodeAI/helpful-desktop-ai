@@ -740,6 +740,7 @@ function JarvisPage() {
       // Replace onstop with a no-op teardown to skip STT.
       mediaRef.current.onstop = () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
+        mediaRef.current = null;
         setPhase("idle");
         setRecPaused(false);
         setRecStartedAt(null);
