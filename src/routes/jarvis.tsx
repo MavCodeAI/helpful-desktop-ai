@@ -912,7 +912,6 @@ function JarvisPage() {
           // so the trailing "You" bubble simply drops its caret in place.
           setRtUserPartial(text);
           await sendToChat(text);
-          await sendToChat(text);
         } catch (e) {
           // User-initiated cancel (Escape / stopGenerating) — silent teardown.
           if ((e as { name?: string })?.name === "AbortError") {
