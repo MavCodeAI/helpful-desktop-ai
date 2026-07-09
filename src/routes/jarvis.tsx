@@ -640,6 +640,9 @@ function JarvisPage() {
               )}
             </div>
           </button>
+          </div>
+
+
 
           {/* Status pill — solid background so text is readable over orb */}
           <div
