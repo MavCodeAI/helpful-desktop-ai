@@ -54,3 +54,15 @@ src/features/jarvis-ui/
 - **Playwright smokes** for PTT / Auto-VAD / Realtime — spec sketch:
   reproduce a full voice cycle against the live preview and assert the
   orb reaches `idle` again within N seconds.
+
+## Post-lazy-markdown (2026-07-09)
+
+| Chunk                     | Before | After  | Δ      |
+| ------------------------- | ------ | ------ | ------ |
+| jarvis (initial)          | 339 KB | 189 KB | −150 KB (−44%) |
+| react-markdown (on-demand)| —      | 110 KB | new lazy chunk |
+| remark-gfm (on-demand)    | —      |  38 KB | new lazy chunk |
+
+Users who never render assistant text (idle bounce, license gate, error
+paths) never pay the markdown cost. First message triggers a single
+prefetch (~55 KB gzipped) that then caches for the session.
