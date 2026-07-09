@@ -785,7 +785,7 @@ function JarvisPage() {
               {phase === "thinking" ? (
                 <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
               ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} />
+                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
               ) : (
                 <Mic className="w-11 h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
               )}
