@@ -859,7 +859,7 @@ function JarvisPage() {
             aria-live="polite"
             aria-atomic="true"
             title={micActive ? "Mic active" : "Mic inactive"}
-            className={`hidden sm:inline-flex items-center gap-1.5 rounded-full glass-pill px-2 py-1 transition-colors ${
+            className={`hidden sm:inline-flex items-center gap-1.5 rounded-full glass-pill px-2.5 min-h-11 min-w-11 transition-colors ${
               micActive ? "text-emerald-400" : "text-muted-foreground/60"
             }`}
           >
