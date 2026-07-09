@@ -1549,9 +1549,33 @@ function JarvisPage() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <label className="text-xs uppercase tracking-widest text-muted-foreground">
-                      Speed
+                      Speed <span className="text-foreground/40 normal-case tracking-normal">— {paceLabel(tts.speed)}</span>
                     </label>
                     <span className="text-xs text-jarvis font-mono">{tts.speed.toFixed(2)}×</span>
+                  </div>
+                  {/* Preset chips — one-tap coarse control. The slider below
+                      stays available for fine-tuning. Highlighted chip is
+                      whichever preset is closest to the current speed. */}
+                  <div className="flex gap-1.5 mb-3" role="group" aria-label="Speed presets">
+                    {SPEED_PRESETS.map((p) => {
+                      const selected = paceLabel(tts.speed) === p.label;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => updateTts({ speed: p.value })}
+                          aria-pressed={selected}
+                          className={`flex-1 min-h-9 rounded-full text-[11px] font-mono tracking-wider border transition-colors ${
+                            selected
+                              ? "bg-jarvis/20 border-jarvis/60 text-jarvis"
+                              : "bg-white/[0.02] border-white/10 text-foreground/70 hover:bg-white/[0.06] hover:text-foreground"
+                          }`}
+                        >
+                          {p.label}
+                          <span className="ml-1 text-[9px] opacity-70">{p.value}×</span>
+                        </button>
+                      );
+                    })}
                   </div>
                   <Slider
                     min={0.5}
@@ -1561,6 +1585,7 @@ function JarvisPage() {
                     onValueChange={([v]) => updateTts({ speed: v })}
                   />
                 </div>
+
 
                 <div>
                   <div className="flex justify-between mb-2">
