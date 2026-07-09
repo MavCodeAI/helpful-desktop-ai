@@ -50,6 +50,14 @@ export const INITIAL_VOICE_STATE: VoiceState = {
 };
 
 export type VoiceEvent =
+  /**
+   * Escape hatch — set phase directly. Used by the current JarvisPage
+   * during migration so we can adopt the reducer surface without also
+   * rewriting every transition site. Prefer the semantic events below
+   * for new code so invalid transitions become no-ops instead of silent
+   * jumps between unrelated states.
+   */
+  | { type: "SET_PHASE"; phase: Phase }
   | { type: "START_LISTENING" }
   | { type: "PAUSE_RECORDING" }
   | { type: "RESUME_RECORDING" }
@@ -63,6 +71,9 @@ export type VoiceEvent =
 
 export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
   switch (event.type) {
+    case "SET_PHASE":
+      if (state.phase === event.phase) return state;
+      return { ...state, phase: event.phase, error: null };
     case "START_LISTENING":
       if (state.phase !== "idle") return state;
       return { phase: "listening", recPaused: false, playPaused: false, error: null };

@@ -29,27 +29,34 @@ intentionally deferred.
 
 7. **`RealtimeClient` lazy-loaded** — split into its own `realtime-client-*.js`
    chunk (~3.6 KB), fetched on first realtime click via `await import()`.
-   Non-realtime users (PTT / Auto-VAD) no longer pay the WebRTC code cost
-   at initial load.
-8. **`/api/chat`, `/api/stt`, `/api/tts` migrated to `gatewayFetch()`** —
-   upstream URL, auth header, and `LOVABLE_API_KEY` read now live in one
-   place (`src/lib/server/gateway-client.ts`). Wire format unchanged
-   (Bearer auth, plain-text error bodies) so client parsing is untouched.
+8. **`/api/{chat,stt,tts}` migrated to `gatewayFetch()`** — upstream URL,
+   auth header, and `LOVABLE_API_KEY` read live in one place. Wire format
+   unchanged.
+9. **Playwright smoke** — `scripts/smoke-jarvis.py` seeds a valid license
+   in localStorage, loads `/jarvis`, asserts the `TAP TO START` caption
+   (from `PHASE_CAPTION.idle`) is visible, buttons render, no pageerror.
+   Run: `python3 ./scripts/smoke-jarvis.py`.
+10. **`voiceReducer` wired into `JarvisPage`** — `useState<Phase>` replaced
+    with `useReducer(voiceReducer, INITIAL_VOICE_STATE)`. Existing 22
+    `setPhase(x)` sites keep working (adapter dispatches `SET_PHASE`), so
+    behavior is 1:1. Reducer now has 10 vitest cases (added SET_PHASE
+    escape-hatch + referential-stability tests). New transition sites
+    should prefer semantic events (`dispatch({ type: "START_LISTENING" })`)
+    so invalid jumps become tested no-ops.
 
 ## Deferred (each safe on its own)
 
-- **Adopt `voiceReducer` inside `JarvisPage`.** Reducer + 8 tests shipped;
-  the ~2.4k-line component still uses `useState<Phase>` (97 `phase`/
-  `setPhase` refs). Recommended sequence:
-  1. Add Playwright smokes for PTT / Auto-VAD / Realtime.
-  2. Swap one transition family at a time (recorder → TTS → realtime).
-  3. Delete `setPhase`, expose only `dispatch`.
-- **Playwright smoke tests** for the three voice flows — asserts each
-  flow returns to `idle` and shows no error toast.
+- **Convert `setPhase` → semantic events site-by-site.** Adapter is in
+  place; each call site can migrate on its own PR, e.g.
+  `setPhase("thinking")` after a recorder stop → `dispatch({ type: "STOP_LISTENING" })`.
+  Guardrail is the smoke script + reducer tests.
+- **Full voice-cycle smoke** — mock `/api/{stt,chat,tts}` via Playwright
+  `route.fulfill()`, feed a fake audio blob through
+  `--use-file-for-fake-audio-capture`, assert the phase machine returns
+  to `idle` within N seconds.
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
-  `gatewayFetch`. If we ever proxy realtime through Lovable, migrate it
-  then.
+  `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.
 
 Elon-style rule: don't touch what isn't demonstrably slow. Each deferred
 item has a measurable payoff (bundle size, LOC, test coverage) — tackle
