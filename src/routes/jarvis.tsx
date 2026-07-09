@@ -99,7 +99,7 @@ import { LiveWaveform } from "@/features/jarvis-ui/LiveWaveform";
 import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
 import { MarkdownMessage, prefetchMarkdown } from "@/features/jarvis-ui/MarkdownMessage";
-import { classifyMicError, queryMicPermission, watchMicPermission } from "@/lib/mic-permission";
+import { classifyMicError } from "@/lib/mic-permission";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
