@@ -654,7 +654,7 @@ function JarvisPage() {
           toast.error("Empty response — please retry.");
           setMessages(messages);
           setLastFailed(userText);
-          setPhase("idle");
+          dispatch({ type: "CANCEL" });
         }
       } catch (e: unknown) {
         if ((e as { name?: string })?.name === "AbortError") {
