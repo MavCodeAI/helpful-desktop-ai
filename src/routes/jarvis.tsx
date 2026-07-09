@@ -965,60 +965,15 @@ function JarvisPage() {
 
         </div>
 
-        {/* Middle zone — control clusters */}
+        {/* Middle zone — only idle-state replay affordance now; active controls live above the composer. */}
         <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
-          {phase === "listening" && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {recPaused ? (
-                <Button variant="outline" size="sm" onClick={resumeRecording}>
-                  <Play className="w-4 h-4 mr-1.5" /> Resume
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={pauseRecording}>
-                  <Pause className="w-4 h-4 mr-1.5" /> Pause
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={stopListening}>
-                <Square className="w-4 h-4 mr-1.5" /> Send
-              </Button>
-              <Button variant="ghost" size="sm" onClick={cancelRecording}>
-                Cancel
-              </Button>
-            </div>
-          )}
-
-          {phase === "speaking" && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {playPaused ? (
-                <Button variant="outline" size="sm" onClick={resumePlayback}>
-                  <Play className="w-4 h-4 mr-1.5" /> Resume
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={pausePlayback}>
-                  <Pause className="w-4 h-4 mr-1.5" /> Pause
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={restartPlayback}>
-                <RotateCcw className="w-4 h-4 mr-1.5" /> Restart
-              </Button>
-              <Button variant="outline" size="sm" onClick={stopPlayback}>
-                <Square className="w-4 h-4 mr-1.5" /> Stop
-              </Button>
-            </div>
-          )}
-
-          {phase === "thinking" && (
-            <Button variant="outline" size="sm" onClick={stopGenerating}>
-              <Square className="w-4 h-4 mr-1.5" /> Stop generating
-            </Button>
-          )}
-
           {phase === "idle" && lastSpokenRef.current && (
             <Button variant="ghost" size="sm" onClick={restartPlayback}>
               <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
             </Button>
           )}
         </div>
+
 
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
         <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3">
