@@ -1515,7 +1515,7 @@ function JarvisPage() {
               return (
                 <div
                   className={`flex flex-col items-center shrink-0 transition-all duration-500 px-4 sm:px-6 ${
-                    isEmpty ? "gap-6 pt-10 sm:pt-14 pb-4" : "gap-3 pt-6 pb-3"
+                    isEmpty ? "gap-4 pt-6 sm:pt-10 lg:pt-14 pb-4" : "gap-3 pt-6 pb-3"
                   }`}
                 >
                   <div className="relative flex items-center justify-center gap-8 sm:gap-14">
