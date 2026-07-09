@@ -583,6 +583,14 @@ function JarvisPage() {
   const handleTextSend = () => {
     const text = composerText.trim();
     if (!text || phase !== "idle") return;
+    // Enforce the same cap the server enforces, but surface it here so the
+    // user doesn't wait for a 400 round-trip to learn their draft is too big.
+    if (text.length > MAX_MESSAGE_CHARS) {
+      toast.error("Message is too long", {
+        description: `Please keep it under ${MAX_MESSAGE_CHARS.toLocaleString()} characters.`,
+      });
+      return;
+    }
     setComposerText("");
     haptic(8);
     void sendToChat(text);
