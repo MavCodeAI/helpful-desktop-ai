@@ -828,6 +828,23 @@ function JarvisPage() {
 
   const handleMicClick = () => {
     haptic(12);
+    // Realtime: orb is a connect/disconnect toggle. Referenced via ref because
+    // connectRealtime is defined below in source order but hoisted at runtime.
+    if (mode === "realtime") {
+      if (realtimeOn || realtimeRef.current) {
+        disconnectRealtimeRef.current?.();
+      } else {
+        void connectRealtimeRef.current?.();
+      }
+      return;
+    }
+    // VAD: orb pauses/resumes hands-free mode by switching modes visually,
+    // but the actual auto-listen is driven by the mic level effect above.
+    // Tapping while listening = cancel current utterance.
+    if (mode === "vad" && phase === "listening") {
+      cancelRecording();
+      return;
+    }
     if (phase === "listening") {
       stopListening();
     } else if (phase === "idle") {
@@ -843,6 +860,11 @@ function JarvisPage() {
       stopGenerating();
     }
   };
+
+  // Forward refs so handleMicClick (defined above the realtime callbacks) can
+  // reach them without hoisting issues under TanStack's code-splitter.
+  const connectRealtimeRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const disconnectRealtimeRef = useRef<() => void>(() => {});
 
   /* ---------- Thread actions ---------- */
 
