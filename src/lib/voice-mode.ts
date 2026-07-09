@@ -13,14 +13,8 @@ export type VoiceMode = "ptt" | "vad" | "realtime";
 const KEY = "jarvis.voice.mode.v1";
 
 export function loadVoiceMode(): VoiceMode {
-  if (typeof window === "undefined") return "ptt";
-  try {
-    const v = localStorage.getItem(KEY);
-    if (v === "vad" || v === "realtime" || v === "ptt") return v;
-  } catch {
-    /* private mode / access denied — fall through to default */
-  }
-  return "ptt";
+  // Auto-VAD is the only supported mode right now.
+  return "vad";
 }
 
 export function saveVoiceMode(mode: VoiceMode): void {
