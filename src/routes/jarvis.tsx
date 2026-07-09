@@ -86,8 +86,8 @@ import {
 // HologramSafe removed — orb visuals are now inline in the preview-parity cluster below.
 import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+// Markdown is lazy-loaded via MarkdownMessage — keeps ~180 KB of
+// react-markdown/remark/mdast/micromark out of the initial jarvis chunk.
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { haptic } from "@/lib/haptic";
 import { friendlyError, sttErrorDetail, type SttAttempt } from "@/lib/friendly-error";
@@ -105,6 +105,7 @@ import { OrbSideButton } from "@/features/jarvis-ui/OrbSideButton";
 import { LiveWaveform } from "@/features/jarvis-ui/LiveWaveform";
 import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
+import { MarkdownMessage } from "@/features/jarvis-ui/MarkdownMessage";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -2354,7 +2355,7 @@ function JarvisPage() {
                             {it.role === "user" ? "You" : "Assistant"}
                           </div>
                           <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] sm:[&_code]:text-xs [&_code]:break-words [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:break-all [&_a]:text-jarvis">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{it.content}</ReactMarkdown>
+                            <MarkdownMessage>{it.content}</MarkdownMessage>
                           </div>
                         </div>
                       );
@@ -2412,7 +2413,7 @@ function JarvisPage() {
                     </div>
                     {partial || rtAsstPartial ? (
                       <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] sm:[&_code]:text-xs [&_code]:break-words [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_a]:underline [&_a]:break-all [&_a]:text-jarvis">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
+                        <MarkdownMessage>{partial || rtAsstPartial}</MarkdownMessage>
                         <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
                     ) : (
