@@ -547,6 +547,9 @@ function JarvisPage() {
     if (!text || phase !== "idle") return;
     setComposerText("");
     haptic(8);
+    // Keep focus in the composer so the user can immediately keep typing —
+    // otherwise browsers move focus to the clicked/pressed Submit button.
+    queueMicrotask(() => composerRef.current?.focus());
     void sendToChat(text);
   };
 
