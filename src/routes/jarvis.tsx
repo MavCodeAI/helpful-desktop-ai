@@ -669,14 +669,16 @@ function JarvisPage() {
   }, [scrolledUp]);
 
 
-  // Cycle "Reading → Analyzing → Composing" while thinking (before first token).
   useEffect(() => {
     if (phase !== "thinking" || partial) {
       setThinkStageIdx(0);
+      setThinkElapsedMs(0);
       return;
     }
-    const id = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
-    return () => clearInterval(id);
+    const started = Date.now();
+    const stageId = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
+    const tickId = setInterval(() => setThinkElapsedMs(Date.now() - started), 500);
+    return () => { clearInterval(stageId); clearInterval(tickId); };
   }, [phase, partial]);
 
   /* ---------- bootstrap ---------- */
