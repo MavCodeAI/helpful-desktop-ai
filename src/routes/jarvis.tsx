@@ -598,7 +598,7 @@ function JarvisPage() {
       setMessages(next);
       setRtUserPartial("");
       setLastFailed(null);
-      setPhase("thinking");
+      dispatch({ type: "START_THINKING" });
       const controller = new AbortController();
       abortRef.current = controller;
       let full = "";
