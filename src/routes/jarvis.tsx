@@ -1150,7 +1150,7 @@ function JarvisPage() {
               if (phase === "thinking") stopGenerating();
               else handleTextSend();
             }}
-            className="mt-3 flex items-end gap-2 rounded-2xl border border-jarvis/25 bg-background/70 backdrop-blur-md p-2 focus-within:border-jarvis/60 transition-colors"
+            className="mt-4 flex items-end gap-2 rounded-2xl border border-jarvis/30 bg-background/60 backdrop-blur-xl p-2 shadow-[0_0_0_1px_oklch(0.78_0.16_215/0.05),0_20px_40px_-20px_oklch(0.05_0.03_240/0.6)] focus-within:border-jarvis/70 focus-within:shadow-[0_0_0_1px_oklch(0.78_0.16_215/0.4),0_0_40px_-10px_oklch(0.78_0.16_215/0.3)] transition-all"
           >
             {/* Mic button — inline, leading position */}
             <button
