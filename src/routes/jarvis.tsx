@@ -1015,12 +1015,12 @@ function JarvisPage() {
         </div>
 
         {/* Status metadata rail — visible identity for the assistant */}
-        <div className="hidden lg:flex flex-col gap-3 text-center">
-          <div className="inline-flex items-center justify-center gap-2 mx-auto rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
+        <div className="flex flex-col gap-2 lg:gap-3 text-center items-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
             <span className={`w-1.5 h-1.5 rounded-full ${phase === "idle" ? "bg-jarvis/70" : phase === "listening" ? "bg-emerald-400 motion-safe:animate-pulse" : phase === "speaking" ? "bg-jarvis motion-safe:animate-pulse" : "bg-amber-400 motion-safe:animate-pulse"}`} />
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{statusLabel}</span>
           </div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
+          <div className="hidden lg:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
             Voice · <span className="text-jarvis/80">{tts.voice.split("-").pop() || "auto"}</span>
           </div>
         </div>
