@@ -1199,7 +1199,7 @@ function JarvisPage() {
     client.on((e) => {
       if (e.type === "connected") {
         setRealtimeOn(true);
-        setPhase("listening");
+        dispatch({ type: "REALTIME_LIVE" });
         toast.success("Live connection open", { duration: 1500 });
       } else if (e.type === "disconnected") {
         setRealtimeOn(false);
