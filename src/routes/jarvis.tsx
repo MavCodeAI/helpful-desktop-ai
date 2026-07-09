@@ -843,6 +843,48 @@ function JarvisPage() {
     };
   }, []);
 
+  // First-run coachmark — one-shot toast so a new user knows what the orb
+  // does before tapping. Persisted flag prevents re-showing on every visit.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (localStorage.getItem("jarvis:coachmark:v1")) return;
+      const t = setTimeout(() => {
+        toast("Tap the orb to talk", {
+          description:
+            "Hold Space to speak, release to send. Press Esc to cancel. Tap orb again while I'm speaking to interrupt.",
+          duration: 8000,
+        });
+        localStorage.setItem("jarvis:coachmark:v1", "1");
+      }, 900);
+      return () => clearTimeout(t);
+    } catch { /* localStorage blocked — skip */ }
+  }, []);
+
+  // "?" opens a shortcut cheat-sheet toast so keybindings are discoverable
+  // without cluttering the visible UI.
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null) => {
+      const t = el as HTMLElement | null;
+      if (!t) return false;
+      const tag = t.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isEditable(e.target)) return;
+      e.preventDefault();
+      toast("Keyboard shortcuts", {
+        description:
+          "Space — hold to talk\nEsc — cancel current phase\nTap orb — start / send / interrupt\n? — show this sheet",
+        duration: 6000,
+      });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+
   /* ---------- TTS settings ---------- */
 
   const updateTts = (patch: Partial<TTSSettings>) => {
@@ -1243,7 +1285,12 @@ function JarvisPage() {
           toast.error(detail.title, {
             description: `${detail.cause}\n${fileLine}\n→ ${detail.next}`,
             duration: 10000,
+            action: {
+              label: "Retry",
+              onClick: () => { void startListening(); },
+            },
           });
+
           setPhase("idle");
         } finally {
           trace.ms = Math.round(performance.now() - sttT0);
@@ -1812,7 +1859,33 @@ function JarvisPage() {
             />
           </div>
 
+          {/* Persistent mode badge — makes the active voice pipeline visible
+              at a glance instead of hiding it behind transient toasts. */}
+          <div
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full glass-pill px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
+            title={
+              mode === "realtime"
+                ? realtimeOn ? "Realtime WebRTC session active" : "Realtime mode — not yet connected"
+                : "Classic pipeline (record → STT → chat → TTS)"
+            }
+          >
+            <span
+              aria-hidden="true"
+              className={`h-1.5 w-1.5 rounded-full ${
+                mode === "realtime"
+                  ? realtimeOn
+                    ? "bg-emerald-400 motion-safe:animate-pulse"
+                    : "bg-amber-400"
+                  : "bg-jarvis"
+              }`}
+            />
+            <span className={mode === "realtime" ? "text-jarvis" : "text-foreground/80"}>
+              {mode === "realtime" ? "Realtime" : "Voice"}
+            </span>
+          </div>
+
           {/* History drawer */}
+
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -2337,12 +2410,43 @@ function JarvisPage() {
                     {phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}
                   </div>
 
+                  {/* Speaking phase — visible barge-in hint. The interrupt
+                      gesture existed but was undiscoverable. */}
+                  {phase === "speaking" && (
+                    <div className="text-[10px] sm:text-[11px] font-medium text-foreground/60 motion-safe:animate-fade-in">
+                      Tap the orb to interrupt
+                    </div>
+                  )}
+
+                  {/* Empty-state sample prompts — give a new user something to
+                      try instead of a silent orb. Tapping a chip commits it
+                      straight into the chat pipeline. */}
+                  {isEmpty && phase === "idle" && (
+                    <div className="flex flex-wrap justify-center gap-2 max-w-md motion-safe:animate-fade-in">
+                      {[
+                        "What can you do?",
+                        "Summarise today's news",
+                        "Help me brainstorm a startup idea",
+                      ].map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => { void sendToChat(prompt); }}
+                          className="glass-pill rounded-full px-3 py-1.5 text-xs text-foreground/80 hover:text-foreground hover:bg-white/[0.08] transition-colors border border-white/10"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
                     {announcedLabel}
                   </div>
                 </div>
               );
             })()}
+
 
             {/* Spacer to push controls to bottom (preview-parity: no welcome/chips) */}
             <div className="flex-1 min-h-0" />
