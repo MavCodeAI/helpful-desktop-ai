@@ -1774,23 +1774,6 @@ function JarvisPage() {
 
 
 
-                {lastFailed && phase === "idle" && (
-                  <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
-                    <span className="text-destructive">Last message failed to send.</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-10 sm:h-7 text-xs px-3"
-                      onClick={() => {
-                        const t = lastFailed;
-                        setLastFailed(null);
-                        void sendToChat(t);
-                      }}
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" /> Retry
-                    </Button>
-                  </div>
-                )}
               </>
             )}
           </aside>
