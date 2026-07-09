@@ -663,7 +663,7 @@ function JarvisPage() {
             ...next,
             { role: "assistant", content: (full.trim() || "_(no response)_") + " _(stopped)_" },
           ]);
-          setPhase("idle");
+          dispatch({ type: "CANCEL" });
           return;
         }
         console.error(e);
