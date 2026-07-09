@@ -887,14 +887,31 @@ function JarvisPage() {
     // and bails before the setPhase("idle") from stopPlayback commits.
     if (mediaRef.current) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Tight constraints — mono @ 16 kHz + AEC/NS shrinks the STT upload
+      // ~4× vs stereo/48kHz defaults without hurting speech recognition,
+      // so the round-trip to Whisper feels noticeably snappier.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
       const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
-      const rec = new MediaRecorder(stream, { mimeType: mime });
+      // 24 kbps mono Opus is transparent for speech; the smaller blob means
+      // the POST body is done uploading before the recorder even flushes,
+      // shaving hundreds of ms off perceived end-to-end latency.
+      const rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 24000 });
       mediaRef.current = rec;
       chunksRef.current = [];
       setRecPaused(false);
 
+      // 100 ms timeslice → the browser flushes small chunks continuously
+      // instead of holding one giant blob until stop(), so the upload can
+      // start streaming rather than block on rec.onstop.
       rec.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
 
       rec.onstop = async () => {
