@@ -30,7 +30,9 @@ import {
   Plus,
   Trash2,
   ArrowDown,
+  SendHorizontal,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
