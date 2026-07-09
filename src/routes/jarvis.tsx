@@ -445,7 +445,7 @@ function JarvisPage() {
   const statusLabel = {
     idle: "Ready. Tap to speak.",
     listening: recPaused ? "Paused" : "Listening…",
-    thinking: "Processing…",
+    thinking: partial ? "Responding…" : "Thinking…",
     speaking: playPaused ? "Paused" : "Speaking…",
   }[phase];
 
