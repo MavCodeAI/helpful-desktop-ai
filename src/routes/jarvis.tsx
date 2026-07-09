@@ -875,7 +875,7 @@ function JarvisPage() {
                 size="icon"
                 aria-label="Conversation history"
                 title="History"
-                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full"
+                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 rounded-full"
               >
                 <History className="w-4 h-4" />
               </Button>
@@ -930,7 +930,7 @@ function JarvisPage() {
                 size="icon"
                 aria-label="Voice settings"
                 title="Voice"
-                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full"
+                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 rounded-full"
               >
                 <Settings className="w-4 h-4" />
               </Button>
@@ -1152,7 +1152,7 @@ function JarvisPage() {
                             void sendToChat(text);
                           }}
                           disabled={phase !== "idle"}
-                          className={`rounded-full text-xs sm:text-[13px] px-3.5 min-h-11 sm:min-h-9 inline-flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
+                          className={`rounded-full text-xs sm:text-[13px] px-3.5 min-h-11 inline-flex items-center transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
                             featured
                               ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
                               : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
