@@ -776,6 +776,18 @@ function JarvisPage() {
     speaking: playPaused ? "Paused" : "Speaking…",
   }[phase];
 
+  // Debounced announcement — visual statusLabel updates immediately, but the
+  // screen-reader live region only speaks after the phase has been stable for
+  // ~450ms. Rapid transitions (idle→listening→idle during a hot-key stutter,
+  // or thinking-stage cycling) collapse into a single announcement so VO/TB
+  // don't queue overlapping speech.
+  const [announcedLabel, setAnnouncedLabel] = useState(statusLabel);
+  useEffect(() => {
+    const t = setTimeout(() => setAnnouncedLabel(statusLabel), 450);
+    return () => clearTimeout(t);
+  }, [statusLabel]);
+
+
   return (
     <main
       className="flex flex-col relative overflow-hidden"
