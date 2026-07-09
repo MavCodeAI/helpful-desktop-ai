@@ -790,11 +790,18 @@ function JarvisPage() {
     if (phase === "listening") cancelRecording();
     if (phase === "speaking") stopPlayback();
     const t = createThread();
-    const list = upsertThread(t);
-    setThreads(list);
-    setActiveId(t.id);
-    setMessages([]);
-    setPartial("");
+    try {
+      const list = upsertThread(t);
+      setThreads(list);
+      setActiveId(t.id);
+      setMessages([]);
+      setPartial("");
+    } catch (e) {
+      console.error("[jarvis] newConversation failed", e);
+      toast.error(
+        e instanceof Error ? e.message : "Couldn't start a new conversation.",
+      );
+    }
   };
 
   const openThread = (id: string) => {
@@ -808,19 +815,26 @@ function JarvisPage() {
   };
 
   const removeThread = (id: string) => {
-    const list = deleteThread(id);
-    if (list.length === 0) {
-      const t = createThread();
-      const seeded = upsertThread(t);
-      setThreads(seeded);
-      setActiveId(t.id);
-      setMessages([]);
-    } else {
-      setThreads(list);
-      if (id === activeId) {
-        setActiveId(list[0].id);
-        setMessages(list[0].messages);
+    try {
+      const list = deleteThread(id);
+      if (list.length === 0) {
+        const t = createThread();
+        const seeded = upsertThread(t);
+        setThreads(seeded);
+        setActiveId(t.id);
+        setMessages([]);
+      } else {
+        setThreads(list);
+        if (id === activeId) {
+          setActiveId(list[0].id);
+          setMessages(list[0].messages);
+        }
       }
+    } catch (e) {
+      console.error("[jarvis] removeThread failed", e);
+      toast.error(
+        e instanceof Error ? e.message : "Couldn't delete that conversation.",
+      );
     }
   };
 
