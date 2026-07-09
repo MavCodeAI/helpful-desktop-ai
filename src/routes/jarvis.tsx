@@ -1178,9 +1178,18 @@ function JarvisPage() {
           setRtUserPartial("");
           const ex = e as { sttStatus?: number; sttBody?: string; name?: string };
           const detail = sttErrorDetail(ex.sttStatus ?? null, ex.sttBody ?? "", e);
+          // Attach the actually-uploaded MIME + byte count so the user sees
+          // immediately whether the browser captured audio, what container
+          // was sent, and how big it was.
+          const sentType = uploadBlob.type || "unknown";
+          const originalType = mime || "unknown";
+          const fileLine =
+            uploadName === "recording.wav" && originalType !== sentType
+              ? `File: ${sentType} · ${uploadBlob.size.toLocaleString()} bytes (transcoded from ${originalType})`
+              : `File: ${sentType} · ${uploadBlob.size.toLocaleString()} bytes`;
           toast.error(detail.title, {
-            description: `${detail.cause}\n→ ${detail.next}`,
-            duration: 8000,
+            description: `${detail.cause}\n${fileLine}\n→ ${detail.next}`,
+            duration: 10000,
           });
           setPhase("idle");
         } finally {
