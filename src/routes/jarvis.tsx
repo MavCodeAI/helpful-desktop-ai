@@ -33,8 +33,7 @@ import {
   SendHorizontal,
   Radio,
 } from "lucide-react";
-import { VoiceModeToggle } from "@/components/VoiceModeToggle";
-import { loadVoiceMode, saveVoiceMode, VOICE_MODE_META, type VoiceMode } from "@/lib/voice-mode";
+import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
