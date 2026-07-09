@@ -1120,7 +1120,7 @@ function JarvisPage() {
             // don't retry, still surface the original error text below.
             peekBody = await res.clone().text().catch(() => "");
           }
-          if (!res.ok && needsTranscodeRetry(res.status, peekBody)) {
+          if (!res.ok && needsTranscodeRetry(res.status, peekBody) && uploadName !== "recording.wav") {
             console.warn("[stt] upstream rejected format — retrying with WAV transcode", {
               status: res.status,
               body: peekBody.slice(0, 200),
