@@ -267,6 +267,7 @@ function JarvisPage() {
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
+  const [recStartedAt, setRecStartedAt] = useState<number | null>(null);
   const [playPaused, setPlayPaused] = useState(false);
 
   // --- TTS settings ---
