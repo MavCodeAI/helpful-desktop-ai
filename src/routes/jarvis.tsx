@@ -1071,15 +1071,30 @@ function JarvisPage() {
         abortRef.current = sttController;
         const sttT0 = performance.now();
         try {
-          const fd = new FormData();
+          // POST the recording; on 415 (unsupported format) auto-retry once
+          // with a WAV transcode so codec mismatches don't fail transcription.
+          const postAudio = async (b: Blob, filename: string): Promise<Response> => {
+            const fd = new FormData();
+            fd.append("file", b, filename);
+            return fetch("/api/stt?stream=1", {
+              method: "POST",
+              body: fd,
+              signal: sttController.signal,
+            });
+          };
           const ext = mime.includes("mp4") ? "mp4" : "webm";
-          fd.append("file", blob, `recording.${ext}`);
-          // Stream so partial transcript deltas appear as words are recognized.
-          const res = await fetch("/api/stt?stream=1", {
-            method: "POST",
-            body: fd,
-            signal: sttController.signal,
-          });
+          let res = await postAudio(blob, `recording.${ext}`);
+          if (res.status === 415) {
+            console.warn("[stt] 415 unsupported — retrying with WAV transcode");
+            try {
+              const wav = await transcodeToWav(blob);
+              toast.message("Retrying with a different audio format…", { duration: 2500 });
+              res = await postAudio(wav, "recording.wav");
+            } catch (transcodeErr) {
+              console.error("[stt] WAV transcode failed", transcodeErr);
+              // Fall through — original 415 response is still `res` for error UI.
+            }
+          }
           if (!res.ok) {
             const body = await res.text().catch(() => "");
             await cooldown.startFromResponse(res);
