@@ -1706,69 +1706,7 @@ function JarvisPage() {
               </div>
             )}
 
-            {/* Composer */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (phase === "thinking") stopGenerating();
-                else handleTextSend();
-              }}
-              className="shrink-0 flex items-end gap-2 glass-pill rounded-full mx-3 sm:mx-4 mb-3 px-3 py-1.5"
-            >
-              <Textarea
-                ref={composerRef}
-                value={composerText}
-                onChange={(e) => setComposerText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleTextSend();
-                  } else if (e.key === "Escape" && phase === "idle" && composerText) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setComposerText("");
-                  }
-                }}
-                placeholder={
-                  phase === "idle"
-                    ? "Message Jarvis, or hold Space to talk…"
-                    : phase === "speaking"
-                      ? "Jarvis is speaking — tap orb to interrupt…"
-                      : phase === "listening"
-                        ? "Listening…"
-                        : "Thinking… tap Stop to cancel"
-                }
-                disabled={phase !== "idle"}
-                rows={1}
-                maxLength={MAX_MESSAGE_CHARS}
-                className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
-                aria-label="Message JARVIS"
-                aria-keyshortcuts="Enter Escape"
-              />
-
-              {phase === "thinking" ? (
-                <Button type="submit" size="icon" variant="destructive" className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full" aria-label="Stop generating response" aria-keyshortcuts="Escape" title="Stop generating (Esc)">
-                  <Square className="w-4 h-4" aria-hidden="true" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  size="icon"
-                  variant="ghost"
-                  disabled={phase !== "idle" || !composerText.trim()}
-                  className={`shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full transition-all ${
-                    composerText.trim()
-                      ? "bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110"
-                      : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
-                  } disabled:shadow-none`}
-                  aria-label="Send message"
-                  aria-keyshortcuts="Enter"
-                  title="Send message (Enter)"
-                >
-                  <SendHorizontal className="w-4 h-4" aria-hidden="true" />
-                </Button>
-              )}
-            </form>
+            {/* Composer removed — voice-only interaction */}
           </div>
 
           {/* RIGHT — preview-style chat rail (dark cards) */}
