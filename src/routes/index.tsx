@@ -11,7 +11,7 @@
  *   2. On submit, validate locally (mock) and either save + redirect or
  *      show a toast error.
  */
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
