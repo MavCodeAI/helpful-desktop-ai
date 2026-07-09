@@ -282,9 +282,17 @@ function JarvisPage() {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const micButtonRef = useRef<HTMLButtonElement | null>(null);
+  const phaseRef2 = useRef<Phase>("idle");
+  const spaceHeldRef = useRef(false);
   const [scrolledUp, setScrolledUp] = useState(false);
   const [thinkStageIdx, setThinkStageIdx] = useState(0);
   const reduced = useReducedMotion();
+
+  // Keep phaseRef2 in sync so global keyboard handlers can read latest phase.
+  useEffect(() => {
+    phaseRef2.current = phase;
+  }, [phase]);
+
 
   // Auto-scroll transcript ONLY when the user hasn't scrolled up to read history.
   useEffect(() => {
