@@ -61,6 +61,9 @@ import {
 import { HologramSafe } from "@/components/HologramSafe";
 import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
