@@ -48,6 +48,9 @@ function JarvisPreview() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const { level, active } = useMicLevel(state === "listening");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Session token — bumped on stop so any in-flight timeout callbacks abort
+  // instead of pushing a stale message or advancing state after idle.
+  const sessionRef = useRef(0);
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -55,23 +58,31 @@ function JarvisPreview() {
 
   const startSession = () => {
     if (state !== "idle") { stopSession(); return; }
+    const token = ++sessionRef.current;
     setState("connecting");
-    timerRef.current = setTimeout(() => cycleTurn(0), 1400);
+    timerRef.current = setTimeout(() => {
+      if (sessionRef.current !== token) return;
+      cycleTurn(0, token);
+    }, 1400);
   };
 
-  const cycleTurn = (i: number) => {
+  const cycleTurn = (i: number, token: number) => {
+    if (sessionRef.current !== token) return;
     setState("listening");
     timerRef.current = setTimeout(() => {
+      if (sessionRef.current !== token) return;
       setMessages((m) => [...m, DEMO_LINES[(i * 2) % DEMO_LINES.length]]);
       setState("speaking");
       timerRef.current = setTimeout(() => {
+        if (sessionRef.current !== token) return;
         setMessages((m) => [...m, DEMO_LINES[(i * 2 + 1) % DEMO_LINES.length]]);
-        cycleTurn(i + 1);
+        cycleTurn(i + 1, token);
       }, 2400);
     }, 2600);
   };
 
   const stopSession = () => {
+    sessionRef.current++;   // invalidate any pending callbacks
     clearTimer();
     setState("idle");
   };
