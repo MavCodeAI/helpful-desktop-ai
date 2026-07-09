@@ -645,6 +645,7 @@ function JarvisPage() {
     } else if (phase === "speaking") {
       // Barge-in: stop TTS AND immediately start listening — feels seamless.
       stopPlayback();
+      toast("Interrupted — I'm listening", { duration: 1500 });
       // stopPlayback flips phase to idle synchronously → startListening's guard passes.
       // Use a microtask so state settles first.
       queueMicrotask(() => startListening());
