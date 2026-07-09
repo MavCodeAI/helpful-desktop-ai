@@ -32,6 +32,7 @@ import {
   ArrowDown,
   Loader2,
   X,
+  Activity,
 } from "lucide-react";
 import { loadVoiceMode, saveVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient, RealtimeError } from "@/lib/realtime-client";
