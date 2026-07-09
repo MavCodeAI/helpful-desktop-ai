@@ -1696,7 +1696,7 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="lg:col-span-4 self-stretch lg:self-center flex flex-col gap-3 min-h-0 lg:max-h-[70dvh] max-h-full overflow-y-auto pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+            className="lg:col-span-4 self-stretch lg:self-center flex flex-col gap-3 min-w-0 min-h-0 lg:max-h-[70dvh] max-h-full overflow-y-auto overflow-x-hidden pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
             {messages.length === 0 && !partial && !rtUserPartial && !rtAsstPartial && !lastFailed && phase === "idle" ? null : (
               <>
