@@ -72,7 +72,7 @@ import {
   type Thread,
   type ChatMsg,
 } from "@/lib/chat-history";
-import { HologramSafe } from "@/components/HologramSafe";
+// HologramSafe removed — orb visuals are now inline in the preview-parity cluster below.
 import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
