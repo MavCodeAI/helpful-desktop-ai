@@ -86,17 +86,52 @@ type Phase = "idle" | "listening" | "thinking" | "speaking";
  *    the color itself communicates intensity.
  * Renders as SVG for crisp scaling and cheap per-frame updates.
  */
-function WaveBars({ level, active }: { level: number; active: boolean }) {
+function WaveBars({
+  level,
+  active,
+  mode,
+}: {
+  level: number;
+  active: boolean;
+  mode: "listening" | "speaking";
+}) {
   const BARS = 7;
-  const gradId = "wavebar-grad";
+  // Unique per-mode gradient id so React never reuses one <defs> across modes
+  // (would otherwise cache the previous mode's stops on the first paint).
+  const gradId = `wavebar-grad-${mode}`;
   const heightsRef = useRef<number[]>(Array(BARS).fill(0.15));
   const smoothLevelRef = useRef(0);
   const [, force] = useState(0);
   const phaseRef = useRef(0);
 
+  // Per-mode motion + palette profiles.
+  //  listening → snappy follow (mic input is the truth, react fast).
+  //  speaking  → slower, floatier easing (TTS is smooth, feel calm/warm).
+  const profile =
+    mode === "speaking"
+      ? {
+          levelLerp: 0.09,        // slower level tracking
+          barLerp: 0.18,          // gentler bar easing
+          phaseStep: 0.07,        // slower wobble
+          barSpread: 0.75,        // wider wobble range → floatier
+          // Warm violet → magenta → amber gradient
+          top: (i: number) => `oklch(${0.82 + i * 0.12} ${0.16 + i * 0.04} ${300 - i * 20})`,
+          mid: (i: number) => `oklch(${0.72 + i * 0.1} 0.2 ${325 - i * 10})`,
+          bot: (i: number) => `oklch(${0.6 + i * 0.12} 0.2 ${350 - i * 5})`,
+        }
+      : {
+          levelLerp: 0.28,        // fast, reactive to voice
+          barLerp: 0.42,          // crisper bar snap
+          phaseStep: 0.13,        // livelier wobble
+          barSpread: 0.5,
+          // Cool cyan → electric blue gradient (existing JARVIS palette)
+          top: (i: number) => `oklch(${0.78 + i * 0.17} ${0.16 - i * 0.06} ${215 - i * 15})`,
+          mid: (i: number) => `oklch(${0.7 + i * 0.15} 0.17 210)`,
+          bot: (i: number) => `oklch(${0.55 + i * 0.15} 0.18 220)`,
+        };
+
   useEffect(() => {
     if (!active) {
-      // On stop: gently drain to rest so bars don't snap flat.
       smoothLevelRef.current = 0;
       heightsRef.current = heightsRef.current.map(() => 0.15);
       force((n) => n + 1);
@@ -104,16 +139,18 @@ function WaveBars({ level, active }: { level: number; active: boolean }) {
     }
     let raf = 0;
     const loop = () => {
-      phaseRef.current += 0.11;
-      // Smooth incoming mic level (~120ms follow time @ 60fps).
+      phaseRef.current += profile.phaseStep;
       const target = Math.min(1, Math.max(0, level));
-      smoothLevelRef.current += (target - smoothLevelRef.current) * 0.18;
+      smoothLevelRef.current += (target - smoothLevelRef.current) * profile.levelLerp;
 
       const base = 0.18 + smoothLevelRef.current * 0.82;
       const next = heightsRef.current.map((h, i) => {
         const wobble = (Math.sin(phaseRef.current + i * 0.85) + 1) / 2;
-        const desired = Math.max(0.08, base * (0.5 + wobble * 0.5));
-        return h + (desired - h) * 0.35; // per-bar easing
+        const desired = Math.max(
+          0.08,
+          base * (1 - profile.barSpread / 2 + wobble * profile.barSpread),
+        );
+        return h + (desired - h) * profile.barLerp;
       });
       heightsRef.current = next;
       force((n) => (n + 1) % 1_000_000);
@@ -121,13 +158,12 @@ function WaveBars({ level, active }: { level: number; active: boolean }) {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active, level]);
+  }, [active, level, profile.phaseStep, profile.levelLerp, profile.barLerp, profile.barSpread]);
 
-  // Gradient intensity: quiet = deep cyan, loud = bright cyan/white.
   const intensity = smoothLevelRef.current;
-  const topStop = `oklch(${0.78 + intensity * 0.17} ${0.16 - intensity * 0.06} ${215 - intensity * 15})`;
-  const midStop = `oklch(${0.7 + intensity * 0.15} 0.17 210)`;
-  const botStop = `oklch(${0.55 + intensity * 0.15} 0.18 220)`;
+  const topStop = profile.top(intensity);
+  const midStop = profile.mid(intensity);
+  const botStop = profile.bot(intensity);
 
   return (
     <svg viewBox="0 0 84 60" className="w-20 h-14" aria-hidden="true">
@@ -152,7 +188,7 @@ function WaveBars({ level, active }: { level: number; active: boolean }) {
             fill={`url(#${gradId})`}
             style={{
               filter: `drop-shadow(0 0 ${4 + intensity * 10}px var(--jarvis-glow))`,
-              transition: "filter 180ms ease-out",
+              transition: "filter 220ms ease-out",
             }}
           />
         );
@@ -749,7 +785,7 @@ function JarvisPage() {
               {phase === "thinking" ? (
                 <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
               ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} />
+                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
               ) : (
                 <Mic className="w-11 h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
               )}
