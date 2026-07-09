@@ -1559,9 +1559,13 @@ function JarvisPage() {
           {/* STT diagnostics drawer — rolling log of the last 10 transcription
               attempts (pre-transcode result, HTTP status, retry reason). Lets
               the user see *why* a transcription failed at a glance. */}
-          <Sheet>
-            <SheetTrigger asChild>
+          <LazySheet
+            side="right"
+            title="STT Diagnostics"
+            contentClassName="w-[92vw] sm:w-[420px] flex flex-col"
+            trigger={(p) => (
               <Button
+                {...p}
                 variant="ghost"
                 size="icon"
                 aria-label={`STT diagnostics${sttLog.some((e) => e.finalStatus !== "ok" && e.finalStatus !== "aborted") ? " — recent failures" : ""}`}
@@ -1576,13 +1580,8 @@ function JarvisPage() {
                   />
                 )}
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[92vw] sm:w-[420px] flex flex-col">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">
-                  STT Diagnostics
-                </SheetTitle>
-              </SheetHeader>
+            )}
+          >
               <div className="mt-2 text-xs text-muted-foreground">
                 Last {sttLog.length} of 10 attempts · newest first
               </div>
@@ -1671,8 +1670,8 @@ function JarvisPage() {
                   Clear log
                 </Button>
               )}
-            </SheetContent>
-          </Sheet>
+          </LazySheet>
+
 
           {/* TTS settings drawer */}
 
