@@ -1845,11 +1845,8 @@ function JarvisPage() {
                         <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
                     ) : (
-                      <div className="font-sans text-sm leading-relaxed text-white/60 flex items-center gap-1.5">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-300/80 motion-safe:animate-pulse" style={{ animationDelay: "0ms" }} />
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-300/80 motion-safe:animate-pulse" style={{ animationDelay: "180ms" }} />
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-300/80 motion-safe:animate-pulse" style={{ animationDelay: "360ms" }} />
-                      </div>
+                      <TypingDots hue={PHASE_HUE.speaking} label="Speaking" />
+
                     )}
                   </div>
                 )}
