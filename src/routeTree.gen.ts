@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as JarvisPreviewRouteImport } from './routes/jarvis-preview'
 import { Route as JarvisRouteImport } from './routes/jarvis'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
@@ -16,6 +17,11 @@ import { Route as ApiSttRouteImport } from './routes/api/stt'
 import { Route as ApiRealtimeTokenRouteImport } from './routes/api/realtime-token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
+const JarvisPreviewRoute = JarvisPreviewRouteImport.update({
+  id: '/jarvis-preview',
+  path: '/jarvis-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JarvisRoute = JarvisRouteImport.update({
   id: '/jarvis',
   path: '/jarvis',
@@ -50,6 +56,7 @@ const ApiChatRoute = ApiChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jarvis': typeof JarvisRoute
+  '/jarvis-preview': typeof JarvisPreviewRoute
   '/api/chat': typeof ApiChatRoute
   '/api/realtime-token': typeof ApiRealtimeTokenRoute
   '/api/stt': typeof ApiSttRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/jarvis': typeof JarvisRoute
+  '/jarvis-preview': typeof JarvisPreviewRoute
   '/api/chat': typeof ApiChatRoute
   '/api/realtime-token': typeof ApiRealtimeTokenRoute
   '/api/stt': typeof ApiSttRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/jarvis': typeof JarvisRoute
+  '/jarvis-preview': typeof JarvisPreviewRoute
   '/api/chat': typeof ApiChatRoute
   '/api/realtime-token': typeof ApiRealtimeTokenRoute
   '/api/stt': typeof ApiSttRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/jarvis'
+    | '/jarvis-preview'
     | '/api/chat'
     | '/api/realtime-token'
     | '/api/stt'
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/jarvis'
+    | '/jarvis-preview'
     | '/api/chat'
     | '/api/realtime-token'
     | '/api/stt'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/jarvis'
+    | '/jarvis-preview'
     | '/api/chat'
     | '/api/realtime-token'
     | '/api/stt'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JarvisRoute: typeof JarvisRoute
+  JarvisPreviewRoute: typeof JarvisPreviewRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiRealtimeTokenRoute: typeof ApiRealtimeTokenRoute
   ApiSttRoute: typeof ApiSttRoute
@@ -110,6 +123,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/jarvis-preview': {
+      id: '/jarvis-preview'
+      path: '/jarvis-preview'
+      fullPath: '/jarvis-preview'
+      preLoaderRoute: typeof JarvisPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jarvis': {
       id: '/jarvis'
       path: '/jarvis'
@@ -158,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JarvisRoute: JarvisRoute,
+  JarvisPreviewRoute: JarvisPreviewRoute,
   ApiChatRoute: ApiChatRoute,
   ApiRealtimeTokenRoute: ApiRealtimeTokenRoute,
   ApiSttRoute: ApiSttRoute,
