@@ -700,7 +700,12 @@ function JarvisPage() {
   const sendToChat = useCallback(
     async (userText: string) => {
       const next: ChatMsg[] = [...messages, { role: "user", content: userText }];
+      // Batch: commit the user message AND clear the STT partial in the same
+      // render so the trailing "You" bubble's DOM node is reused (stable key
+      // `msg-${messages.length}`) — no unmount/remount, no fade-in slide,
+      // no caret jump, no italic flash.
       setMessages(next);
+      setRtUserPartial("");
       setLastFailed(null);
       setPhase("thinking");
       const controller = new AbortController();
