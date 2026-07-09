@@ -46,14 +46,19 @@ intentionally deferred.
 
 ## Deferred (each safe on its own)
 
+11. **Full voice-cycle smoke** — `scripts/smoke-jarvis-cycle.py` mocks
+    `/api/{stt,chat,tts}` via `context.route()`, drives one orb-click →
+    listening → orb-click → thinking → speaking → idle cycle with a fake
+    audio device, and asserts each phase caption via `PHASE_CAPTION`.
+    Guardrail for future setPhase → semantic-event migration.
+
+## Deferred (each safe on its own)
+
 - **Convert `setPhase` → semantic events site-by-site.** Adapter is in
   place; each call site can migrate on its own PR, e.g.
   `setPhase("thinking")` after a recorder stop → `dispatch({ type: "STOP_LISTENING" })`.
-  Guardrail is the smoke script + reducer tests.
-- **Full voice-cycle smoke** — mock `/api/{stt,chat,tts}` via Playwright
-  `route.fulfill()`, feed a fake audio blob through
-  `--use-file-for-fake-audio-capture`, assert the phase machine returns
-  to `idle` within N seconds.
+  Guardrails now green: `phase-machine.test.ts` + `smoke-jarvis.py` +
+  `smoke-jarvis-cycle.py`.
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
   `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.
