@@ -788,13 +788,20 @@ function JarvisPage() {
   // stale first-render closures. Critical for voice PTT: without this,
   // Space-hold recordings post-first-message would call render-0's
   // sendToChat with empty history, wiping conversation context.
-  handlersRef.current = {
-    startListening,
-    stopListening,
-    cancelRecording,
-    stopPlayback,
-    stopGenerating,
-  };
+  //
+  // Sync inside useEffect (post-commit) — mutating refs during render is a
+  // React anti-pattern that can leave torn state when a render is discarded
+  // by concurrent mode / Suspense.
+  useEffect(() => {
+    handlersRef.current = {
+      startListening,
+      stopListening,
+      cancelRecording,
+      stopPlayback,
+      stopGenerating,
+    };
+  });
+
 
   /* ---------- Orb tap dispatch ---------- */
 
