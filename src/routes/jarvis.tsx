@@ -773,9 +773,14 @@ function JarvisPage() {
 
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
-      {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
-      <header className="relative flex items-center justify-between px-6 py-4 backdrop-blur-md bg-background/40 border-b border-jarvis/10">
-        <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-jarvis/50 to-transparent" aria-hidden="true" />
+      {/* Aurora ambient background — the signature Liquid Glass look */}
+      <div className="aurora-field" aria-hidden="true">
+        <div className="aurora-accent" style={{ width: "40vmax", height: "40vmax", left: "30%", top: "40%", background: "radial-gradient(circle, var(--aurora-c), transparent 60%)" }} />
+      </div>
+
+      {/* Floating glass header pill — centered top, doesn't take vertical space */}
+      <header className="relative z-40 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
+
 
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
@@ -968,97 +973,33 @@ function JarvisPage() {
         </div>
       </header>
 
-      <div className="flex-1 relative">
-        <div className="pointer-events-none absolute inset-0 bg-grid-jarvis opacity-40" aria-hidden="true" />
-        <div className="relative flex-1 grid grid-cols-1 md:grid-cols-1 lg:grid-cols-[minmax(300px,400px)_minmax(0,1fr)] xl:grid-cols-[minmax(340px,440px)_minmax(0,1fr)] gap-4 md:gap-5 lg:gap-8 xl:gap-12 items-stretch min-h-full px-4 sm:px-6 lg:px-8 xl:px-10 pt-4 md:pt-6 lg:pt-8 xl:pt-10 pb-4 md:pb-6">
-        <h1 className="sr-only">JARVIS Voice Assistant</h1>
+      <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
-        {/* LEFT COLUMN — orb + status panel. Below lg: horizontal row on md to save vertical space. */}
-        <aside className="flex flex-col items-center gap-3 md:flex-row md:justify-center md:items-center md:gap-6 lg:flex-col lg:items-stretch lg:justify-center lg:gap-8 lg:sticky lg:top-6 lg:self-start">
-        {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
-            the orb + mic shrink so all three zones stay on one screen. */}
-
-        {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
-            the orb + mic shrink so all three zones stay on one screen. */}
-        <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-4 lg:gap-5 mt-0 lg:mt-8 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
-          <button
-            type="button"
-            onClick={handleMicClick}
-            aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-            className="group relative flex items-center justify-center w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] md:w-[220px] md:h-[220px] lg:w-[340px] lg:h-[340px] xl:w-[400px] xl:h-[400px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
-          >
-            <div
-              className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
-                phase === "idle" ? "opacity-50 group-hover:opacity-75" : phase === "speaking" ? "opacity-95" : "opacity-80"
-              } ${reduced ? "opacity-30" : ""}`}
-              aria-hidden="true"
-            >
-              <HologramSafe level={reduced ? 0 : micLevel} />
-            </div>
-            {/* Hint chip inside orb — shows only when idle so it doesn't fight active states */}
-            {phase === "idle" && (
-              <span className="pointer-events-none relative z-10 rounded-full border border-jarvis/40 bg-background/70 backdrop-blur-sm px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-jarvis/80 opacity-0 group-hover:opacity-100 motion-safe:transition-opacity">
-                Tap to talk
-              </span>
-            )}
-          </button>
-
-
-
-
-
-          {/* SR-only status for assistive tech (visible pill removed) */}
-          <p className="sr-only" role="status" aria-live="polite">
-            {statusLabel}
-          </p>
-
-        </div>
-
-        {/* Status metadata rail — visible identity for the assistant */}
-        <div className="flex flex-col gap-2 lg:gap-3 text-center items-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${phase === "idle" ? "bg-jarvis/70" : phase === "listening" ? "bg-emerald-400 motion-safe:animate-pulse" : phase === "speaking" ? "bg-jarvis motion-safe:animate-pulse" : "bg-amber-400 motion-safe:animate-pulse"}`} />
-            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{statusLabel}</span>
-          </div>
-          <div className="hidden lg:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
-            Voice · <span className="text-jarvis/80">{tts.voice.split("-").pop() || "auto"}</span>
-          </div>
-        </div>
-
-        {/* Middle zone — only idle-state replay affordance now; active controls live above the composer. */}
-        <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
-          {phase === "idle" && lastSpokenRef.current && (
-            <Button variant="ghost" size="sm" onClick={restartPlayback}>
-              <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
-            </Button>
-          )}
-        </div>
-        </aside>
-
-        {/* RIGHT COLUMN — premium chat console */}
-        <section className="jarvis-panel rounded-2xl lg:rounded-3xl p-3 sm:p-5 lg:p-6 flex flex-col min-h-[340px] md:min-h-[380px] lg:min-h-[calc(100dvh-8rem)] pb-[env(safe-area-inset-bottom)]">
-        {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
-        <div className="relative z-10 w-full flex-1 flex flex-col gap-3">
-          <div className="relative w-full flex-1 flex flex-col">
-
+      {/* ==================================================================
+          TRANSCRIPT COLUMN — floating glass card, scrolls, flex-1
+          ================================================================== */}
+      <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-4 sm:pt-6">
+        <div className="w-full max-w-3xl flex flex-col min-h-0 relative">
           <div
             ref={transcriptRef}
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="w-full flex-1 space-y-5 min-h-[140px] sm:min-h-[200px] max-h-[45dvh] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-3 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
+            className="glass-card rounded-[28px] sm:rounded-[32px] flex-1 min-h-[200px] overflow-y-auto p-4 sm:p-6 space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
-              <div className="flex flex-col items-center text-center gap-5 py-4 sm:py-6">
-                <div className="space-y-2 max-w-md">
-                  <h2 className="font-display tracking-[0.3em] text-jarvis text-sm sm:text-base">
-                    HELLO, I'M JARVIS
+              <div className="flex flex-col items-center text-center gap-6 py-6 sm:py-10 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
+                <div className="space-y-3 max-w-md">
+                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                    Hello, I'm <span className="bg-gradient-to-r from-[oklch(0.85_0.15_210)] via-[oklch(0.8_0.16_260)] to-[oklch(0.82_0.16_300)] bg-clip-text text-transparent">Jarvis</span>
                   </h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Your voice-first intelligence. Talk, type, or hold <kbd className="rounded border border-jarvis/25 bg-background/60 px-1 py-0.5 font-mono text-[10px] text-jarvis/80">Space</kbd> to speak — I'll answer with voice and text in real time.
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                    Your voice-first intelligence. Talk, type, or hold{" "}
+                    <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">Space</kbd>{" "}
+                    to speak — I'll answer in real time.
                   </p>
                 </div>
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-2.5">
                   <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
                     Try asking
                   </div>
@@ -1078,7 +1019,7 @@ function JarvisPage() {
                           void sendToChat(s);
                         }}
                         disabled={phase !== "idle"}
-                        className="group rounded-full border border-jarvis/25 bg-background/50 hover:bg-jarvis/10 hover:border-jarvis/60 text-xs sm:text-[13px] px-3 py-1.5 text-foreground/85 hover:text-jarvis transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis"
+                        className="glass-pill rounded-full text-xs sm:text-[13px] px-3.5 py-1.5 text-foreground/85 hover:text-foreground hover:bg-white/[0.08] transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98]"
                       >
                         {s}
                       </button>
@@ -1090,16 +1031,16 @@ function JarvisPage() {
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+                className={`flex flex-col motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] ${m.role === "user" ? "items-end" : "items-start"}`}
               >
-                <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1 px-1">
+                <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
                   {m.role === "user" ? "You" : "Jarvis"}
                 </span>
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                  className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed space-y-2 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
                     m.role === "user"
-                      ? "bg-jarvis/10 border border-jarvis/20 text-foreground rounded-tr-sm"
-                      : "bg-transparent text-jarvis/90 rounded-tl-sm"
+                      ? "glass-pill text-foreground rounded-tr-md"
+                      : "bg-transparent text-foreground/90 rounded-tl-md"
                   }`}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
@@ -1108,17 +1049,17 @@ function JarvisPage() {
             ))}
             {partial && (
               <div className="flex flex-col items-start">
-                <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1 px-1">
+                <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
                   Jarvis
                 </span>
-                <div className="max-w-[85%] rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
+                <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
                   <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                 </div>
               </div>
             )}
             {lastFailed && phase === "idle" && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+              <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
                 <span className="text-destructive">Last message failed to send.</span>
                 <Button
                   variant="outline"
@@ -1136,150 +1077,7 @@ function JarvisPage() {
             )}
           </div>
 
-
-          {/* Inline mini-controls — appear directly above the composer during active phases. */}
-          {phase === "listening" && (
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-jarvis/25 bg-background/60 backdrop-blur-md px-2 py-1.5">
-              {recPaused ? (
-                <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8">
-                  <Play className="w-3.5 h-3.5 mr-1" /> Resume
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8">
-                  <Pause className="w-3.5 h-3.5 mr-1" /> Pause
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={stopListening} className="h-8">
-                <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
-              </Button>
-              <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 text-muted-foreground">
-                Cancel
-              </Button>
-            </div>
-          )}
-          {phase === "speaking" && (
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-jarvis/25 bg-background/60 backdrop-blur-md px-2 py-1.5">
-              {playPaused ? (
-                <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8">
-                  <Play className="w-3.5 h-3.5 mr-1" /> Resume
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8">
-                  <Pause className="w-3.5 h-3.5 mr-1" /> Pause
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8">
-                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
-              </Button>
-              <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8">
-                <Square className="w-3.5 h-3.5 mr-1" /> Stop
-              </Button>
-            </div>
-          )}
-
-          {/* Unified composer — mic + textarea + send/stop in one row. */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (phase === "thinking") stopGenerating();
-              else handleTextSend();
-            }}
-            className="mt-4 flex items-end gap-2 rounded-2xl border border-jarvis/30 bg-background/60 backdrop-blur-xl p-2 shadow-[0_0_0_1px_oklch(0.78_0.16_215/0.05),0_20px_40px_-20px_oklch(0.05_0.03_240/0.6)] focus-within:border-jarvis/70 focus-within:shadow-[0_0_0_1px_oklch(0.78_0.16_215/0.4),0_0_40px_-10px_oklch(0.78_0.16_215/0.3)] transition-all"
-          >
-            {/* Mic button — inline, leading position */}
-            <button
-              type="button"
-              ref={micButtonRef}
-              onClick={handleMicClick}
-              className="relative shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-xl border border-jarvis/40 bg-background/60 flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis"
-              aria-label={statusLabel}
-            >
-              {phase === "listening" && !recPaused && !reduced && (
-                <span className="absolute inset-0 rounded-xl border border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
-              )}
-              {phase === "thinking" ? (
-                <Loader2 className="w-5 h-5 text-jarvis motion-safe:animate-spin" />
-              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                <>
-                  <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
-                  <span className="sr-only">
-                    {phase === "speaking" ? "JARVIS is speaking" : "Listening to your voice"}
-                  </span>
-                </>
-              ) : (
-                <Mic className="w-5 h-5 text-jarvis" />
-              )}
-            </button>
-
-            <Textarea
-              value={composerText}
-              onChange={(e) => setComposerText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleTextSend();
-                }
-              }}
-              placeholder={
-                phase === "idle"
-                  ? "Type a message, or hold Space to talk…"
-                  : phase === "speaking"
-                  ? "JARVIS is speaking — tap mic to interrupt…"
-                  : phase === "listening"
-                  ? "Listening…"
-                  : "Thinking… tap Stop to cancel"
-              }
-              disabled={phase !== "idle"}
-              rows={1}
-              className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-sm"
-              aria-label="Message JARVIS"
-            />
-
-            {phase === "thinking" ? (
-              <Button
-                type="submit"
-                size="icon"
-                variant="destructive"
-                className="shrink-0 min-h-11 min-w-11 rounded-xl"
-                aria-label="Stop generating"
-              >
-                <Square className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                size="icon"
-                disabled={phase !== "idle" || !composerText.trim()}
-                className="shrink-0 min-h-11 min-w-11 rounded-xl"
-                aria-label="Send message"
-              >
-                <SendHorizontal className="w-4 h-4" />
-              </Button>
-            )}
-          </form>
-
-          {/* Keyboard shortcut hints — subtle, so users discover push-to-talk without cluttering the composer */}
-          <div className="mt-1.5 hidden sm:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
-            <span className="inline-flex items-center gap-1">
-              <kbd className="rounded border border-jarvis/25 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-jarvis/80">Space</kbd>
-              hold to talk
-            </span>
-            <span className="opacity-40">•</span>
-            <span className="inline-flex items-center gap-1">
-              <kbd className="rounded border border-jarvis/25 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-jarvis/80">Enter</kbd>
-              send
-            </span>
-            <span className="opacity-40">•</span>
-            <span className="inline-flex items-center gap-1">
-              tap orb to talk
-            </span>
-          </div>
-
-
-
-
-
-          {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
+          {/* Scroll-to-bottom pill */}
           {scrolledUp && (
             <button
               onClick={() => {
@@ -1287,22 +1085,168 @@ function JarvisPage() {
                 if (el) el.scrollTop = el.scrollHeight;
                 setScrolledUp(false);
               }}
-              className="absolute left-1/2 -translate-x-1/2 -top-4 flex items-center gap-1.5 rounded-full border border-jarvis/40 bg-background/90 backdrop-blur-md px-3 py-1.5 text-xs text-jarvis shadow-lg hover:bg-jarvis/10 transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1"
+              className="absolute left-1/2 -translate-x-1/2 bottom-4 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
               aria-label="Scroll to latest message"
             >
               <ArrowDown className="w-3.5 h-3.5" /> New reply
             </button>
           )}
-
-          {/* SR-only live region — announces streaming chunks to assistive tech
-              (aria-live on the visual bubble would spam; polite here batches). */}
-          <div className="sr-only" aria-live="polite" aria-atomic="false">
-            {partial}
-          </div>
-          </div>
         </div>
-        </section>
+      </div>
 
+      {/* ==================================================================
+          BOTTOM DOCK — orb (mic) + composer pill + hints
+          ================================================================== */}
+      <div className="relative z-30 w-full flex flex-col items-center gap-3 px-3 sm:px-6 pt-4 pb-4 sm:pb-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}>
+        {/* Active playback / listening strips */}
+        {phase === "listening" && (
+          <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
+            {recPaused ? (
+              <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full">
+                <Play className="w-3.5 h-3.5 mr-1" /> Resume
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full">
+                <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full">
+              <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+            </Button>
+            <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground">
+              Cancel
+            </Button>
+          </div>
+        )}
+        {phase === "speaking" && (
+          <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
+            {playPaused ? (
+              <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8 rounded-full">
+                <Play className="w-3.5 h-3.5 mr-1" /> Resume
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8 rounded-full">
+                <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8 rounded-full">
+              <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
+            </Button>
+            <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8 rounded-full">
+              <Square className="w-3.5 h-3.5 mr-1" /> Stop
+            </Button>
+          </div>
+        )}
+
+        {/* Floating orb — the mic button, Siri-style */}
+        <button
+          type="button"
+          ref={micButtonRef}
+          onClick={handleMicClick}
+          aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+          className="group relative flex items-center justify-center w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] [@media(max-height:640px)]:w-[90px] [@media(max-height:640px)]:h-[90px] rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite]"
+        >
+          <div
+            className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
+              phase === "idle" ? "opacity-70 group-hover:opacity-95" : phase === "speaking" ? "opacity-100" : "opacity-90"
+            } ${reduced ? "opacity-40" : ""}`}
+            aria-hidden="true"
+          >
+            <HologramSafe level={reduced ? 0 : micLevel} />
+          </div>
+        </button>
+
+        {/* Status pill — always visible, compact */}
+        <div className="glass-pill inline-flex items-center gap-2 rounded-full px-3 py-1">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              phase === "idle"
+                ? "bg-jarvis/70"
+                : phase === "listening"
+                ? "bg-emerald-400 motion-safe:animate-pulse"
+                : phase === "speaking"
+                ? "bg-jarvis motion-safe:animate-pulse"
+                : "bg-amber-400 motion-safe:animate-pulse"
+            }`}
+          />
+          <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/80">{statusLabel}</span>
+          <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
+            · {tts.voice.split("-").pop() || "auto"}
+          </span>
+        </div>
+
+        {/* Composer glass pill — text only, orb is the mic */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (phase === "thinking") stopGenerating();
+            else handleTextSend();
+          }}
+          className="glass-input w-full max-w-2xl flex items-end gap-2 rounded-3xl p-2 pl-5"
+        >
+          <Textarea
+            value={composerText}
+            onChange={(e) => setComposerText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleTextSend();
+              }
+            }}
+            placeholder={
+              phase === "idle"
+                ? "Message Jarvis, or hold Space to talk…"
+                : phase === "speaking"
+                ? "Jarvis is speaking — tap orb to interrupt…"
+                : phase === "listening"
+                ? "Listening…"
+                : "Thinking… tap Stop to cancel"
+            }
+            disabled={phase !== "idle"}
+            rows={1}
+            className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
+            aria-label="Message JARVIS"
+          />
+
+          {phase === "thinking" ? (
+            <Button
+              type="submit"
+              size="icon"
+              variant="destructive"
+              className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full"
+              aria-label="Stop generating"
+            >
+              <Square className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              size="icon"
+              disabled={phase !== "idle" || !composerText.trim()}
+              className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+              aria-label="Send message"
+            >
+              <SendHorizontal className="w-4 h-4" />
+            </Button>
+          )}
+        </form>
+
+        {/* Keyboard shortcut hints — subtle */}
+        <div className="hidden sm:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">
+          <span className="inline-flex items-center gap-1">
+            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Space</kbd>
+            hold to talk
+          </span>
+          <span className="opacity-40">•</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Enter</kbd>
+            send
+          </span>
+        </div>
+
+        {/* SR-only live region — streamed chunks for assistive tech */}
+        <div className="sr-only" aria-live="polite" aria-atomic="false">
+          {partial}
         </div>
       </div>
     </main>
