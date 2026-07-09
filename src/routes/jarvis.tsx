@@ -602,9 +602,10 @@ function JarvisPage() {
             variant="ghost"
             size="sm"
             onClick={signOut}
-            className="text-muted-foreground hover:text-foreground"
+            aria-label="Sign out"
+            className="text-muted-foreground hover:text-foreground px-2 sm:px-3"
           >
-            <LogOut className="w-4 h-4 mr-1.5" /> Sign out
+            <LogOut className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Sign out</span>
           </Button>
         </div>
       </header>
