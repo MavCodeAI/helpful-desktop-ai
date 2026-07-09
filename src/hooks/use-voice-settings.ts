@@ -1,0 +1,137 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ProviderId,
+  type Pace,
+  HF_VOICES,
+  GEMINI_VOICES,
+} from "@/lib/voice-providers";
+import { getGeminiKey } from "@/lib/gemini-key.functions";
+import { DEFAULTS, type LiteMode } from "@/lib/realtime/constants";
+import { loadSettings, persist } from "@/lib/realtime/storage";
+
+type Options = {
+  /** Stop the current session (called on provider/voice/pace change). */
+  onStop: () => void;
+  /** Clear transient session error/cooldown after provider change. */
+  onSessionReset: () => void;
+  /** Apply rate live to running session if possible. */
+  onLiveRate: (r: number) => void;
+  /** Prompt for API key when provider resolves to gemini without one. */
+  onRequestKey: () => void;
+};
+
+/**
+ * All persisted voice/provider settings + their change handlers.
+ * Bootstraps once from local storage, then resolves the server-side
+ * Gemini key if none is locally stored.
+ */
+export function useVoiceSettings({
+  onStop, onSessionReset, onLiveRate, onRequestKey,
+}: Options) {
+  const [provider, setProvider] = useState<ProviderId>("hf");
+  const [geminiKey, setGeminiKey] = useState("");
+  const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
+  const [geminiVoice, setGeminiVoice] = useState<string>(DEFAULTS.geminiVoice);
+  const [pace, setPace] = useState<Pace>(DEFAULTS.pace);
+  const [rate, setRate] = useState<number>(DEFAULTS.rate);
+  const [sensitivity, setSensitivity] = useState<number>(DEFAULTS.sensitivity);
+  const [autoRate, setAutoRate] = useState<boolean>(DEFAULTS.autoRate);
+  const [liteMode, setLiteMode] = useState<LiteMode>(DEFAULTS.liteMode);
+
+  // Refs so bootstrap effect doesn't need callback deps (they're stable in
+  // practice but not guaranteed by parent).
+  const onRequestKeyRef = useRef(onRequestKey);
+  useEffect(() => { onRequestKeyRef.current = onRequestKey; }, [onRequestKey]);
+
+  useEffect(() => {
+    const s = loadSettings();
+    setHfVoice(s.hfVoice);
+    setGeminiVoice(s.geminiVoice);
+    setPace(s.pace);
+    setRate(s.rate);
+    setSensitivity(s.sensitivity);
+    setAutoRate(s.autoRate);
+    setLiteMode(s.liteMode);
+    setGeminiKey(s.geminiKey);
+    getGeminiKey()
+      .then(({ key }) => {
+        let effectiveKey = s.geminiKey;
+        if (key && !s.geminiKey) {
+          setGeminiKey(key);
+          persist.geminiKey(key);
+          effectiveKey = key;
+        }
+        const p = s.provider || (effectiveKey ? "gemini" : "hf");
+        setProvider(p);
+        // Bug fix #2: if resolved to gemini without a key, prompt immediately
+        if (p === "gemini" && !effectiveKey) onRequestKeyRef.current();
+      })
+      .catch(() => setProvider(s.provider || "hf"));
+  }, []);
+
+  const changeProvider = useCallback((p: ProviderId) => {
+    onStop();
+    setProvider(p);
+    persist.provider(p);
+    onSessionReset();
+    if (p === "gemini" && !geminiKey) onRequestKeyRef.current();
+  }, [onStop, onSessionReset, geminiKey]);
+
+  const changeVoice = useCallback((v: string) => {
+    if (provider === "gemini") {
+      setGeminiVoice(v);
+      persist.geminiVoice(v);
+    } else {
+      setHfVoice(v);
+      persist.hfVoice(v);
+    }
+    onStop();
+  }, [provider, onStop]);
+
+  const changePace = useCallback((p: Pace) => {
+    setPace(p);
+    persist.pace(p);
+    onStop();
+  }, [onStop]);
+
+  /** Rate applies live to the current session if possible, else stored for next. */
+  const changeRate = useCallback((r: number) => {
+    setRate(r);
+    persist.rate(r);
+    onLiveRate(r);
+  }, [onLiveRate]);
+
+  const changeSensitivity = useCallback((s: number) => {
+    setSensitivity(s);
+    persist.sensitivity(s);
+  }, []);
+
+  const toggleAutoRate = useCallback((v: boolean) => {
+    setAutoRate(v);
+    persist.autoRate(v);
+  }, []);
+
+  const changeLiteMode = useCallback((v: LiteMode) => {
+    setLiteMode(v);
+    persist.liteMode(v);
+  }, []);
+
+  const saveKey = useCallback(() => {
+    persist.geminiKey(geminiKey.trim());
+  }, [geminiKey]);
+
+  const currentVoice = provider === "gemini" ? geminiVoice : hfVoice;
+  const voiceList = provider === "gemini" ? GEMINI_VOICES : HF_VOICES;
+
+  return {
+    // state
+    provider, geminiKey, setGeminiKey,
+    hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
+    currentVoice, voiceList,
+    // rate setter exposed for auto-rate adapt from session hook
+    setRate,
+    // handlers
+    changeProvider, changeVoice, changePace, changeRate,
+    changeSensitivity, toggleAutoRate, changeLiteMode, saveKey,
+  };
+}
