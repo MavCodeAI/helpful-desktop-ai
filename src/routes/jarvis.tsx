@@ -1043,7 +1043,10 @@ function JarvisPage() {
 
           <div
             ref={transcriptRef}
-            className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
+            role="log"
+            aria-label="Conversation"
+            aria-live="polite"
+            className="w-full flex-1 space-y-5 min-h-[220px] max-h-[calc(100dvh-22rem)] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-4 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
               <p className="text-center text-sm text-muted-foreground italic">
