@@ -78,6 +78,50 @@ export const Route = createFileRoute("/jarvis")({
 
 type Phase = "idle" | "listening" | "thinking" | "speaking";
 
+/**
+ * Audio-reactive vertical bars. `level` (0..1) drives the average height;
+ * each bar gets a phased sine offset so the row breathes even at low input.
+ * Renders as SVG for crisp scaling and cheap per-frame updates.
+ */
+function WaveBars({ level, active }: { level: number; active: boolean }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    let raf = 0;
+    const loop = () => {
+      setTick((t) => (t + 1) % 10_000);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [active]);
+
+  const bars = 7;
+  const base = 0.15 + Math.min(1, Math.max(0, level)) * 0.85;
+  return (
+    <svg viewBox="0 0 84 60" className="w-20 h-14 text-jarvis" aria-hidden="true">
+      {Array.from({ length: bars }).map((_, i) => {
+        const phase = tick * 0.12 + i * 0.9;
+        const wobble = (Math.sin(phase) + 1) / 2; // 0..1
+        const h = Math.max(6, (base * 0.55 + wobble * 0.45 * base) * 56);
+        const y = (60 - h) / 2;
+        return (
+          <rect
+            key={i}
+            x={i * 12 + 2}
+            y={y}
+            width={8}
+            height={h}
+            rx={4}
+            fill="currentColor"
+            style={{ filter: "drop-shadow(0 0 6px var(--jarvis-glow))" }}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 function JarvisPage() {
   const navigate = useNavigate();
 
@@ -665,12 +709,10 @@ function JarvisPage() {
             <div className="absolute inset-0 flex items-center justify-center">
               {phase === "thinking" ? (
                 <Loader2 className="w-12 h-12 text-jarvis animate-spin" />
-              ) : phase === "speaking" ? (
-                <Volume2 className="w-12 h-12 text-jarvis" />
-              ) : phase === "listening" ? (
-                <Mic className="w-12 h-12 text-jarvis" />
+              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
+                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} />
               ) : (
-                <Mic className="w-12 h-12 text-jarvis" />
+                <Mic className="w-11 h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
               )}
             </div>
           </button>
