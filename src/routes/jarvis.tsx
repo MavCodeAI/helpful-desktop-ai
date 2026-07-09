@@ -367,8 +367,6 @@ function VolumeMeter({ level, peak, sensitivity = 1 }: { level: number; peak: nu
     scaledLevel < 0.15 ? "quiet" :
     scaledPeak > 0.9 ? "clip" :
     "good";
-  // (uses `scaledLevel`/`scaledPeak` — raw `peak` is not referenced below.)
-  void peak;
   const barColor =
     zone === "silent" ? "bg-muted-foreground/40" :
     zone === "quiet" ? "bg-red-400" :
