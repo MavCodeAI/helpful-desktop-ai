@@ -38,6 +38,7 @@ import { RealtimeClient, RealtimeError } from "@/lib/realtime-client";
 import { readSttResponse } from "@/lib/stt-stream";
 import { useMicPermission } from "@/hooks/useMicPermission";
 import { useQuotaCooldown } from "@/hooks/useQuotaCooldown";
+import { transcodeToWav } from "@/lib/audio-to-wav";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
