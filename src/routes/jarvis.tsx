@@ -31,7 +31,11 @@ import {
   Trash2,
   ArrowDown,
   SendHorizontal,
+  Radio,
 } from "lucide-react";
+import { VoiceModeToggle } from "@/components/VoiceModeToggle";
+import { loadVoiceMode, saveVoiceMode, VOICE_MODE_META, type VoiceMode } from "@/lib/voice-mode";
+import { RealtimeClient } from "@/lib/realtime-client";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -232,6 +236,15 @@ function JarvisPage() {
   const [partial, setPartial] = useState("");
   const [composerText, setComposerText] = useState("");
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Voice interaction mode: push-to-talk, auto-VAD, or realtime streaming.
+  const [mode, setMode] = useState<VoiceMode>(() => loadVoiceMode());
+  // Realtime session state — only meaningful when mode === "realtime".
+  const [realtimeOn, setRealtimeOn] = useState(false);
+  const realtimeRef = useRef<RealtimeClient | null>(null);
+  // Live transcript captions during realtime (user + assistant).
+  const [rtUserPartial, setRtUserPartial] = useState("");
+  const [rtAsstPartial, setRtAsstPartial] = useState("");
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
@@ -815,6 +828,23 @@ function JarvisPage() {
 
   const handleMicClick = () => {
     haptic(12);
+    // Realtime: orb is a connect/disconnect toggle. Referenced via ref because
+    // connectRealtime is defined below in source order but hoisted at runtime.
+    if (mode === "realtime") {
+      if (realtimeOn || realtimeRef.current) {
+        disconnectRealtimeRef.current?.();
+      } else {
+        void connectRealtimeRef.current?.();
+      }
+      return;
+    }
+    // VAD: orb pauses/resumes hands-free mode by switching modes visually,
+    // but the actual auto-listen is driven by the mic level effect above.
+    // Tapping while listening = cancel current utterance.
+    if (mode === "vad" && phase === "listening") {
+      cancelRecording();
+      return;
+    }
     if (phase === "listening") {
       stopListening();
     } else if (phase === "idle") {
@@ -830,6 +860,11 @@ function JarvisPage() {
       stopGenerating();
     }
   };
+
+  // Forward refs so handleMicClick (defined above the realtime callbacks) can
+  // reach them without hoisting issues under TanStack's code-splitter.
+  const connectRealtimeRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const disconnectRealtimeRef = useRef<() => void>(() => {});
 
   /* ---------- Thread actions ---------- */
 
@@ -895,6 +930,147 @@ function JarvisPage() {
   // Passive analyser runs while page is mounted; the recording MediaRecorder
   // uses its own independent stream, so both can coexist.
   const { level: micLevel, active: micActive } = useMicLevel(!!license);
+
+  /* ---------- Auto-VAD (mode === "vad") ---------- */
+  //
+  // Watches the passive mic amplitude from useMicLevel. When speech is
+  // detected while idle we auto-start recording; when the level stays below
+  // the silence floor for `SILENCE_MS` while listening we auto-stop and let
+  // the existing STT→LLM→TTS pipeline take over. Uses refs, not state, so
+  // rapid mic-level updates don't rebind the effect every frame.
+  const vadRef = useRef({ lastLoud: 0, armed: false });
+  useEffect(() => {
+    // Only arm in VAD mode; other modes leave voice control fully manual.
+    vadRef.current.armed = mode === "vad";
+    if (mode !== "vad") vadRef.current.lastLoud = 0;
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "vad" || !micActive) return;
+    const SPEECH_THRESHOLD = 0.06; // RMS above this = speaking
+    const SILENCE_MS = 900;         // silence this long → send
+    const MIN_UTTERANCE_MS = 400;   // ignore ultra-short blips
+
+    const now = Date.now();
+    if (micLevel > SPEECH_THRESHOLD) {
+      vadRef.current.lastLoud = now;
+      // Barge-in: user speaks while JARVIS is talking → stop playback.
+      if (phaseRef2.current === "speaking") {
+        stopPlayback();
+        queueMicrotask(() => startListening());
+        return;
+      }
+      if (phaseRef2.current === "idle") {
+        void startListening();
+      }
+    } else if (phaseRef2.current === "listening" && !recPaused) {
+      const silenceFor = now - vadRef.current.lastLoud;
+      const talkedFor = recStartedAt ? now - recStartedAt : 0;
+      if (silenceFor > SILENCE_MS && talkedFor > MIN_UTTERANCE_MS) {
+        stopListening();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [micLevel, micActive, mode, recPaused, recStartedAt]);
+
+  /* ---------- Realtime (mode === "realtime") ---------- */
+
+  // Disconnect the WebRTC session cleanly whenever we leave realtime mode or
+  // the component unmounts. Also mirror new user/assistant transcripts into
+  // the persistent `messages` history when a turn completes.
+  const rtMirroredUserRef = useRef("");
+  const rtMirroredAsstRef = useRef("");
+
+  const disconnectRealtime = useCallback(() => {
+    realtimeRef.current?.close();
+    realtimeRef.current = null;
+    setRealtimeOn(false);
+    setRtUserPartial("");
+    setRtAsstPartial("");
+    setPhase("idle");
+  }, []);
+
+  const connectRealtime = useCallback(async () => {
+    if (realtimeRef.current) return;
+    setPhase("thinking");
+    const client = new RealtimeClient();
+    realtimeRef.current = client;
+    client.on((e) => {
+      if (e.type === "connected") {
+        setRealtimeOn(true);
+        setPhase("listening");
+        toast.success("Live connection open", { duration: 1500 });
+      } else if (e.type === "disconnected") {
+        setRealtimeOn(false);
+        setPhase("idle");
+      } else if (e.type === "user_transcript") {
+        setRtUserPartial(e.text);
+        if (e.final && e.text.trim() && e.text !== rtMirroredUserRef.current) {
+          rtMirroredUserRef.current = e.text;
+          setMessages((m) => [...m, { role: "user", content: e.text.trim() }]);
+          setRtUserPartial("");
+        }
+      } else if (e.type === "assistant_transcript") {
+        setRtAsstPartial(e.text);
+        if (e.final && e.text.trim() && e.text !== rtMirroredAsstRef.current) {
+          rtMirroredAsstRef.current = e.text;
+          setMessages((m) => [...m, { role: "assistant", content: e.text.trim() }]);
+          setRtAsstPartial("");
+        }
+      } else if (e.type === "error") {
+        toast.error(e.message);
+      }
+    });
+    try {
+      await client.connect();
+    } catch (err) {
+      console.error("[realtime] connect failed", err);
+      const msg = err instanceof Error ? err.message : "Realtime connection failed";
+      // 501 = OPENAI_API_KEY not configured — surface the friendly hint.
+      toast.error(msg.length < 200 ? msg : "Realtime connection failed");
+      disconnectRealtime();
+    }
+  }, [disconnectRealtime]);
+
+  // Teardown on unmount / mode change away from realtime.
+  useEffect(() => {
+    if (mode !== "realtime" && realtimeRef.current) disconnectRealtime();
+    return () => {
+      realtimeRef.current?.close();
+      realtimeRef.current = null;
+    };
+  }, [mode, disconnectRealtime]);
+
+  // Sync forward refs so handleMicClick can call the latest closures.
+  useEffect(() => {
+    connectRealtimeRef.current = connectRealtime;
+    disconnectRealtimeRef.current = disconnectRealtime;
+  });
+
+  // Also sync realtime status into the visible phase so the orb reflects
+  // it (listening halo while connected, idle otherwise). We only touch phase
+  // when in realtime mode to avoid stepping on the other pipelines.
+  useEffect(() => {
+    if (mode !== "realtime") return;
+    setPhase(realtimeOn ? "listening" : "idle");
+  }, [mode, realtimeOn]);
+
+  const changeMode = useCallback(
+    (m: VoiceMode) => {
+      if (m === mode) return;
+      // Cancel any in-flight voice work before switching interaction model.
+      if (phase === "listening") cancelRecording();
+      if (phase === "speaking") stopPlayback();
+      setMode(m);
+      saveVoiceMode(m);
+      toast(`${VOICE_MODE_META[m].label} mode`, {
+        description: VOICE_MODE_META[m].desc,
+        duration: 2200,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mode, phase],
+  );
 
   const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
@@ -977,6 +1153,9 @@ function JarvisPage() {
             </span>
           </div>
         </div>
+
+        {/* Voice-mode segmented control — desktop/tablet only (see md: gate). */}
+        <VoiceModeToggle mode={mode} onChange={changeMode} disabled={phase !== "idle"} />
 
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
           {/* Mic activity — reflects the true state of the useMicLevel hook,
