@@ -53,15 +53,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { LazySheet, prefetchSheet } from "@/components/ui/lazy-sheet";
+import { LazyDropdownMenu, prefetchDropdownMenu } from "@/components/ui/lazy-dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getLicense, clearLicense } from "@/lib/license";
 import {
