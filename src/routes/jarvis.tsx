@@ -1168,7 +1168,7 @@ function JarvisPage() {
         </button>
 
         {/* Status pill — always visible, compact */}
-        <div className="glass-pill inline-flex items-center gap-2 rounded-full px-3 py-1">
+        <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               phase === "idle"
@@ -1180,11 +1180,9 @@ function JarvisPage() {
                 : "bg-amber-400 motion-safe:animate-pulse"
             }`}
           />
-          <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/80">{statusLabel}</span>
-          <span className="hidden sm:inline text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
-            · {tts.voice.split("-").pop() || "auto"}
-          </span>
+          <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">{statusLabel}</span>
         </div>
+
 
         {/* Composer glass pill — text only, orb is the mic */}
         <form
