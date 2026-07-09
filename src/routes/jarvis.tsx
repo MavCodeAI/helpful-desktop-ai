@@ -396,7 +396,7 @@ function VolumeMeter({ level, peak, sensitivity = 1 }: { level: number; peak: nu
           aria-hidden="true"
         />
         {/* Peak-hold marker — 2px vertical line that decays slowly. */}
-        {peak > 0.02 && (
+        {scaledPeak > 0.02 && (
           <div
             className={`absolute top-0 bottom-0 w-[2px] ${zone === "clip" ? "bg-amber-200" : "bg-white/70"}`}
             style={{ left: `calc(${peakPct}% - 1px)` }}
