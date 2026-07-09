@@ -10,6 +10,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { gatewayFetch, readGatewayKey } from "@/lib/server/gateway-client";
 
 /**
  * TTS body schema.
@@ -43,17 +44,13 @@ export const Route = createFileRoute("/api/tts")({
         }
         const { text, voice, speed } = parsed.data;
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Voice service is not configured", { status: 500 });
+        if (!readGatewayKey()) return new Response("Voice service is not configured", { status: 500 });
 
         let upstream: Response;
         try {
-          upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+          upstream = await gatewayFetch("/audio/speech", {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${key}`,
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               model: "openai/gpt-4o-mini-tts",
               input: text,

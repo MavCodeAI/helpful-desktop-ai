@@ -14,6 +14,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { JARVIS_SYSTEM_PROMPT } from "@/lib/jarvis-prompt";
+import { gatewayFetch, readGatewayKey } from "@/lib/server/gateway-client";
 
 /**
  * Wire schema for the chat body.
@@ -67,19 +68,15 @@ export const Route = createFileRoute("/api/chat")({
 
         // 3. Secret must stay server-side. Read at request time (Cloudflare
         //    Workers inject env per-request; module scope may be undefined).
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("AI service is not configured", { status: 500 });
+        if (!readGatewayKey()) return new Response("AI service is not configured", { status: 500 });
 
         // 4. Call the upstream gateway. Network failure here is separate
         //    from a non-2xx response and needs its own catch.
         let upstream: Response;
         try {
-          upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          upstream = await gatewayFetch("/chat/completions", {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${key}`,
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               model: "google/gemini-2.5-flash",
               stream: true,
