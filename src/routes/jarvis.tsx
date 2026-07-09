@@ -471,6 +471,17 @@ function JarvisPage() {
   // delay coming from?" and "should I speak faster?" share one signal.
   const [sttMs, setSttMs] = useState(0);
   const [ttsMs, setTtsMs] = useState(0);
+  // True end-to-end latency for realtime: server-VAD speech_stopped → first
+  // assistant audio frame. Reflects what the user actually feels.
+  const [e2eMs, setE2eMs] = useState(0);
+
+  // Mic permission state (granted/denied/prompt/unknown) — surfaced as a
+  // small dot in the listening strip so the user knows why capture may fail.
+  const micPerm = useMicPermission();
+
+  // Countdown for 402 (quota) / 429 (rate) responses so the user sees exactly
+  // how long to wait, instead of a generic error toast repeated on each retry.
+  const cooldown = useQuotaCooldown();
 
   // --- Mic test overlay ---
   // Continuously renders a big meter without touching the STT pipeline, so
