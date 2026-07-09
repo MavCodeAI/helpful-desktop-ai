@@ -1858,7 +1858,7 @@ function JarvisPage() {
             <button
               onClick={() => {
                 const el = transcriptRef.current;
-                if (el) el.scrollTop = el.scrollHeight;
+                if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
                 setScrolledUp(false);
               }}
               className="absolute right-6 bottom-6 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
