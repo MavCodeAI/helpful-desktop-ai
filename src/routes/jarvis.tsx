@@ -368,8 +368,6 @@ function JarvisPage() {
   // --- Chat phase + streaming ---
   const [phase, setPhase] = useState<Phase>("idle");
   const [partial, setPartial] = useState("");
-  const [composerText, setComposerText] = useState("");
-  const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Voice interaction mode: push-to-talk, auto-VAD, or realtime streaming.
   const [mode, setMode] = useState<VoiceMode>(() => loadVoiceMode());
