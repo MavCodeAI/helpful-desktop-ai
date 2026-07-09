@@ -30,7 +30,6 @@ import {
   Plus,
   Trash2,
   ArrowDown,
-  SendHorizontal,
   Loader2,
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
