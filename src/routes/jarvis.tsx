@@ -147,13 +147,12 @@ function WaveBars({
   mode: "listening" | "speaking";
 }) {
   const BARS = 7;
-  // Unique per-mode gradient id so React never reuses one <defs> across modes
-  // (would otherwise cache the previous mode's stops on the first paint).
   const gradId = `wavebar-grad-${mode}`;
   const heightsRef = useRef<number[]>(Array(BARS).fill(0.15));
   const smoothLevelRef = useRef(0);
   const [, force] = useState(0);
   const phaseRef = useRef(0);
+  const reduced = useReducedMotion();
 
   // Per-mode motion + palette profiles.
   //  listening → snappy follow (mic input is the truth, react fast).
