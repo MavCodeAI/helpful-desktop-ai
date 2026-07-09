@@ -317,7 +317,15 @@ function JarvisPage() {
     }
   }, [navigate]);
 
-  /** Persist current messages into the active thread whenever they change. */
+  /**
+   * Persist current messages into the active thread whenever they change.
+   *
+   * Wrapped in try/catch because `upsertThread` can throw when localStorage
+   * is full (quota exceeded). We toast a single warning so the user knows
+   * their conversation isn't being saved, but the in-memory UI keeps
+   * working — losing persistence is not worth a crashed render.
+   */
+  const storageToastShownRef = useRef(false);
   useEffect(() => {
     if (!activeId) return;
     const current = threads.find((t) => t.id === activeId);
@@ -329,8 +337,18 @@ function JarvisPage() {
       updatedAt: Date.now(),
       messages,
     };
-    const list = upsertThread(updated);
-    setThreads(list);
+    try {
+      const list = upsertThread(updated);
+      setThreads(list);
+    } catch (e) {
+      console.error("[jarvis] persist thread failed", e);
+      if (!storageToastShownRef.current) {
+        storageToastShownRef.current = true;
+        toast.error(
+          e instanceof Error ? e.message : "Couldn't save conversation to browser storage.",
+        );
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
