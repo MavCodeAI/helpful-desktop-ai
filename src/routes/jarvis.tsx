@@ -897,13 +897,17 @@ function JarvisPage() {
                   <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
                 </>
               )}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {phase === "thinking" ? (
+                  <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-jarvis motion-safe:animate-spin" />
+                ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
+                  <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
+                ) : (
+                  <Mic className="w-10 h-10 sm:w-11 sm:h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
+                )}
+              </div>
             </button>
           </div>
-
-          {/* Mic indicator — sits outside the orb's visual radius */}
-          {phase === "idle" && (
-            <Mic className="w-6 h-6 text-jarvis drop-shadow-[0_0_10px_var(--jarvis-glow)] mt-24 sm:mt-40 [@media(max-height:640px)]:mt-14" aria-hidden="true" />
-          )}
 
 
 
