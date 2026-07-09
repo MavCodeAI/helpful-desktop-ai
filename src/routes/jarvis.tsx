@@ -31,6 +31,7 @@ import {
   Trash2,
   ArrowDown,
   Loader2,
+  X,
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
