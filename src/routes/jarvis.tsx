@@ -100,6 +100,7 @@ import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
 import { MarkdownMessage, prefetchMarkdown } from "@/features/jarvis-ui/MarkdownMessage";
 import { classifyMicError } from "@/lib/mic-permission";
+import { MicPermissionBanner } from "@/features/jarvis-ui/MicPermissionBanner";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
