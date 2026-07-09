@@ -44,8 +44,6 @@ intentionally deferred.
     should prefer semantic events (`dispatch({ type: "START_LISTENING" })`)
     so invalid jumps become tested no-ops.
 
-## Deferred (each safe on its own)
-
 11. **Full voice-cycle smoke** — `scripts/smoke-jarvis-cycle.py` mocks
     `/api/{stt,chat,tts}` via `context.route()`, drives one orb-click →
     listening → orb-click → thinking → speaking → idle cycle with a fake
