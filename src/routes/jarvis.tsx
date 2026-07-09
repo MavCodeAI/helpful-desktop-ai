@@ -1199,6 +1199,25 @@ function JarvisPage() {
             )}
           </form>
 
+          {/* Keyboard shortcut hints — subtle, so users discover push-to-talk without cluttering the composer */}
+          <div className="mt-1.5 hidden sm:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-jarvis/25 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-jarvis/80">Space</kbd>
+              hold to talk
+            </span>
+            <span className="opacity-40">•</span>
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-jarvis/25 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-jarvis/80">Enter</kbd>
+              send
+            </span>
+            <span className="opacity-40">•</span>
+            <span className="inline-flex items-center gap-1">
+              tap orb to talk
+            </span>
+          </div>
+
+
+
 
 
           {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
