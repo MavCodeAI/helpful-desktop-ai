@@ -1739,7 +1739,7 @@ function JarvisPage() {
 
                 {phase === "thinking" && !partial && !rtAsstPartial && (
                   <div
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(48 90% 70%)" }}>
