@@ -1826,11 +1826,8 @@ function JarvisPage() {
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(48 90% 70%)" }}>
                       Thinking
                     </div>
-                    <div className="font-sans text-sm leading-relaxed text-white/70 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "0ms" }} />
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "180ms" }} />
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "360ms" }} />
-                    </div>
+                    <TypingDots hue={PHASE_HUE.thinking} label="Thinking" />
+
                   </div>
                 )}
 
