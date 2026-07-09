@@ -1046,7 +1046,7 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="w-full flex-1 space-y-5 min-h-[220px] max-h-[calc(100dvh-22rem)] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-4 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
+            className="w-full flex-1 space-y-5 min-h-[140px] sm:min-h-[200px] max-h-[45dvh] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-3 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
               <p className="text-center text-sm text-muted-foreground italic">
