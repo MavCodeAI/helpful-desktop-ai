@@ -783,7 +783,11 @@ function JarvisPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, voice: tts.voice, speed: effectiveSpeed }),
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          await cooldown.startFromResponse(res);
+          throw new Error(body || `${res.status}`);
+        }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
 
@@ -838,6 +842,7 @@ function JarvisPage() {
         });
         if (!res.ok || !res.body) {
           const body = await res.text().catch(() => "");
+          await cooldown.startFromResponse(res);
           throw new Error(`${res.status} ${body}`);
         }
 
@@ -993,7 +998,11 @@ function JarvisPage() {
             body: fd,
             signal: sttController.signal,
           });
-          if (!res.ok) throw new Error(await res.text());
+          if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            await cooldown.startFromResponse(res);
+            throw new Error(body || `${res.status}`);
+          }
 
           // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
           // src/lib/stt-stream.test.ts for delta/final-commit tests.
