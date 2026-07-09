@@ -2415,17 +2415,6 @@ function JarvisPage() {
                     )}
                   </div>
 
-                  <div
-                    className="text-[10px] sm:text-[11px] tracking-[0.35em] font-mono select-none"
-                    style={{ color: `hsl(${hue} 30% 68%)` }}
-                    aria-hidden="true"
-                    title={(() => {
-                      // Which backend service is doing the work right now.
-                      if (mode === "realtime") {
-                        return realtimeOn
-                          ? "OpenAI Realtime API — streaming voice-to-voice over WebRTC"
-                          : "Realtime mode — tap orb to connect";
-                      }
                   {(() => {
                     const techTip =
                       mode === "realtime"
@@ -2433,7 +2422,7 @@ function JarvisPage() {
                           ? "OpenAI Realtime API — streaming voice-to-voice over WebRTC. Audio flows both ways as PCM frames; no separate STT/LLM/TTS round-trips."
                           : "Realtime mode — tap the orb to open a WebRTC session with OpenAI's Realtime API."
                         : phase === "listening"
-                          ? "Whisper STT via Lovable AI Gateway. Mic → 16kHz mono WAV → POST /api/stt → transcript."
+                          ? "Whisper STT via Lovable AI Gateway. Mic → 16 kHz mono WAV → POST /api/stt → transcript."
                           : phase === "thinking"
                             ? "Chat LLM (Gemini via Lovable AI Gateway). Streaming SSE tokens from POST /api/chat into the transcript."
                             : phase === "speaking"
@@ -2465,6 +2454,12 @@ function JarvisPage() {
                       </>
                     );
                   })()}
+
+                  {/* Plain-language subtitle — always visible. */}
+                  <div
+                    className="text-[10px] sm:text-[11px] text-foreground/50 motion-safe:animate-fade-in max-w-[22rem] text-center leading-snug"
+                    aria-live="polite"
+                  >
                     {mode === "realtime"
                       ? realtimeOn
                         ? "🔴 OpenAI Realtime — live voice stream"
