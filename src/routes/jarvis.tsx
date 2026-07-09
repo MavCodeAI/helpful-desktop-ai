@@ -968,8 +968,35 @@ function JarvisPage() {
           )}
         </div>
 
-        {/* Bottom zone — wrapper for scroll-to-bottom pill overlay. */}
-        <div className="relative z-10 w-full max-w-2xl">
+        {/* Bottom zone — mic button + transcript + composer, stacked together. */}
+        <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3">
+          {/* Mic button — sits just above the transcript. */}
+          <button
+            ref={micButtonRef}
+            onClick={handleMicClick}
+            className="relative w-20 h-20 sm:w-24 sm:h-24 [@media(max-height:640px)]:w-16 [@media(max-height:640px)]:h-16 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            aria-label={statusLabel}
+            aria-live="polite"
+          >
+            {phase === "listening" && !recPaused && !reduced && (
+              <>
+                <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
+                <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
+              </>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              {phase === "thinking" ? (
+                <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-jarvis motion-safe:animate-spin" />
+              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
+                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
+              ) : (
+                <Mic className="w-7 h-7 sm:w-8 sm:h-8 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
+              )}
+            </div>
+          </button>
+
+          <div className="relative w-full">
+
           <div
             ref={transcriptRef}
             className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
