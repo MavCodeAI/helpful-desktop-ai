@@ -1194,39 +1194,8 @@ function JarvisPage() {
           </div>
         )}
 
-        {/* Floating orb — the mic button, Siri-style */}
-        <button
-          type="button"
-          ref={micButtonRef}
-          onClick={handleMicClick}
-          aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-          className="group relative flex items-center justify-center w-[88px] h-[88px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px] rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite]"
-        >
-          <div
-            className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
-              phase === "idle" ? "opacity-70 group-hover:opacity-95" : phase === "speaking" ? "opacity-100" : "opacity-90"
-            } ${reduced ? "opacity-40" : ""}`}
-            aria-hidden="true"
-          >
-            <HologramSafe level={reduced ? 0 : micLevel} />
-          </div>
-        </button>
 
-        {/* Status pill — always visible, compact */}
-        <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              phase === "idle"
-                ? "bg-jarvis/70"
-                : phase === "listening"
-                ? "bg-emerald-400 motion-safe:animate-pulse"
-                : phase === "speaking"
-                ? "bg-jarvis motion-safe:animate-pulse"
-                : "bg-amber-400 motion-safe:animate-pulse"
-            }`}
-          />
-          <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">{statusLabel}</span>
-        </div>
+
 
 
         {/* Composer glass pill — text only, orb is the mic */}
