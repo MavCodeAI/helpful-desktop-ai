@@ -30,6 +30,7 @@ import {
   History,
   Plus,
   Trash2,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -41,6 +42,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getLicense, clearLicense } from "@/lib/license";
 import {
   loadTTSSettings,
@@ -63,6 +73,47 @@ import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+/** Respect the OS reduced-motion setting — kills orb/wave/ring animations. */
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const on = () => setReduced(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return reduced;
+}
+
+/** Best-effort haptic feedback; silently no-ops where unsupported. */
+function haptic(ms = 10) {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    /* not supported */
+  }
+}
+
+/**
+ * Convert a failed fetch (thrown Error / non-ok Response text) into a
+ * user-facing reason. Gateway returns 429 (rate limit) and 402 (credits
+ * exhausted) verbatim; network drops surface as TypeError.
+ */
+function friendlyError(e: unknown, fallback: string): string {
+  const err = e as { message?: string; name?: string };
+  const msg = (err?.message || "").toLowerCase();
+  if (!navigator.onLine) return "You're offline — check your connection.";
+  if (err?.name === "TypeError" || msg.includes("failed to fetch")) return "Network error — please retry.";
+  if (msg.includes("429") || msg.includes("rate")) return "Rate limit reached — slow down and retry.";
+  if (msg.includes("402") || msg.includes("credit")) return "AI credits exhausted — top up in your workspace.";
+  if (msg.includes("401") || msg.includes("unauthorized")) return "Session expired — please sign in again.";
+  return fallback;
+}
+
+/** Cycle short verbs during the "thinking" phase so it feels alive. */
+const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
 
 
 export const Route = createFileRoute("/jarvis")({
