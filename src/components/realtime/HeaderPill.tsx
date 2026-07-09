@@ -16,8 +16,18 @@ export function HeaderPill({
 }: Props) {
   return (
     <header className="relative z-10 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-4 sm:px-6 py-2.5 glass-pill rounded-full">
-      <div className="text-xs tracking-widest uppercase text-muted-foreground">
-        Realtime · S2S
+      <div className="flex items-center gap-2">
+        <img
+          src="/alpha-icon.png"
+          alt="Alpha logo"
+          width={24}
+          height={24}
+          className="w-6 h-6 rounded-md ring-1 ring-cyan-400/30"
+          loading="lazy"
+        />
+        <div className="text-xs tracking-widest uppercase text-muted-foreground">
+          Alpha · Realtime
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <button
