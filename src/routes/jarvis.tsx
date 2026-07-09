@@ -1088,7 +1088,9 @@ function JarvisPage() {
           <div className="sr-only" aria-live="polite" aria-atomic="false">
             {partial}
           </div>
+          </div>
         </div>
+
       </div>
     </main>
   );
