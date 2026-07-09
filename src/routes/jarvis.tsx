@@ -1346,9 +1346,11 @@ function JarvisPage() {
                   size="icon"
                   variant="destructive"
                   className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full"
-                  aria-label="Stop generating"
+                  aria-label="Stop generating response"
+                  aria-keyshortcuts="Escape"
+                  title="Stop generating (Esc)"
                 >
-                  <Square className="w-4 h-4" />
+                  <Square className="w-4 h-4" aria-hidden="true" />
                 </Button>
               ) : (
                 <Button
