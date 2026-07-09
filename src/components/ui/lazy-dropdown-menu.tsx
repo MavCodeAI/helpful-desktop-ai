@@ -14,10 +14,8 @@ import {
   isValidElement,
   lazy,
   Suspense,
-  useRef,
   useState,
   type ComponentType,
-  type KeyboardEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
@@ -42,7 +40,6 @@ type ImplProps = {
   align?: "start" | "center" | "end";
   contentClassName?: string;
   render: (parts: DropdownMenuParts) => ReactNode;
-  onClose: () => void;
 };
 
 const DropdownImpl: ComponentType<ImplProps> = lazy(async () => {
@@ -54,14 +51,9 @@ const DropdownImpl: ComponentType<ImplProps> = lazy(async () => {
     Separator: m.DropdownMenuSeparator,
   };
   return {
-    default: function Impl({ triggerButton, align, contentClassName, render, onClose }: ImplProps) {
+    default: function Impl({ triggerButton, align, contentClassName, render }: ImplProps) {
       return (
-        <m.DropdownMenu
-          defaultOpen
-          onOpenChange={(o) => {
-            if (!o) onClose();
-          }}
-        >
+        <m.DropdownMenu defaultOpen>
           <m.DropdownMenuTrigger asChild>{triggerButton}</m.DropdownMenuTrigger>
           <parts.Content align={align} className={contentClassName}>
             {render(parts)}
@@ -84,34 +76,16 @@ export function LazyDropdownMenu({
   children: (parts: DropdownMenuParts) => ReactNode;
 }) {
   const [mounted, setMounted] = useState(false);
-  const triggerRef = useRef<HTMLElement | null>(null);
-
-  const open = () => {
-    prefetchDropdownMenu();
-    setMounted(true);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
-    // Match Radix DropdownMenuTrigger keyboard behavior on the pre-mount button:
-    // Enter / Space / ArrowDown / ArrowUp all open the menu.
-    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      open();
-    }
-  };
 
   if (!mounted) {
     if (!isValidElement<Record<string, unknown>>(triggerButton)) return null;
     return cloneElement(triggerButton, {
-      ref: (node: HTMLElement | null) => {
-        triggerRef.current = node;
+      onClick: () => {
+        prefetchDropdownMenu();
+        setMounted(true);
       },
-      onClick: open,
-      onKeyDown: handleKeyDown,
       onPointerEnter: prefetchDropdownMenu,
       onFocus: prefetchDropdownMenu,
-      "aria-haspopup": "menu",
-      "aria-expanded": false,
     });
   }
 
@@ -122,12 +96,6 @@ export function LazyDropdownMenu({
         align={align}
         contentClassName={contentClassName}
         render={children}
-        onClose={() => {
-          // Restore focus to the trigger after Escape / outside-click close,
-          // then unmount Radix so the chunk is idle until next open.
-          setMounted(false);
-          queueMicrotask(() => triggerRef.current?.focus());
-        }}
       />
     </Suspense>
   );

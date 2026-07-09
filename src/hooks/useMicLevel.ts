@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { classifyMicError, type MicErrorInfo } from "@/lib/mic-permission";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Live microphone amplitude (0..1), smoothed.
@@ -34,19 +33,13 @@ export interface MicStatus {
    *  Reflects the browser's reported input→analyser delay; useful as a
    *  visible metric next to the recording pill. */
   latencyMs: number;
-  /** Classified failure from the most recent getUserMedia rejection. Null
-   *  while pending, on success, or after the caller flips `active` off.
-   *  Use to render a friendly explanation in place of the meter. */
-  error: MicErrorInfo | null;
 }
-
 
 
 export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
   const [peak, setPeak] = useState(0);
   const [latencyMs, setLatencyMs] = useState(0);
-  const [error, setError] = useState<MicErrorInfo | null>(null);
   // Reflects whether the pipeline is truly live (stream open + RAF ticking).
   // Distinct from `active` (intent): stays false while permission resolves,
   // when tab is hidden, or after any failure.
@@ -90,10 +83,6 @@ export function useMicLevel(active: boolean): MicStatus {
       setPeak(0);
       setLatencyMs(0);
       setLive(false);
-      // Clear a stale error when the caller stops asking for mic — the
-      // banner should only show while the caller wants the mic AND we
-      // just failed to open it.
-      setError(null);
       return;
     }
 
@@ -233,11 +222,9 @@ export function useMicLevel(active: boolean): MicStatus {
         };
         raf = requestAnimationFrame(loop);
         setLive(true);
-        setError(null);
       } catch (err) {
         console.warn("[useMicLevel] mic access failed:", err);
         setLive(false);
-        setError(classifyMicError(err));
         teardown();
       }
     })();
@@ -252,6 +239,6 @@ export function useMicLevel(active: boolean): MicStatus {
     };
   }, [active, visible]);
 
-  return { level, peak, active: live, latencyMs, error };
+  return { level, peak, active: live, latencyMs };
 }
 

@@ -99,8 +99,6 @@ import { LiveWaveform } from "@/features/jarvis-ui/LiveWaveform";
 import { VolumeMeter } from "@/features/jarvis-ui/VolumeMeter";
 import { RecTimer } from "@/features/jarvis-ui/RecTimer";
 import { MarkdownMessage, prefetchMarkdown } from "@/features/jarvis-ui/MarkdownMessage";
-import { classifyMicError } from "@/lib/mic-permission";
-import { MicPermissionBanner } from "@/features/jarvis-ui/MicPermissionBanner";
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -923,18 +921,7 @@ function JarvisPage() {
       dispatch({ type: "START_LISTENING" });
     } catch (e) {
       console.error(e);
-      const info = classifyMicError(e);
-      // Long-duration toast so the fix instructions stay readable; the
-      // Voice-settings sheet has a matching banner for the "denied" case
-      // so the user can find the instructions again after the toast fades.
-      toast.error(info.title, {
-        description: info.description,
-        duration: info.kind === "denied" ? 10000 : 6000,
-      });
-      // No manual permission-state update needed — `useMicPermission()`
-      // subscribes to `permissions.query({name:'microphone'}).onchange`,
-      // so a denied prompt flips `micPerm` automatically on the next tick.
-      dispatch({ type: "CANCEL" });
+      toast.error("Microphone access denied — enable it in browser settings.");
     }
   };
 
@@ -2101,16 +2088,6 @@ function JarvisPage() {
                               ? "Tap the orb to talk"
                               : "Push-to-talk · hold Space or tap the orb"}
                   </div>
-
-                  {/* Mic permission call-to-action / friendly-block banner.
-                      Only shown at idle so it never distracts mid-conversation.
-                      Handles both "prompt" (surface the native dialog) and
-                      "denied" (explain the fix + offer reload). Granted /
-                      unknown → renders nothing. */}
-                  {phase === "idle" && (
-                    <MicPermissionBanner state={micPerm} />
-                  )}
-
 
                   {/* Slow-thinking progress hint — reassures the user that
                       the app isn't frozen when the model takes a while to
