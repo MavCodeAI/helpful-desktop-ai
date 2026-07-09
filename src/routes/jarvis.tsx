@@ -451,15 +451,7 @@ function JarvisPage() {
 
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
-      {/* Volumetric energy orb — sits behind the mic cluster, dimmed when idle. */}
-      <div
-        className={`absolute left-1/2 top-[26%] sm:top-[30%] -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(80vw,460px)] aspect-square transition-opacity duration-500 ${
-          phase === "idle" ? "opacity-45" : phase === "speaking" ? "opacity-95" : "opacity-75"
-        }`}
-        aria-hidden="true"
-      >
-        <HologramSafe level={micLevel} />
-      </div>
+      {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
