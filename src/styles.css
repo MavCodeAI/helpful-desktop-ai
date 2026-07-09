@@ -36,6 +36,7 @@
   --color-jarvis: var(--jarvis);
   --color-jarvis-glow: var(--jarvis-glow);
   --font-display: "Orbitron", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
