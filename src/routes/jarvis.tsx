@@ -1672,7 +1672,10 @@ function JarvisPage() {
                   key={i}
                   className={`flex flex-col motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] ${m.role === "user" ? "items-end" : "items-start"}`}
                 >
-                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
+                    style={{ color: m.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
+                  >
                     {m.role === "user" ? "You" : "Jarvis"}
                   </span>
                   <div
