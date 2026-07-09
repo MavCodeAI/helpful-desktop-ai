@@ -251,7 +251,7 @@ export function useMicLevel(active: boolean, deviceId?: string | null): MicStatu
       setLatencyMs(0);
       setLive(false);
     };
-  }, [active, visible]);
+  }, [active, visible, deviceId]);
 
   return { level, peak, active: live, latencyMs, error };
 }
