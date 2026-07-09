@@ -774,7 +774,9 @@ function JarvisPage() {
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
       {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
+      <header className="relative flex items-center justify-between px-6 py-4 backdrop-blur-md bg-background/40 border-b border-jarvis/10">
+        <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-jarvis/50 to-transparent" aria-hidden="true" />
+
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
           <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
