@@ -86,7 +86,15 @@ type Phase = "idle" | "listening" | "thinking" | "speaking";
  *    the color itself communicates intensity.
  * Renders as SVG for crisp scaling and cheap per-frame updates.
  */
-function WaveBars({ level, active }: { level: number; active: boolean }) {
+function WaveBars({
+  level,
+  active,
+  mode,
+}: {
+  level: number;
+  active: boolean;
+  mode: "listening" | "speaking";
+}) {
   const BARS = 7;
   const gradId = "wavebar-grad";
   const heightsRef = useRef<number[]>(Array(BARS).fill(0.15));
