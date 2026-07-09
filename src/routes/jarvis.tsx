@@ -796,8 +796,8 @@ function JarvisPage() {
       </div>
 
       {/* Floating glass header pill — centered top, doesn't take vertical space */}
-      <header className="relative z-40 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <header className="relative z-40 flex items-center gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
           <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
             <svg viewBox="0 0 32 32" className="w-full h-full">
