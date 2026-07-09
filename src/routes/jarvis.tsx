@@ -1675,9 +1675,13 @@ function JarvisPage() {
 
           {/* TTS settings drawer */}
 
-          <Sheet>
-            <SheetTrigger asChild>
+          <LazySheet
+            side="right"
+            title="Voice Settings"
+            contentClassName="w-[85vw] sm:w-[340px]"
+            trigger={(p) => (
               <Button
+                {...p}
                 variant="ghost"
                 size="icon"
                 aria-label="Voice settings"
@@ -1686,14 +1690,8 @@ function JarvisPage() {
               >
                 <Settings className="w-4 h-4" />
               </Button>
-            </SheetTrigger>
-
-            <SheetContent side="right" className="w-[85vw] sm:w-[340px]">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">
-                  Voice Settings
-                </SheetTitle>
-              </SheetHeader>
+            )}
+          >
               <div className="mt-6 space-y-6">
                 <div>
                   <label className="text-xs uppercase tracking-widest text-muted-foreground mb-2 block">
@@ -1847,13 +1845,14 @@ function JarvisPage() {
                   </label>
                 </div>
               </div>
-            </SheetContent>
-          </Sheet>
+          </LazySheet>
 
 
           {/* Account menu — replaces the raw license chip with a proper avatar dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <LazyDropdownMenu
+            align="end"
+            contentClassName="w-56"
+            triggerButton={
               <Button
                 variant="ghost"
                 aria-label="Account menu"
@@ -1865,21 +1864,25 @@ function JarvisPage() {
                   </AvatarFallback>
                 </Avatar>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                Licensed as
-                <div className="mt-1 font-mono text-foreground truncate">{license}</div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={signOut}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="w-4 h-4 mr-2" /> Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            }
+          >
+            {(parts) => (
+              <>
+                <parts.Label className="text-xs font-normal text-muted-foreground">
+                  Licensed as
+                  <div className="mt-1 font-mono text-foreground truncate">{license}</div>
+                </parts.Label>
+                <parts.Separator />
+                <parts.Item
+                  onClick={signOut}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-2" /> Sign out
+                </parts.Item>
+              </>
+            )}
+          </LazyDropdownMenu>
+
         </div>
       </header>
 
