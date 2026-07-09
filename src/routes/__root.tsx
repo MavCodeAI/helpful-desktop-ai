@@ -120,7 +120,11 @@ function RootShell({ children }: { children: ReactNode }) {
     // that attribute. Suppressing here silences the noisy console error
     // without hiding real hydration bugs elsewhere in the tree.
     <html lang="en" suppressHydrationWarning>
-      <head>
+      {/* suppressHydrationWarning on <head>: Lovable's dev source-annotation
+          transform stamps `data-tsd-source="…:LINE:COL"` and the line/col can
+          differ between the SSR render and the client render of this file.
+          The attribute is dev-only instrumentation; suppress the noise here. */}
+      <head suppressHydrationWarning>
         <HeadContent />
       </head>
       <body suppressHydrationWarning>
