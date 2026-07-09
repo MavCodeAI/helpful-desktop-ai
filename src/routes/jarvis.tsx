@@ -985,7 +985,7 @@ function JarvisPage() {
             type="button"
             onClick={handleMicClick}
             aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-            className="group relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
+            className="group relative flex items-center justify-center w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] lg:w-[380px] lg:h-[380px] xl:w-[420px] xl:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
           >
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
@@ -1015,12 +1015,12 @@ function JarvisPage() {
         </div>
 
         {/* Status metadata rail — visible identity for the assistant */}
-        <div className="hidden lg:flex flex-col gap-3 text-center">
-          <div className="inline-flex items-center justify-center gap-2 mx-auto rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
+        <div className="flex flex-col gap-2 lg:gap-3 text-center items-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
             <span className={`w-1.5 h-1.5 rounded-full ${phase === "idle" ? "bg-jarvis/70" : phase === "listening" ? "bg-emerald-400 motion-safe:animate-pulse" : phase === "speaking" ? "bg-jarvis motion-safe:animate-pulse" : "bg-amber-400 motion-safe:animate-pulse"}`} />
             <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{statusLabel}</span>
           </div>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
+          <div className="hidden lg:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
             Voice · <span className="text-jarvis/80">{tts.voice.split("-").pop() || "auto"}</span>
           </div>
         </div>
@@ -1036,7 +1036,7 @@ function JarvisPage() {
         </aside>
 
         {/* RIGHT COLUMN — premium chat console */}
-        <section className="jarvis-panel rounded-3xl p-4 sm:p-6 flex flex-col min-h-[520px] lg:min-h-[calc(100dvh-9rem)]">
+        <section className="jarvis-panel rounded-2xl lg:rounded-3xl p-3 sm:p-5 lg:p-6 flex flex-col min-h-[360px] sm:min-h-[420px] lg:min-h-[calc(100dvh-9rem)] pb-[env(safe-area-inset-bottom)]">
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
         <div className="relative z-10 w-full flex-1 flex flex-col gap-3">
           <div className="relative w-full flex-1 flex flex-col">
@@ -1046,7 +1046,7 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="w-full flex-1 space-y-5 min-h-[220px] max-h-[calc(100dvh-22rem)] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-4 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
+            className="w-full flex-1 space-y-5 min-h-[140px] sm:min-h-[200px] max-h-[45dvh] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-3 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
               <p className="text-center text-sm text-muted-foreground italic">
