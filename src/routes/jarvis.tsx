@@ -2329,14 +2329,16 @@ function JarvisPage() {
                 >
                   <div className="relative flex items-center justify-center gap-8 sm:gap-14">
                     {showSides && (
-                      <OrbSideButton
-                        icon={<Mic className="h-4 w-4" />}
-                        hue={hue}
-                        level={phase === "listening" ? micLevel : 0}
-                        showArc
-                        onClick={handleMicClick}
-                        ariaLabel={phase === "idle" ? "Start listening" : "Toggle mic"}
-                      />
+                      <div className="hidden sm:block">
+                        <OrbSideButton
+                          icon={<Mic className="h-4 w-4" />}
+                          hue={hue}
+                          level={phase === "listening" ? micLevel : 0}
+                          showArc
+                          onClick={handleMicClick}
+                          ariaLabel={phase === "idle" ? "Start listening" : "Toggle mic"}
+                        />
+                      </div>
                     )}
 
                     <button
