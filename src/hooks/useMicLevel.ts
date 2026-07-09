@@ -156,6 +156,7 @@ export function useMicLevel(active: boolean, deviceId?: string | null): MicStatu
         // best-effort: browsers ignore what they don't support.
         const s = await navigator.mediaDevices.getUserMedia({
           audio: {
+            ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
             channelCount: 1,
             sampleRate: 16000,
             echoCancellation: true,
