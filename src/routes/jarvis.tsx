@@ -746,15 +746,25 @@ function JarvisPage() {
    */
   const speak = useCallback(
     async (text: string) => {
+      const t0 = performance.now();
       try {
         setPhase("speaking");
         setPlayPaused(false);
         lastSpokenRef.current = text;
 
+        // Adaptive pace: use the user's base speed unless auto-adaptive is
+        // on, in which case nudge it up in proportion to the most recent
+        // total pipeline latency (STT + TTS). Bounded inside adaptiveSpeed.
+        const effectiveSpeed = adaptiveSpeed(
+          tts.speed,
+          sttMs + ttsMs,
+          tts.autoAdaptivePace,
+        );
+
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voice: tts.voice, speed: tts.speed }),
+          body: JSON.stringify({ text, voice: tts.voice, speed: effectiveSpeed }),
         });
         if (!res.ok) throw new Error(await res.text());
         const blob = await res.blob();
@@ -774,6 +784,9 @@ function JarvisPage() {
           toast.success("Ready for your next message", { duration: 1500 });
         };
         await audio.play();
+        // Measured from request start to first audible playback — this is
+        // the metric that maps to "how long did I wait to hear a reply?".
+        setTtsMs(Math.round(performance.now() - t0));
       } catch (e) {
         console.error(e);
         setPhase("idle");
