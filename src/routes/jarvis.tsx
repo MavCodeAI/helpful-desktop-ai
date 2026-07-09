@@ -578,8 +578,9 @@ function JarvisPage() {
         setTtsMs(Math.round(performance.now() - t0));
       } catch (e) {
         console.error(e);
-        setPhase("idle");
-        toast.error(friendlyError(e, "Voice playback failed"));
+        const msg = friendlyError(e, "Voice playback failed");
+        dispatch({ type: "ERROR", message: msg });
+        toast.error(msg);
       }
     },
     [tts, sttMs, ttsMs],
