@@ -976,10 +976,54 @@ function JarvisPage() {
       <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
       {/* ==================================================================
-          TRANSCRIPT COLUMN — floating glass card, scrolls, flex-1
+          CHAT COLUMN — orb hero (top) + transcript (flex-1)
           ================================================================== */}
-      <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-4 sm:pt-6">
+      <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-5">
         <div className="w-full max-w-3xl flex flex-col min-h-0 relative">
+          {/* Orb + status — hero identity, sits ABOVE transcript */}
+          <div className={`flex flex-col items-center shrink-0 transition-all duration-500 ${
+            messages.length === 0 && !partial && !lastFailed
+              ? "gap-4 sm:gap-5 pb-2"
+              : "gap-2 pb-3"
+          }`}>
+            <button
+              type="button"
+              ref={micButtonRef}
+              onClick={handleMicClick}
+              aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+              className={`group relative flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-500 motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite] ${
+                messages.length === 0 && !partial && !lastFailed
+                  ? "w-[96px] h-[96px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px]"
+                  : "w-[56px] h-[56px] sm:w-[64px] sm:h-[64px]"
+              }`}
+            >
+              <div
+                className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
+                  phase === "idle" ? "opacity-70 group-hover:opacity-95" : phase === "speaking" ? "opacity-100" : "opacity-90"
+                } ${reduced ? "opacity-40" : ""}`}
+                aria-hidden="true"
+              >
+                <HologramSafe level={reduced ? 0 : micLevel} />
+              </div>
+            </button>
+
+            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  phase === "idle"
+                    ? "bg-jarvis/70"
+                    : phase === "listening"
+                    ? "bg-emerald-400 motion-safe:animate-pulse"
+                    : phase === "speaking"
+                    ? "bg-jarvis motion-safe:animate-pulse"
+                    : "bg-amber-400 motion-safe:animate-pulse"
+                }`}
+              />
+              <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">{statusLabel}</span>
+            </div>
+          </div>
+
+          {/* Transcript — scrolls; empty state renders welcome + chips inline */}
           <div
             ref={transcriptRef}
             role="log"
@@ -989,12 +1033,12 @@ function JarvisPage() {
               messages.length === 0 && !partial && !lastFailed
                 ? "bg-transparent border-0"
                 : "glass-card rounded-[24px] sm:rounded-[32px] p-4 sm:p-6"
-            } flex-1 min-h-[120px] sm:min-h-[200px] overflow-y-auto space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]`}
+            } flex-1 min-h-0 overflow-y-auto space-y-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]`}
           >
             {messages.length === 0 && !partial && !lastFailed && (
-              <div className="flex flex-col items-center justify-center text-center gap-7 h-full py-4 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
-                <div className="space-y-3 max-w-md">
-                  <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
+              <div className="flex flex-col items-center text-center gap-5 pt-2 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
+                <div className="space-y-2 max-w-md">
+                  <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-[1.1]">
                     <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
                       Good to see you.
                     </span>
@@ -1104,6 +1148,7 @@ function JarvisPage() {
           )}
         </div>
       </div>
+
 
       {/* ==================================================================
           BOTTOM DOCK — orb (mic) + composer pill + hints
