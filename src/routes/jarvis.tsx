@@ -435,6 +435,11 @@ function JarvisPage() {
     navigate({ to: "/" });
   };
 
+  // Live mic amplitude → volumetric orb density.
+  // Passive analyser runs while page is mounted; the recording MediaRecorder
+  // uses its own independent stream, so both can coexist.
+  const micLevel = useMicLevel(!!license);
+
   if (!license) return null;
 
   const statusLabel = {
@@ -446,6 +451,10 @@ function JarvisPage() {
 
   return (
     <main className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Volumetric energy orb — full-screen reactive background. */}
+      <div className="absolute inset-0 pointer-events-none">
+        <HologramSafe level={micLevel} />
+      </div>
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
