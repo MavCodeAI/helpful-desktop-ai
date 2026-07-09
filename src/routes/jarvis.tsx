@@ -31,6 +31,7 @@ import {
   Trash2,
   ArrowDown,
   Loader2,
+  X,
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
@@ -787,6 +788,21 @@ function JarvisPage() {
   /** Cancel an in-flight LLM stream; keeps whatever tokens already arrived. */
   const stopGenerating = () => {
     abortRef.current?.abort();
+  };
+
+  /**
+   * Hard-cancel any in-flight SSE stream (STT transcription OR assistant tokens)
+   * and clear partial transcripts safely. Used by the visible Cancel pill.
+   * Aborting the controller triggers the reader's AbortError path, which
+   * releases the reader in `finally` — no socket leak.
+   */
+  const cancelStream = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setRtUserPartial("");
+    setRtAsstPartial("");
+    setPartial("");
+    setPhase("idle");
   };
 
 
@@ -1694,8 +1710,8 @@ function JarvisPage() {
             <div className="flex-1 min-h-0" />
 
 
-            {/* Listening / speaking strips */}
-            {(phase === "listening" || phase === "speaking") && (
+            {/* Listening / thinking / speaking strips */}
+            {(phase === "listening" || phase === "thinking" || phase === "speaking") && (
               <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
                 {phase === "listening" && (
                   <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
@@ -1749,6 +1765,20 @@ function JarvisPage() {
                     )}
                     <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Restart playback from beginning" title="Restart">
                       <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
+                    </Button>
+                  </div>
+                )}
+                {phase === "thinking" && (
+                  <div className="glass-pill flex items-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]" role="group" aria-label="Streaming controls">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={cancelStream}
+                      className="h-11 sm:h-8 rounded-full px-3 text-red-300 hover:text-red-200 hover:bg-red-500/10"
+                      aria-label="Cancel — stop streaming and clear partial transcript"
+                      title="Cancel (Esc)"
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Cancel
                     </Button>
                   </div>
                 )}
