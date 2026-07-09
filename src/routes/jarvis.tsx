@@ -708,7 +708,21 @@ function JarvisPage() {
     if (lastSpokenRef.current) await speak(lastSpokenRef.current);
   };
 
+  // Keep handlersRef pointing at the CURRENT versions of these functions so
+  // the keyboard listener (which was bound once on mount) never invokes
+  // stale first-render closures. Critical for voice PTT: without this,
+  // Space-hold recordings post-first-message would call render-0's
+  // sendToChat with empty history, wiping conversation context.
+  handlersRef.current = {
+    startListening,
+    stopListening,
+    cancelRecording,
+    stopPlayback,
+    stopGenerating,
+  };
+
   /* ---------- Orb tap dispatch ---------- */
+
 
   const handleMicClick = () => {
     haptic(12);
