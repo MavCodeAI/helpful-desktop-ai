@@ -18,7 +18,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Mic,
-  MicOff,
   Loader2,
   LogOut,
   Volume2,
