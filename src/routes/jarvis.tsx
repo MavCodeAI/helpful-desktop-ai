@@ -1028,6 +1028,41 @@ function JarvisPage() {
             )}
           </div>
 
+          {/* Text composer — type a message as an alternative to voice. */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleTextSend();
+            }}
+            className="mt-3 flex items-end gap-2 rounded-2xl border border-jarvis/25 bg-background/70 backdrop-blur-md p-2 focus-within:border-jarvis/60 transition-colors"
+          >
+            <Textarea
+              value={composerText}
+              onChange={(e) => setComposerText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleTextSend();
+                }
+              }}
+              placeholder={phase === "idle" ? "Type a message… (Enter to send, Shift+Enter for newline)" : "Wait for JARVIS to finish…"}
+              disabled={phase !== "idle"}
+              rows={1}
+              className="min-h-[40px] max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 text-sm"
+              aria-label="Message JARVIS"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={phase !== "idle" || !composerText.trim()}
+              className="shrink-0 rounded-xl"
+              aria-label="Send message"
+            >
+              <SendHorizontal className="w-4 h-4" />
+            </Button>
+          </form>
+
+
           {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
           {scrolledUp && (
             <button
