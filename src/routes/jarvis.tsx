@@ -1267,7 +1267,9 @@ function JarvisPage() {
           </div>
           </div>
         </div>
+        </section>
 
+        </div>
       </div>
     </main>
   );
