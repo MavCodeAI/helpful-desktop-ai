@@ -30,7 +30,9 @@ import {
   Plus,
   Trash2,
   ArrowDown,
+  SendHorizontal,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -261,6 +263,7 @@ function JarvisPage() {
   // --- Chat phase + streaming ---
   const [phase, setPhase] = useState<Phase>("idle");
   const [partial, setPartial] = useState("");
+  const [composerText, setComposerText] = useState("");
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
@@ -499,6 +502,15 @@ function JarvisPage() {
   /** Cancel an in-flight LLM stream; keeps whatever tokens already arrived. */
   const stopGenerating = () => {
     abortRef.current?.abort();
+  };
+
+  /** Send a typed message via the text composer. */
+  const handleTextSend = () => {
+    const text = composerText.trim();
+    if (!text || phase !== "idle") return;
+    setComposerText("");
+    haptic(8);
+    void sendToChat(text);
   };
 
   /* ---------- Recording controls ---------- */
@@ -869,7 +881,7 @@ function JarvisPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 relative gap-6">
+      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 [@media(max-height:640px)]:pt-2 [@media(max-height:640px)]:pb-2 [@media(max-height:640px)]:gap-2 relative gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
 
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
@@ -1015,6 +1027,41 @@ function JarvisPage() {
               </div>
             )}
           </div>
+
+          {/* Text composer — type a message as an alternative to voice. */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleTextSend();
+            }}
+            className="mt-3 flex items-end gap-2 rounded-2xl border border-jarvis/25 bg-background/70 backdrop-blur-md p-2 focus-within:border-jarvis/60 transition-colors"
+          >
+            <Textarea
+              value={composerText}
+              onChange={(e) => setComposerText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleTextSend();
+                }
+              }}
+              placeholder={phase === "idle" ? "Type a message… (Enter to send, Shift+Enter for newline)" : "Wait for JARVIS to finish…"}
+              disabled={phase !== "idle"}
+              rows={1}
+              className="min-h-[40px] max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 text-sm"
+              aria-label="Message JARVIS"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={phase !== "idle" || !composerText.trim()}
+              className="shrink-0 rounded-xl"
+              aria-label="Send message"
+            >
+              <SendHorizontal className="w-4 h-4" />
+            </Button>
+          </form>
+
 
           {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
           {scrolledUp && (
