@@ -61,6 +61,8 @@ import {
   loadTTSSettings,
   saveTTSSettings,
   VOICE_OPTIONS,
+  SPEED_PRESETS,
+  paceLabel,
   type TTSSettings,
   type TTSVoice,
 } from "@/lib/tts-settings";
@@ -333,6 +335,70 @@ function LiveWaveform({ level, paused }: { level: number; paused: boolean }) {
         );
       })}
     </svg>
+  );
+}
+
+/**
+ * Volume meter with a colored quality zone and peak-hold marker.
+ *
+ * Reads the smoothed `level` (0..1) for the animated bar and the unsmoothed
+ * `peak` (0..1) for a thin overlay marker that snaps to loud bursts and
+ * decays slowly — the same convention as any audio-app input meter. Colors
+ * encode capture quality at a glance:
+ *
+ *   - < 0.15   → red      "too quiet — speak louder / move closer"
+ *   - 0.15–0.85 → emerald "good input level"
+ *   - > 0.85   → amber    "clipping risk — back off"
+ *
+ * Purely visual; the actual STT capture always proceeds regardless.
+ */
+function VolumeMeter({ level, peak }: { level: number; peak: number }) {
+  const pct = Math.max(0, Math.min(1, level)) * 100;
+  const peakPct = Math.max(0, Math.min(1, peak)) * 100;
+  const zone =
+    peak < 0.05 ? "silent" :
+    level < 0.15 ? "quiet" :
+    peak > 0.9 ? "clip" :
+    "good";
+  const barColor =
+    zone === "silent" ? "bg-muted-foreground/40" :
+    zone === "quiet" ? "bg-red-400" :
+    zone === "clip" ? "bg-amber-400" :
+    "bg-emerald-400";
+  const label =
+    zone === "silent" ? "No signal" :
+    zone === "quiet" ? "Too quiet" :
+    zone === "clip" ? "Clipping" :
+    "Good";
+  const labelColor =
+    zone === "silent" ? "text-muted-foreground/70" :
+    zone === "quiet" ? "text-red-300" :
+    zone === "clip" ? "text-amber-300" :
+    "text-emerald-300";
+  return (
+    <div className="flex items-center gap-2 min-w-0" role="meter" aria-label={`Input level ${Math.round(pct)}%, ${label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+      <div className="relative h-2 w-32 sm:w-40 rounded-full bg-white/5 overflow-hidden ring-1 ring-white/10">
+        {/* Ideal-zone shading — subtle emerald tint between 15% and 85%. */}
+        <div className="absolute inset-y-0 left-[15%] right-[15%] bg-emerald-400/5" aria-hidden="true" />
+        {/* Live level bar. */}
+        <div
+          className={`absolute inset-y-0 left-0 ${barColor} transition-[width] duration-75 ease-out`}
+          style={{ width: `${pct}%` }}
+          aria-hidden="true"
+        />
+        {/* Peak-hold marker — 2px vertical line that decays slowly. */}
+        {peak > 0.02 && (
+          <div
+            className={`absolute top-0 bottom-0 w-[2px] ${zone === "clip" ? "bg-amber-200" : "bg-white/70"}`}
+            style={{ left: `calc(${peakPct}% - 1px)` }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+      <span className={`text-[9px] font-semibold uppercase tracking-[0.2em] whitespace-nowrap ${labelColor}`}>
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -821,14 +887,31 @@ function JarvisPage() {
     // and bails before the setPhase("idle") from stopPlayback commits.
     if (mediaRef.current) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Tight constraints — mono @ 16 kHz + AEC/NS shrinks the STT upload
+      // ~4× vs stereo/48kHz defaults without hurting speech recognition,
+      // so the round-trip to Whisper feels noticeably snappier.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
       const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
-      const rec = new MediaRecorder(stream, { mimeType: mime });
+      // 24 kbps mono Opus is transparent for speech; the smaller blob means
+      // the POST body is done uploading before the recorder even flushes,
+      // shaving hundreds of ms off perceived end-to-end latency.
+      const rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 24000 });
       mediaRef.current = rec;
       chunksRef.current = [];
       setRecPaused(false);
 
+      // 100 ms timeslice → the browser flushes small chunks continuously
+      // instead of holding one giant blob until stop(), so the upload can
+      // start streaming rather than block on rec.onstop.
       rec.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
 
       rec.onstop = async () => {
@@ -895,7 +978,7 @@ function JarvisPage() {
         }
       };
 
-      rec.start();
+      rec.start(100);
       setRecStartedAt(Date.now());
       setPhase("listening");
     } catch (e) {
@@ -1109,7 +1192,7 @@ function JarvisPage() {
   // Live mic amplitude → volumetric orb density.
   // Passive analyser runs while page is mounted; the recording MediaRecorder
   // uses its own independent stream, so both can coexist.
-  const { level: micLevel, active: micActive } = useMicLevel(!!license);
+  const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license);
 
   /* ---------- Auto-VAD (mode === "vad") ---------- */
   //
@@ -1466,9 +1549,33 @@ function JarvisPage() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <label className="text-xs uppercase tracking-widest text-muted-foreground">
-                      Speed
+                      Speed <span className="text-foreground/40 normal-case tracking-normal">— {paceLabel(tts.speed)}</span>
                     </label>
                     <span className="text-xs text-jarvis font-mono">{tts.speed.toFixed(2)}×</span>
+                  </div>
+                  {/* Preset chips — one-tap coarse control. The slider below
+                      stays available for fine-tuning. Highlighted chip is
+                      whichever preset is closest to the current speed. */}
+                  <div className="flex gap-1.5 mb-3" role="group" aria-label="Speed presets">
+                    {SPEED_PRESETS.map((p) => {
+                      const selected = paceLabel(tts.speed) === p.label;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => updateTts({ speed: p.value })}
+                          aria-pressed={selected}
+                          className={`flex-1 min-h-9 rounded-full text-[11px] font-mono tracking-wider border transition-colors ${
+                            selected
+                              ? "bg-jarvis/20 border-jarvis/60 text-jarvis"
+                              : "bg-white/[0.02] border-white/10 text-foreground/70 hover:bg-white/[0.06] hover:text-foreground"
+                          }`}
+                        >
+                          {p.label}
+                          <span className="ml-1 text-[9px] opacity-70">{p.value}×</span>
+                        </button>
+                      );
+                    })}
                   </div>
                   <Slider
                     min={0.5}
@@ -1478,6 +1585,7 @@ function JarvisPage() {
                     onValueChange={([v]) => updateTts({ speed: v })}
                   />
                 </div>
+
 
                 <div>
                   <div className="flex justify-between mb-2">
@@ -1709,6 +1817,26 @@ function JarvisPage() {
                       </span>
                       <LiveWaveform level={micLevel} paused={recPaused} />
                       <RecTimer startedAt={recStartedAt} paused={recPaused} />
+                    </div>
+
+                    {/* Volume meter — instant pass/fail feedback so the user
+                        can tell if their voice is actually being captured. */}
+                    <div className="glass-pill flex items-center gap-3 rounded-full px-3 py-1.5">
+                      <VolumeMeter level={micLevel} peak={micPeak} />
+                    </div>
+
+                    {/* Live metrics — audio input latency + current TTS pace,
+                        so speed changes are quantified, not just felt. */}
+                    <div className="flex items-center gap-3 text-[10px] font-mono tabular-nums text-foreground/60">
+                      <span title="Audio input latency (browser-reported)">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Lat</span>
+                        {micLatency ? `${micLatency}ms` : "—"}
+                      </span>
+                      <span className="text-foreground/20">·</span>
+                      <span title="Current speaking rate preset">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Pace</span>
+                        {paceLabel(tts.speed)} {tts.speed.toFixed(2)}×
+                      </span>
                     </div>
 
                     <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1" role="group" aria-label="Recording controls">

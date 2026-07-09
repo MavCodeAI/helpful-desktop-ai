@@ -29,6 +29,28 @@ export const VOICE_OPTIONS: { id: TTSVoice; label: string }[] = [
   { id: "shimmer", label: "Shimmer — Soft" },
 ];
 
+/** Quick-pick pace presets — for the settings sheet chip row. */
+export const SPEED_PRESETS: { id: string; label: string; value: number }[] = [
+  { id: "slow", label: "Slow", value: 0.8 },
+  { id: "normal", label: "Normal", value: 1.0 },
+  { id: "fast", label: "Fast", value: 1.2 },
+  { id: "faster", label: "Faster", value: 1.5 },
+];
+
+/** Human-readable label for the closest pace preset to a given speed value. */
+export function paceLabel(speed: number): string {
+  let best = SPEED_PRESETS[1];
+  let bestDist = Math.abs(speed - best.value);
+  for (const p of SPEED_PRESETS) {
+    const d = Math.abs(speed - p.value);
+    if (d < bestDist) {
+      best = p;
+      bestDist = d;
+    }
+  }
+  return best.label;
+}
+
 const KEY = "jarvis.tts.settings.v1";
 
 /** Load settings from localStorage; falls back to defaults. Safe on SSR. */
