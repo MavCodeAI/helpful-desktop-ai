@@ -15,32 +15,30 @@
  */
 import { lazy, Suspense } from "react";
 
-const ReactMarkdown = lazy(() => import("react-markdown"));
-// remark-gfm is loaded eagerly inside the same lazy chunk boundary via
-// a top-level dynamic import so both land in the same async graph node.
-const remarkGfmPromise = import("remark-gfm").then((m) => m.default);
-
-// Cache the resolved plugin so every message reuses the same array reference
-// — ReactMarkdown treats a new `remarkPlugins` array as a config change and
-// re-parses; keeping the reference stable lets memoization kick in.
-let cachedPlugins: unknown[] | null = null;
-function usePlugins(): unknown[] | null {
-  if (cachedPlugins) return cachedPlugins;
-  // Fire-and-remember — resolves in the same microtask as the lazy chunk.
-  void remarkGfmPromise.then((p) => {
-    cachedPlugins = [p];
-  });
-  return cachedPlugins;
-}
+// Resolve react-markdown AND remark-gfm together inside the same lazy chunk.
+// Previous approach kept plugins in a module-level variable that was `null`
+// on first render and updated by a fire-and-forget `.then()` — but that
+// mutation never triggered a React re-render, so the first bubble rendered
+// without GFM (no tables, strikethrough, task lists). Awaiting both here
+// means Suspense holds the fallback until both are ready, and the resolved
+// module reference is stable for every subsequent bubble.
+const MarkdownWithGfm = lazy(async () => {
+  const [{ default: ReactMarkdown }, { default: remarkGfm }] = await Promise.all([
+    import("react-markdown"),
+    import("remark-gfm"),
+  ]);
+  const plugins = [remarkGfm];
+  return {
+    default: function MarkdownInner({ children }: { children: string }) {
+      return <ReactMarkdown remarkPlugins={plugins}>{children}</ReactMarkdown>;
+    },
+  };
+});
 
 /**
  * Idle-prefetch the markdown chunk once, so the first assistant bubble
- * doesn't wait on the network. We fire from `requestIdleCallback` (or a
- * short `setTimeout` fallback in browsers without it) so we never
- * contend with the initial paint / hydration burst on `/jarvis`. Idle
- * usually fires within a few hundred ms — well before any LLM round-trip
- * finishes, so by the time the first response streams in, the chunk is
- * already in the module cache and `<Suspense>` never shows its fallback.
+ * doesn't wait on the network. Fires from `requestIdleCallback` (or a
+ * short `setTimeout` fallback) to avoid contending with initial paint.
  */
 let prefetched = false;
 export function prefetchMarkdown(): void {
@@ -48,7 +46,7 @@ export function prefetchMarkdown(): void {
   prefetched = true;
   const run = () => {
     void import("react-markdown");
-    void remarkGfmPromise;
+    void import("remark-gfm");
   };
   const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
     .requestIdleCallback;
@@ -57,12 +55,9 @@ export function prefetchMarkdown(): void {
 }
 
 export function MarkdownMessage({ children }: { children: string }) {
-  const plugins = usePlugins();
   return (
     <Suspense fallback={<span>{children}</span>}>
-      {/* Casting: remark plugins are typed as PluggableList but lazy import
-          erases the narrow type. Runtime behavior is unchanged. */}
-      <ReactMarkdown remarkPlugins={plugins as never}>{children}</ReactMarkdown>
+      <MarkdownWithGfm>{children}</MarkdownWithGfm>
     </Suspense>
   );
 }
