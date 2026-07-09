@@ -2062,6 +2062,15 @@ function JarvisPage() {
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">TTS</span>
                         {ttsMs ? `${ttsMs}ms` : "—"}
                       </span>
+                      {e2eMs > 0 && (
+                        <>
+                          <span className="text-foreground/20">·</span>
+                          <span title="True end-to-end latency: you stopped speaking → first assistant audio (realtime only)">
+                            <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">E2E</span>
+                            {e2eMs}ms
+                          </span>
+                        </>
+                      )}
                       <span className="text-foreground/20">·</span>
                       <span title={tts.autoAdaptivePace ? "Speaking rate — auto-adapts to pipeline latency" : "Speaking rate"}>
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Pace</span>
