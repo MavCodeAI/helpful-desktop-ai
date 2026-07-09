@@ -33,6 +33,29 @@ function usePlugins(): unknown[] | null {
   return cachedPlugins;
 }
 
+/**
+ * Idle-prefetch the markdown chunk once, so the first assistant bubble
+ * doesn't wait on the network. We fire from `requestIdleCallback` (or a
+ * short `setTimeout` fallback in browsers without it) so we never
+ * contend with the initial paint / hydration burst on `/jarvis`. Idle
+ * usually fires within a few hundred ms — well before any LLM round-trip
+ * finishes, so by the time the first response streams in, the chunk is
+ * already in the module cache and `<Suspense>` never shows its fallback.
+ */
+let prefetched = false;
+export function prefetchMarkdown(): void {
+  if (prefetched || typeof window === "undefined") return;
+  prefetched = true;
+  const run = () => {
+    void import("react-markdown");
+    void remarkGfmPromise;
+  };
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
+    .requestIdleCallback;
+  if (ric) ric(run);
+  else setTimeout(run, 250);
+}
+
 export function MarkdownMessage({ children }: { children: string }) {
   const plugins = usePlugins();
   return (
