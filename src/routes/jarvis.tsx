@@ -587,6 +587,7 @@ function JarvisPage() {
 
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        setRecStartedAt(null);
         const blob = new Blob(chunksRef.current, { type: mime });
         if (blob.size < 1500) {
           toast.error("Recording too short");
