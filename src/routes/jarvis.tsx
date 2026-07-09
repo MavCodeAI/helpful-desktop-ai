@@ -986,7 +986,7 @@ function JarvisPage() {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
-    setPhase("idle");
+    dispatch({ type: "PLAYBACK_DONE" });
     setPlayPaused(false);
   };
   /** Restart from beginning; if no audio loaded, re-request TTS. */
