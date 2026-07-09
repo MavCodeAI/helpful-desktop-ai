@@ -1825,7 +1825,7 @@ function JarvisPage() {
               JARVIS
             </span>
             <span className="mt-0.5 text-[9px] uppercase tracking-[0.35em] text-muted-foreground/70 whitespace-nowrap">
-              Voice only
+              Voice AI
             </span>
           </div>
         </div>
