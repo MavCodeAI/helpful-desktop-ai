@@ -1082,7 +1082,10 @@ function JarvisPage() {
           if (!res.ok) {
             const body = await res.text().catch(() => "");
             await cooldown.startFromResponse(res);
-            throw new Error(body || `${res.status}`);
+            const err = new Error(body || `${res.status}`) as Error & { sttStatus?: number; sttBody?: string };
+            err.sttStatus = res.status;
+            err.sttBody = body;
+            throw err;
           }
 
           // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
@@ -1095,7 +1098,9 @@ function JarvisPage() {
           const text = finalText.trim();
           if (!text) {
             setRtUserPartial("");
-            toast.error("Didn't catch that");
+            toast.error("Didn't catch that", {
+              description: "The model returned an empty transcript. Speak a bit louder and retry.",
+            });
             setPhase("idle");
             return;
           }
@@ -1113,7 +1118,12 @@ function JarvisPage() {
           }
           console.error(e);
           setRtUserPartial("");
-          toast.error(friendlyError(e, "Transcription failed"));
+          const ex = e as { sttStatus?: number; sttBody?: string; name?: string };
+          const detail = sttErrorDetail(ex.sttStatus ?? null, ex.sttBody ?? "", e);
+          toast.error(detail.title, {
+            description: `${detail.cause}\n→ ${detail.next}`,
+            duration: 8000,
+          });
           setPhase("idle");
         } finally {
           // Reader cleanup lives inside readSttResponse's finally block.
