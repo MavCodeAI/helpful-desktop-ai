@@ -143,6 +143,109 @@ export const Route = createFileRoute("/jarvis")({
 
 type Phase = "idle" | "listening" | "thinking" | "speaking";
 
+/** Preview-parity color language: each phase has a hue that drives the orb,
+ *  rings, glow, side buttons, caption tint, and message role labels. */
+const PHASE_HUE: Record<Phase, number> = {
+  idle: 258,       // violet — resting
+  listening: 180,  // cyan   — user speaking
+  thinking: 48,    // amber  — connecting / composing
+  speaking: 258,   // violet — assistant replying
+};
+const PHASE_CAPTION: Record<Phase, string> = {
+  idle: "TAP TO SPEAK",
+  listening: "LISTENING",
+  thinking: "THINKING",
+  speaking: "SPEAKING",
+};
+
+/** Animated bars used inside the orb while listening. Purely visual, driven
+ *  by shared mic amplitude. */
+function OrbWaveBars({ level, hue }: { level: number; hue: number }) {
+  const [, force] = useState(0);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (reduced) return;
+    let raf = 0;
+    const tick = () => { force((n) => (n + 1) & 0xffff); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced]);
+  const bars = 7;
+  const now = Date.now() / 140;
+  return (
+    <div className="flex items-center gap-1.5" aria-hidden="true">
+      {Array.from({ length: bars }).map((_, i) => {
+        const wave = Math.abs(Math.sin(now + i * 0.7));
+        const h = 8 + wave * (12 + level * 50);
+        return (
+          <span
+            key={i}
+            className="rounded-full"
+            style={{
+              width: 3,
+              height: `${h}px`,
+              background: `hsl(${hue} 95% 75%)`,
+              boxShadow: `0 0 8px hsl(${hue} 95% 65% / 0.8)`,
+              opacity: 0.4 + wave * 0.6,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Small circular button that flanks the orb (mic on the left, stop on the
+ *  right). Mic variant paints a mic-level arc around itself. */
+function OrbSideButton({
+  icon, hue, level, onClick, ariaLabel, showArc, muted, disabled,
+}: {
+  icon: React.ReactNode; hue: number; level: number;
+  onClick: () => void; ariaLabel: string;
+  showArc?: boolean; muted?: boolean; disabled?: boolean;
+}) {
+  const size = 48;
+  const arcActive = showArc && level > 0.01;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className="relative grid place-items-center rounded-full outline-none transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      style={{ width: size, height: size }}
+    >
+      {showArc && (
+        <svg className="absolute -inset-1" viewBox="0 0 56 56" fill="none" aria-hidden>
+          <circle
+            cx="28" cy="28" r="26"
+            stroke={`hsl(${hue} 90% 60% / ${arcActive ? 0.9 : 0.3})`}
+            strokeWidth="1.5"
+            strokeDasharray={`${34 + level * 80} 180`}
+            strokeLinecap="round"
+            transform="rotate(120 28 28)"
+            style={{ filter: `drop-shadow(0 0 4px hsl(${hue} 90% 60% / 0.6))` }}
+          />
+        </svg>
+      )}
+      <div
+        className="grid place-items-center rounded-full backdrop-blur"
+        style={{
+          width: size, height: size,
+          background: muted
+            ? "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))"
+            : `linear-gradient(180deg, hsl(${hue} 40% 20% / 0.55), hsl(${hue} 30% 10% / 0.55))`,
+          border: `1px solid hsl(${hue} 50% 60% / ${muted ? 0.15 : 0.35})`,
+          color: muted ? "rgba(255,255,255,0.85)" : `hsl(${hue} 90% 85%)`,
+          boxShadow: muted ? "none" : `0 0 18px hsl(${hue} 80% 50% / 0.25)`,
+        }}
+      >
+        {icon}
+      </div>
+    </button>
+  );
+}
+
 /**
  * Scrolling live waveform — rolling buffer of mic amplitudes rendered as
  * vertical bars. Bars slide right→left every frame; newest sample lands
