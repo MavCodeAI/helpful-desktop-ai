@@ -938,7 +938,7 @@ function JarvisPage() {
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
         <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5 mt-2 sm:mt-16 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
-          <div className="relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[160px] [@media(max-height:640px)]:h-[160px]">
+          <div className="relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden">
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
                 phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
