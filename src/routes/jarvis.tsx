@@ -339,6 +339,20 @@ function JarvisPage() {
       return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
     };
     const onDown = (e: KeyboardEvent) => {
+      // Escape — universal cancel/stop
+      if (e.key === "Escape") {
+        if (phaseRef2.current === "listening") {
+          e.preventDefault();
+          cancelRecording();
+        } else if (phaseRef2.current === "speaking") {
+          e.preventDefault();
+          stopPlayback();
+        } else if (phaseRef2.current === "thinking") {
+          e.preventDefault();
+          stopGenerating();
+        }
+        return;
+      }
       if (e.code !== "Space" || e.repeat) return;
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       if (isEditable(e.target)) return;
@@ -999,6 +1013,8 @@ function JarvisPage() {
                 ref={micButtonRef}
                 onClick={handleMicClick}
                 aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+                aria-keyshortcuts={phase === "idle" ? "Space" : "Escape"}
+                title={phase === "idle" ? "Hold Space to talk" : "Press Esc to cancel"}
                 className={`group relative flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-500 motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite] ${
                   messages.length === 0 && !partial && !lastFailed
                     ? "w-[96px] h-[96px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px]"
@@ -1019,8 +1035,14 @@ function JarvisPage() {
                 </div>
               </button>
 
-              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-3 py-1"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <span
+                  aria-hidden="true"
                   className={`w-1.5 h-1.5 rounded-full ${
                     phase === "idle"
                       ? "bg-jarvis/70"
@@ -1175,15 +1197,22 @@ function JarvisPage() {
                     </div>
 
                     {/* Controls */}
-                    <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1">
+                    <div
+                      className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1"
+                      role="group"
+                      aria-label="Recording controls"
+                    >
                       {recPaused ? (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={resumeRecording}
                           className="h-8 rounded-full"
+                          aria-label="Resume recording"
+                          aria-pressed={false}
+                          title="Resume recording"
                         >
-                          <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                          <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                         </Button>
                       ) : (
                         <Button
@@ -1191,8 +1220,11 @@ function JarvisPage() {
                           size="sm"
                           onClick={pauseRecording}
                           className="h-8 rounded-full"
+                          aria-label="Pause recording"
+                          aria-pressed={false}
+                          title="Pause recording"
                         >
-                          <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                          <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                         </Button>
                       )}
                       <Button
@@ -1200,14 +1232,20 @@ function JarvisPage() {
                         size="sm"
                         onClick={stopListening}
                         className="h-8 rounded-full"
+                        aria-label="Stop recording and send"
+                        aria-keyshortcuts="Space"
+                        title="Send (release Space)"
                       >
-                        <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+                        <SendHorizontal className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Send
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={cancelRecording}
                         className="h-8 rounded-full text-muted-foreground"
+                        aria-label="Cancel recording and discard audio"
+                        aria-keyshortcuts="Escape"
+                        title="Cancel (Esc)"
                       >
                         Cancel
                       </Button>
@@ -1215,15 +1253,22 @@ function JarvisPage() {
                   </div>
                 )}
                 {phase === "speaking" && (
-                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
+                  <div
+                    className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]"
+                    role="group"
+                    aria-label="Playback controls"
+                  >
                     {playPaused ? (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={resumePlayback}
                         className="h-8 rounded-full"
+                        aria-label="Resume playback"
+                        aria-pressed={false}
+                        title="Resume playback"
                       >
-                        <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                        <Play className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Resume
                       </Button>
                     ) : (
                       <Button
@@ -1231,8 +1276,11 @@ function JarvisPage() {
                         size="sm"
                         onClick={pausePlayback}
                         className="h-8 rounded-full"
+                        aria-label="Pause playback"
+                        aria-pressed={false}
+                        title="Pause playback"
                       >
-                        <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                        <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                       </Button>
                     )}
                     <Button
@@ -1240,16 +1288,21 @@ function JarvisPage() {
                       size="sm"
                       onClick={restartPlayback}
                       className="h-8 rounded-full"
+                      aria-label="Restart playback from beginning"
+                      title="Restart"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={stopPlayback}
                       className="h-8 rounded-full"
+                      aria-label="Stop playback"
+                      aria-keyshortcuts="Escape"
+                      title="Stop (Esc)"
                     >
-                      <Square className="w-3.5 h-3.5 mr-1" /> Stop
+                      <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Stop
                     </Button>
                   </div>
                 )}
@@ -1295,9 +1348,11 @@ function JarvisPage() {
                   size="icon"
                   variant="destructive"
                   className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full"
-                  aria-label="Stop generating"
+                  aria-label="Stop generating response"
+                  aria-keyshortcuts="Escape"
+                  title="Stop generating (Esc)"
                 >
-                  <Square className="w-4 h-4" />
+                  <Square className="w-4 h-4" aria-hidden="true" />
                 </Button>
               ) : (
                 <Button
@@ -1311,8 +1366,10 @@ function JarvisPage() {
                       : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
                   } disabled:shadow-none`}
                   aria-label="Send message"
+                  aria-keyshortcuts="Enter"
+                  title="Send message (Enter)"
                 >
-                  <SendHorizontal className="w-4 h-4" />
+                  <SendHorizontal className="w-4 h-4" aria-hidden="true" />
                 </Button>
               )}
             </form>
@@ -1356,6 +1413,13 @@ function JarvisPage() {
               Enter
             </kbd>
             send
+          </span>
+          <span className="opacity-40">•</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
+              Esc
+            </kbd>
+            cancel
           </span>
         </div>
 
