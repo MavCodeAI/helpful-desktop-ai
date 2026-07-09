@@ -133,7 +133,6 @@ export const Route = createFileRoute("/jarvis")({
 
 type Phase = "idle" | "listening" | "thinking" | "speaking";
 
-
 /**
  * Scrolling live waveform — rolling buffer of mic amplitudes rendered as
  * vertical bars. Bars slide right→left every frame; newest sample lands

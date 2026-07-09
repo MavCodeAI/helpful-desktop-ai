@@ -12,11 +12,7 @@
  * Hard-coded demo keys that always validate. Useful for QA and screenshots.
  * Remove or replace with a server call once real licensing exists.
  */
-const VALID_KEYS = new Set([
-  "JARVIS-DEMO-0001",
-  "JARVIS-DEMO-0002",
-  "STARK-INDUSTRIES-001",
-]);
+const VALID_KEYS = new Set(["JARVIS-DEMO-0001", "JARVIS-DEMO-0002", "STARK-INDUSTRIES-001"]);
 
 /**
  * Structural pattern for user-generated keys. Case-insensitive; the third

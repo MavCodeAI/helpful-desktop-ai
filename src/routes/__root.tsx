@@ -79,7 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "JARVIS — Desktop AI Assistant" },
-      { name: "description", content: "Voice-powered desktop AI assistant. Talk to JARVIS naturally." },
+      {
+        name: "description",
+        content: "Voice-powered desktop AI assistant. Talk to JARVIS naturally.",
+      },
       { name: "author", content: "JARVIS" },
       { property: "og:title", content: "JARVIS — Desktop AI Assistant" },
       { property: "og:description", content: "Voice-powered desktop AI assistant." },
@@ -97,7 +100,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -130,4 +136,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-
