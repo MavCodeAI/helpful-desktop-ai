@@ -225,6 +225,7 @@ function JarvisPage() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [partial, setPartial] = useState("");
   const [composerText, setComposerText] = useState("");
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
@@ -548,6 +549,21 @@ function JarvisPage() {
     haptic(8);
     void sendToChat(text);
   };
+
+  // Return focus to the composer whenever we transition back to idle from
+  // any active phase (send → thinking → idle, recording cancel, playback end).
+  // Textarea is `disabled` while non-idle so we can't focus in-flight;
+  // instead we refocus on the trailing edge. Skip the very first mount so
+  // we don't steal focus from the license/landing flow.
+  const prevPhaseRef = useRef<Phase>("idle");
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (prev !== "idle" && phase === "idle") {
+      // rAF so React has committed `disabled={false}` before we focus.
+      requestAnimationFrame(() => composerRef.current?.focus());
+    }
+  }, [phase]);
 
   /* ---------- Recording controls ---------- */
 
@@ -1352,12 +1368,22 @@ function JarvisPage() {
               className="shrink-0 flex items-end gap-2 border-t border-white/[0.06] px-3 sm:px-4 py-2.5"
             >
               <Textarea
+                ref={composerRef}
                 value={composerText}
                 onChange={(e) => setComposerText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleTextSend();
+                  } else if (e.key === "Escape" && phase === "idle" && composerText) {
+                    // When idle and the user has a draft, Escape clears it in
+                    // place and keeps focus so they can start over immediately.
+                    // (The global Escape handler only fires when phase is
+                    // listening/speaking/thinking, so this branch owns the
+                    // idle-draft case.)
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setComposerText("");
                   }
                 }}
                 placeholder={
@@ -1373,6 +1399,7 @@ function JarvisPage() {
                 rows={1}
                 className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
                 aria-label="Message JARVIS"
+                aria-keyshortcuts="Enter Escape"
               />
 
               {phase === "thinking" ? (
