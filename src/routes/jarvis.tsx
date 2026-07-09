@@ -451,8 +451,8 @@ function JarvisPage() {
 
   return (
     <main className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Volumetric energy orb — full-screen reactive background. */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Volumetric energy orb — centered, contained (not full-screen). */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(70vw,420px)] aspect-square">
         <HologramSafe level={micLevel} />
       </div>
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
