@@ -339,6 +339,20 @@ function JarvisPage() {
       return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
     };
     const onDown = (e: KeyboardEvent) => {
+      // Escape — universal cancel/stop
+      if (e.key === "Escape") {
+        if (phaseRef2.current === "listening") {
+          e.preventDefault();
+          cancelRecording();
+        } else if (phaseRef2.current === "speaking") {
+          e.preventDefault();
+          stopPlayback();
+        } else if (phaseRef2.current === "thinking") {
+          e.preventDefault();
+          stopGenerating();
+        }
+        return;
+      }
       if (e.code !== "Space" || e.repeat) return;
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
       if (isEditable(e.target)) return;
