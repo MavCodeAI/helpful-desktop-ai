@@ -2139,7 +2139,7 @@ function JarvisPage() {
                         hue={hue}
                         level={0}
                         onClick={stopHandler}
-                        ariaLabel="Stop"
+                        ariaLabel={stopAria}
                         muted
                         disabled={stopDisabled}
                       />
