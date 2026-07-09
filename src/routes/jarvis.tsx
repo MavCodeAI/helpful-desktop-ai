@@ -902,12 +902,15 @@ function JarvisPage() {
                   <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-jarvis motion-safe:animate-spin" />
                 ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
                   <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
-                ) : (
-                  <Mic className="w-10 h-10 sm:w-11 sm:h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
-                )}
+                ) : null}
               </div>
             </button>
           </div>
+
+          {/* Mic indicator below the orb (idle state only) */}
+          {phase === "idle" && (
+            <Mic className="w-6 h-6 text-jarvis drop-shadow-[0_0_10px_var(--jarvis-glow)]" aria-hidden="true" />
+          )}
 
 
 
