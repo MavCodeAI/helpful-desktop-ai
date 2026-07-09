@@ -698,7 +698,7 @@ function JarvisPage() {
     setRtUserPartial("");
     setRtAsstPartial("");
     setPartial("");
-    setPhase("idle");
+    dispatch({ type: "CANCEL" });
   };
 
 
