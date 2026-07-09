@@ -204,7 +204,7 @@ function TypingDots({ hue, label }: { hue: number; label?: string }) {
   const glow = `hsl(${hue} 90% 60% / 0.55)`;
   return (
     <div
-      className="flex items-center gap-1.5"
+      className="flex items-center gap-2 sm:gap-1.5 py-1"
       role="status"
       aria-live="polite"
       aria-label={label ?? "Loading"}
@@ -212,7 +212,7 @@ function TypingDots({ hue, label }: { hue: number; label?: string }) {
       {[0, 160, 320].map((delay) => (
         <span
           key={delay}
-          className={`inline-block w-1.5 h-1.5 rounded-full ${
+          className={`inline-block w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${
             reduced ? "motion-safe:animate-pulse" : "motion-safe:animate-bounce"
           }`}
           style={{
