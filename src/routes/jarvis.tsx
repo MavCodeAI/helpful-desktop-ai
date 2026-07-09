@@ -451,10 +451,10 @@ function JarvisPage() {
 
   return (
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
-      {/* Volumetric energy orb — background, dimmed when idle so UI stays readable. */}
+      {/* Volumetric energy orb — sits behind the mic cluster, dimmed when idle. */}
       <div
-        className={`absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(60vw,340px)] aspect-square transition-opacity duration-500 ${
-          phase === "idle" ? "opacity-40" : phase === "speaking" ? "opacity-90" : "opacity-70"
+        className={`absolute left-1/2 top-[26%] sm:top-[30%] -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[min(80vw,460px)] aspect-square transition-opacity duration-500 ${
+          phase === "idle" ? "opacity-45" : phase === "speaking" ? "opacity-95" : "opacity-75"
         }`}
         aria-hidden="true"
       >
