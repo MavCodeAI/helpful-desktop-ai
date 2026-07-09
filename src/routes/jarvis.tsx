@@ -1744,7 +1744,7 @@ function JarvisPage() {
             aria-live="polite"
             className="lg:col-span-4 flex flex-col gap-3 min-h-0 max-h-full overflow-y-auto pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
-            {messages.length === 0 && !partial && !rtUserPartial && !rtAsstPartial && !lastFailed ? (
+            {messages.length === 0 && !partial && !rtUserPartial && !rtAsstPartial && !lastFailed && phase !== "thinking" ? (
               <div
                 className="rounded-2xl border border-dashed p-6 text-center text-xs text-white/40"
                 style={{ borderColor: `hsl(${PHASE_HUE[phase]} 40% 40% / 0.25)` }}
@@ -1786,13 +1786,29 @@ function JarvisPage() {
                   </div>
                 )}
 
+                {phase === "thinking" && !partial && !rtAsstPartial && (
+                  <div
+                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
+                  >
+                    <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(48 90% 70%)" }}>
+                      Thinking
+                    </div>
+                    <div className="font-sans text-sm leading-relaxed text-white/70 flex items-center gap-1.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "0ms" }} />
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "180ms" }} />
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-300/80 motion-safe:animate-pulse" style={{ animationDelay: "360ms" }} />
+                    </div>
+                  </div>
+                )}
+
                 {(partial || rtAsstPartial) && (
                   <div
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl"
+                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(258 90% 75%)" }}>
-                      Assistant
+                      Responding
                     </div>
                     <div className="font-sans text-sm leading-relaxed text-white/90 [&_p]:my-1">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
@@ -1800,6 +1816,7 @@ function JarvisPage() {
                     </div>
                   </div>
                 )}
+
 
 
                 {lastFailed && phase === "idle" && (
