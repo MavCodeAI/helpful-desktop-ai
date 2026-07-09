@@ -338,6 +338,70 @@ function LiveWaveform({ level, paused }: { level: number; paused: boolean }) {
   );
 }
 
+/**
+ * Volume meter with a colored quality zone and peak-hold marker.
+ *
+ * Reads the smoothed `level` (0..1) for the animated bar and the unsmoothed
+ * `peak` (0..1) for a thin overlay marker that snaps to loud bursts and
+ * decays slowly — the same convention as any audio-app input meter. Colors
+ * encode capture quality at a glance:
+ *
+ *   - < 0.15   → red      "too quiet — speak louder / move closer"
+ *   - 0.15–0.85 → emerald "good input level"
+ *   - > 0.85   → amber    "clipping risk — back off"
+ *
+ * Purely visual; the actual STT capture always proceeds regardless.
+ */
+function VolumeMeter({ level, peak }: { level: number; peak: number }) {
+  const pct = Math.max(0, Math.min(1, level)) * 100;
+  const peakPct = Math.max(0, Math.min(1, peak)) * 100;
+  const zone =
+    peak < 0.05 ? "silent" :
+    level < 0.15 ? "quiet" :
+    peak > 0.9 ? "clip" :
+    "good";
+  const barColor =
+    zone === "silent" ? "bg-muted-foreground/40" :
+    zone === "quiet" ? "bg-red-400" :
+    zone === "clip" ? "bg-amber-400" :
+    "bg-emerald-400";
+  const label =
+    zone === "silent" ? "No signal" :
+    zone === "quiet" ? "Too quiet" :
+    zone === "clip" ? "Clipping" :
+    "Good";
+  const labelColor =
+    zone === "silent" ? "text-muted-foreground/70" :
+    zone === "quiet" ? "text-red-300" :
+    zone === "clip" ? "text-amber-300" :
+    "text-emerald-300";
+  return (
+    <div className="flex items-center gap-2 min-w-0" role="meter" aria-label={`Input level ${Math.round(pct)}%, ${label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+      <div className="relative h-2 w-32 sm:w-40 rounded-full bg-white/5 overflow-hidden ring-1 ring-white/10">
+        {/* Ideal-zone shading — subtle emerald tint between 15% and 85%. */}
+        <div className="absolute inset-y-0 left-[15%] right-[15%] bg-emerald-400/5" aria-hidden="true" />
+        {/* Live level bar. */}
+        <div
+          className={`absolute inset-y-0 left-0 ${barColor} transition-[width] duration-75 ease-out`}
+          style={{ width: `${pct}%` }}
+          aria-hidden="true"
+        />
+        {/* Peak-hold marker — 2px vertical line that decays slowly. */}
+        {peak > 0.02 && (
+          <div
+            className={`absolute top-0 bottom-0 w-[2px] ${zone === "clip" ? "bg-amber-200" : "bg-white/70"}`}
+            style={{ left: `calc(${peakPct}% - 1px)` }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
+      <span className={`text-[9px] font-semibold uppercase tracking-[0.2em] whitespace-nowrap ${labelColor}`}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
 /** MM:SS elapsed timer since `startedAt` (or "--:--" when null). */
 function RecTimer({ startedAt, paused }: { startedAt: number | null; paused: boolean }) {
   const [now, setNow] = useState(() => Date.now());
