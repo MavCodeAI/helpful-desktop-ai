@@ -901,12 +901,17 @@ function JarvisPage() {
           }
 
           const text = finalText.trim();
-          setRtUserPartial("");
           if (!text) {
+            setRtUserPartial("");
             toast.error("Didn't catch that");
             setPhase("idle");
             return;
           }
+          // Snap the caret's text to the final transcript BEFORE sendToChat
+          // batches its commit. Both updates land in the same render tick,
+          // so the trailing "You" bubble simply drops its caret in place.
+          setRtUserPartial(text);
+          await sendToChat(text);
           await sendToChat(text);
         } catch (e) {
           // User-initiated cancel (Escape / stopGenerating) — silent teardown.
