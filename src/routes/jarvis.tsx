@@ -1014,6 +1014,17 @@ function JarvisPage() {
 
         </div>
 
+        {/* Status metadata rail — visible identity for the assistant */}
+        <div className="hidden lg:flex flex-col gap-3 text-center">
+          <div className="inline-flex items-center justify-center gap-2 mx-auto rounded-full border border-jarvis/25 bg-background/50 backdrop-blur-md px-3 py-1">
+            <span className={`w-1.5 h-1.5 rounded-full ${phase === "idle" ? "bg-jarvis/70" : phase === "listening" ? "bg-emerald-400 motion-safe:animate-pulse" : phase === "speaking" ? "bg-jarvis motion-safe:animate-pulse" : "bg-amber-400 motion-safe:animate-pulse"}`} />
+            <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{statusLabel}</span>
+          </div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
+            Voice · <span className="text-jarvis/80">{tts.voice.split("-").pop() || "auto"}</span>
+          </div>
+        </div>
+
         {/* Middle zone — only idle-state replay affordance now; active controls live above the composer. */}
         <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
           {phase === "idle" && lastSpokenRef.current && (
@@ -1022,11 +1033,13 @@ function JarvisPage() {
             </Button>
           )}
         </div>
+        </aside>
 
-
+        {/* RIGHT COLUMN — premium chat console */}
+        <section className="jarvis-panel rounded-3xl p-4 sm:p-6 flex flex-col min-h-[520px] lg:min-h-[calc(100dvh-9rem)]">
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
-        <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3">
-          <div className="relative w-full">
+        <div className="relative z-10 w-full flex-1 flex flex-col gap-3">
+          <div className="relative w-full flex-1 flex flex-col">
 
           <div
             ref={transcriptRef}
