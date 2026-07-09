@@ -65,6 +65,18 @@ describe("voiceReducer", () => {
     expect(s.error).toBe("boom");
   });
 
+  it("SET_PHASE escape hatch jumps to any phase and clears error", () => {
+    const errored: VoiceState = { ...INITIAL_VOICE_STATE, error: "prev" };
+    const s = voiceReducer(errored, { type: "SET_PHASE", phase: "listening" });
+    expect(s.phase).toBe("listening");
+    expect(s.error).toBeNull();
+  });
+
+  it("SET_PHASE to same phase is a no-op (referential stability)", () => {
+    const s = voiceReducer(INITIAL_VOICE_STATE, { type: "SET_PHASE", phase: "idle" });
+    expect(s).toBe(INITIAL_VOICE_STATE);
+  });
+
   it("has hue + caption for every phase", () => {
     for (const p of ["idle", "listening", "thinking", "speaking"] as const) {
       expect(PHASE_HUE[p]).toBeGreaterThan(0);
