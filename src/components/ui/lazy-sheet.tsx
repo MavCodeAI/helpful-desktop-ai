@@ -7,7 +7,7 @@
  * click. On slow networks the fallback is `null` (button stays pressed
  * for a beat) — no layout jump.
  */
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 let sheetPrefetched = false;
 export function prefetchSheet(): void {
