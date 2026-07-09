@@ -1,13 +1,24 @@
 /**
  * LazyDropdownMenu — defers Radix DropdownMenu (~40 KB with Menu + Popper +
- * Portal + focus scope) out of the main /jarvis chunk. Same pattern as
- * LazySheet: plain button trigger, Radix subtree mounts on first open,
- * prefetch on hover/focus.
+ * Portal + focus scope) out of the main /jarvis chunk.
  *
- * `children` receives the Radix primitives resolved from the lazy module
- * so callers can build their own menu content without a static import.
+ * Pattern: caller provides a `triggerButton` React element. Before first
+ * open we render that button directly with an onClick that (a) prefetches
+ * the chunk, (b) flips `mounted=true`. Once mounted, Suspense holds the
+ * same button as its fallback; when the chunk resolves, Radix takes over
+ * via `defaultOpen`, correctly anchoring the menu to the real button.
+ * Prefetch also fires on pointer/focus so the chunk is warm before click.
  */
-import { lazy, Suspense, useState, type ComponentType, type ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  lazy,
+  Suspense,
+  useState,
+  type ComponentType,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 type DropdownModule = typeof import("./dropdown-menu");
 export type DropdownMenuParts = {
@@ -25,8 +36,7 @@ export function prefetchDropdownMenu(): void {
 }
 
 type ImplProps = {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
+  triggerButton: ReactElement;
   align?: "start" | "center" | "end";
   contentClassName?: string;
   render: (parts: DropdownMenuParts) => ReactNode;
@@ -41,18 +51,10 @@ const DropdownImpl: ComponentType<ImplProps> = lazy(async () => {
     Separator: m.DropdownMenuSeparator,
   };
   return {
-    default: function Impl({ open, onOpenChange, align, contentClassName, render }: ImplProps) {
-      // We render Content controlled: the DropdownMenu root owns open state
-      // via `open`/`onOpenChange`. No visible Trigger — the parent's plain
-      // button drives it, and Radix's focus/portal semantics still work
-      // because Content is a portal-rendered popper anchored to body.
-      // Anchoring falls back to viewport center without a trigger; supply
-      // an invisible anchor so it aligns to where the trigger sits.
+    default: function Impl({ triggerButton, align, contentClassName, render }: ImplProps) {
       return (
-        <m.DropdownMenu open={open} onOpenChange={onOpenChange}>
-          <m.DropdownMenuTrigger asChild>
-            <span aria-hidden className="sr-only" />
-          </m.DropdownMenuTrigger>
+        <m.DropdownMenu defaultOpen>
+          <m.DropdownMenuTrigger asChild>{triggerButton}</m.DropdownMenuTrigger>
           <parts.Content align={align} className={contentClassName}>
             {render(parts)}
           </parts.Content>
@@ -62,53 +64,39 @@ const DropdownImpl: ComponentType<ImplProps> = lazy(async () => {
   };
 });
 
-export interface LazyDropdownTriggerProps {
-  onClick: () => void;
-  onPointerEnter: () => void;
-  onFocus: () => void;
-  "aria-expanded": boolean;
-  "aria-haspopup": "menu";
-}
-
 export function LazyDropdownMenu({
-  trigger,
+  triggerButton,
   align,
   contentClassName,
   children,
 }: {
-  trigger: (props: LazyDropdownTriggerProps) => ReactNode;
+  triggerButton: ReactElement;
   align?: "start" | "center" | "end";
   contentClassName?: string;
   children: (parts: DropdownMenuParts) => ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const toggle = () => {
-    setMounted(true);
-    setOpen((v) => !v);
-  };
+  if (!mounted) {
+    if (!isValidElement<Record<string, unknown>>(triggerButton)) return null;
+    return cloneElement(triggerButton, {
+      onClick: () => {
+        prefetchDropdownMenu();
+        setMounted(true);
+      },
+      onPointerEnter: prefetchDropdownMenu,
+      onFocus: prefetchDropdownMenu,
+    });
+  }
 
   return (
-    <>
-      {trigger({
-        onClick: toggle,
-        onPointerEnter: prefetchDropdownMenu,
-        onFocus: prefetchDropdownMenu,
-        "aria-expanded": open,
-        "aria-haspopup": "menu",
-      })}
-      {mounted && (
-        <Suspense fallback={null}>
-          <DropdownImpl
-            open={open}
-            onOpenChange={setOpen}
-            align={align}
-            contentClassName={contentClassName}
-            render={children}
-          />
-        </Suspense>
-      )}
-    </>
+    <Suspense fallback={triggerButton}>
+      <DropdownImpl
+        triggerButton={triggerButton}
+        align={align}
+        contentClassName={contentClassName}
+        render={children}
+      />
+    </Suspense>
   );
 }
