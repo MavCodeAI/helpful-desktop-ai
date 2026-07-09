@@ -616,6 +616,7 @@ function JarvisPage() {
       };
 
       rec.start();
+      setRecStartedAt(Date.now());
       setPhase("listening");
     } catch (e) {
       console.error(e);
