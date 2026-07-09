@@ -2410,12 +2410,43 @@ function JarvisPage() {
                     {phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}
                   </div>
 
+                  {/* Speaking phase — visible barge-in hint. The interrupt
+                      gesture existed but was undiscoverable. */}
+                  {phase === "speaking" && (
+                    <div className="text-[10px] sm:text-[11px] font-medium text-foreground/60 motion-safe:animate-fade-in">
+                      Tap the orb to interrupt
+                    </div>
+                  )}
+
+                  {/* Empty-state sample prompts — give a new user something to
+                      try instead of a silent orb. Tapping a chip commits it
+                      straight into the chat pipeline. */}
+                  {isEmpty && phase === "idle" && (
+                    <div className="flex flex-wrap justify-center gap-2 max-w-md motion-safe:animate-fade-in">
+                      {[
+                        "What can you do?",
+                        "Summarise today's news",
+                        "Help me brainstorm a startup idea",
+                      ].map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => { void sendToChat(prompt); }}
+                          className="glass-pill rounded-full px-3 py-1.5 text-xs text-foreground/80 hover:text-foreground hover:bg-white/[0.08] transition-colors border border-white/10"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
                     {announcedLabel}
                   </div>
                 </div>
               );
             })()}
+
 
             {/* Spacer to push controls to bottom (preview-parity: no welcome/chips) */}
             <div className="flex-1 min-h-0" />
