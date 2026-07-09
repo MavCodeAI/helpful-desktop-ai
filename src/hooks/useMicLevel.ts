@@ -46,6 +46,7 @@ export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
   const [peak, setPeak] = useState(0);
   const [latencyMs, setLatencyMs] = useState(0);
+  const [error, setError] = useState<MicErrorInfo | null>(null);
   // Reflects whether the pipeline is truly live (stream open + RAF ticking).
   // Distinct from `active` (intent): stays false while permission resolves,
   // when tab is hidden, or after any failure.
