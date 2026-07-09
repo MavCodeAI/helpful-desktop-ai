@@ -1344,8 +1344,21 @@ function JarvisPage() {
           setMessages((m) => [...m, { role: "assistant", content: e.text.trim() }]);
           setRtAsstPartial("");
         }
+      } else if (e.type === "e2e_latency") {
+        // True end-to-end (speech_stopped → first assistant audio). Ignore
+        // absurd outliers — a stalled session can produce huge deltas.
+        if (e.ms > 0 && e.ms < 30_000) setE2eMs(e.ms);
       } else if (e.type === "error") {
         toast.error(e.message);
+        // In-session quota errors from the OpenAI Realtime service — start
+        // the cooldown and gracefully fall back to the sequential VAD
+        // pipeline so the user isn't stuck.
+        if (cooldown.startFromErrorMessage(e.message)) {
+          disconnectRealtime();
+          setMode("vad");
+          saveVoiceMode("vad");
+          toast.message("Switched to Auto voice while realtime cools down");
+        }
       }
     });
     try {
@@ -1353,11 +1366,23 @@ function JarvisPage() {
     } catch (err) {
       console.error("[realtime] connect failed", err);
       const msg = err instanceof Error ? err.message : "Realtime connection failed";
-      // 501 = OPENAI_API_KEY not configured — surface the friendly hint.
+      // 501 = OPENAI_API_KEY not configured; 402/429 = quota — either way,
+      // fall back to the sequential VAD pipeline so voice keeps working.
+      if (err instanceof RealtimeError) {
+        if (err.status === 402 || err.status === 429) {
+          cooldown.start(err.retryAfterSec ?? 30, err.status === 402 ? "quota" : "rate");
+        }
+      }
       toast.error(msg.length < 200 ? msg : "Realtime connection failed");
       disconnectRealtime();
+      // Auto-fallback per user's fallback preference (error-only trigger).
+      setMode("vad");
+      saveVoiceMode("vad");
+      toast.message("Switched to Auto voice", {
+        description: "Realtime is unavailable right now — using the standard pipeline.",
+      });
     }
-  }, [disconnectRealtime]);
+  }, [disconnectRealtime, cooldown]);
 
   // Teardown on unmount / mode change away from realtime.
   useEffect(() => {
