@@ -978,7 +978,7 @@ function JarvisPage() {
         }
       };
 
-      rec.start();
+      rec.start(100);
       setRecStartedAt(Date.now());
       setPhase("listening");
     } catch (e) {
