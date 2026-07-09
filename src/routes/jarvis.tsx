@@ -766,8 +766,6 @@ function JarvisPage() {
   // uses its own independent stream, so both can coexist.
   const { level: micLevel, active: micActive } = useMicLevel(!!license);
 
-  if (!license) return null;
-
   const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
     idle: "Ready. Tap to speak.",
@@ -775,6 +773,22 @@ function JarvisPage() {
     thinking: partial ? "Responding…" : stagedThinkingLabel,
     speaking: playPaused ? "Paused" : "Speaking…",
   }[phase];
+
+  // Debounced announcement — visual statusLabel updates immediately, but the
+  // screen-reader live region only speaks after the phase has been stable for
+  // ~450ms. Rapid transitions (idle→listening→idle during a hot-key stutter,
+  // or thinking-stage cycling) collapse into a single announcement so VO/TB
+  // don't queue overlapping speech. MUST live above the license early return
+  // so hook order stays stable across the null→licensed transition.
+  const [announcedLabel, setAnnouncedLabel] = useState(statusLabel);
+  useEffect(() => {
+    const t = setTimeout(() => setAnnouncedLabel(statusLabel), 450);
+    return () => clearTimeout(t);
+  }, [statusLabel]);
+
+  if (!license) return null;
+
+
 
   return (
     <main
@@ -1093,14 +1107,15 @@ function JarvisPage() {
                 </div>
               </button>
 
+              {/* Visual status chip — decorative, updates instantly. The
+                  screen-reader announcement is handled by a separate,
+                  debounced live region below to prevent overlap on rapid
+                  phase changes (e.g. thinking-stage cycling). */}
               <div
                 className="inline-flex items-center gap-2 rounded-full px-3 py-1"
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
+                aria-hidden="true"
               >
                 <span
-                  aria-hidden="true"
                   className={`w-1.5 h-1.5 rounded-full ${
                     phase === "idle"
                       ? "bg-jarvis/70"
@@ -1114,6 +1129,16 @@ function JarvisPage() {
                 <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">
                   {statusLabel}
                 </span>
+              </div>
+
+              {/* Debounced live region for assistive tech. */}
+              <div
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className="sr-only"
+              >
+                {announcedLabel}
               </div>
             </div>
 
