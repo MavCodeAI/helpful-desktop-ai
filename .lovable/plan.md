@@ -52,13 +52,23 @@ intentionally deferred.
     audio device, and asserts each phase caption via `PHASE_CAPTION`.
     Guardrail for future setPhase → semantic-event migration.
 
+12. **Semantic events migrated at 8 hot sites** — recorder start
+    (`START_LISTENING`), recorder stop (`STOP_LISTENING`), cancel /
+    too-short / empty-transcript / STT-abort (`CANCEL`), TTS ended
+    (`PLAYBACK_DONE` ×2). Reducer guards now protect these transitions:
+    an out-of-phase call is a tested no-op instead of a silent state
+    jump. Cycle smoke stays green post-migration.
+
 ## Deferred (each safe on its own)
 
-- **Convert `setPhase` → semantic events site-by-site.** Adapter is in
-  place; each call site can migrate on its own PR, e.g.
-  `setPhase("thinking")` after a recorder stop → `dispatch({ type: "STOP_LISTENING" })`.
-  Guardrails now green: `phase-machine.test.ts` + `smoke-jarvis.py` +
-  `smoke-jarvis-cycle.py`.
+- **Remaining `setPhase` sites** — the chat entry/exit (`sendToChat` +
+  errors) and `speak()` are called from mixed phases (idle from text
+  input / restart button, thinking from voice flow). Migrating requires
+  either broadening reducer transitions or dispatching per entry point;
+  keep `SET_PHASE` for now.
+- **Realtime paths** (`setPhase` at L1187/1192/1201/1205/1280) — the
+  realtime client has its own state machine; unify only if it lands
+  under the same reducer.
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
   `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.
