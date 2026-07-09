@@ -100,6 +100,20 @@ describe("voiceReducer", () => {
     expect(voiceReducer(speaking, { type: "START_SPEAKING" })).toBe(speaking);
   });
 
+  it("REALTIME_LIVE jumps to listening from thinking (connect path)", () => {
+    const thinking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "thinking" };
+    const s = voiceReducer(thinking, { type: "REALTIME_LIVE" });
+    expect(s.phase).toBe("listening");
+    expect(s.error).toBeNull();
+  });
+
+  it("REALTIME_LIVE is a no-op when already listening", () => {
+    const listening: VoiceState = { ...INITIAL_VOICE_STATE, phase: "listening" };
+    expect(voiceReducer(listening, { type: "REALTIME_LIVE" })).toBe(listening);
+  });
+
+
+
 
 
   it("has hue + caption for every phase", () => {
