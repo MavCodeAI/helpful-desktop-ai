@@ -282,9 +282,17 @@ function JarvisPage() {
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const micButtonRef = useRef<HTMLButtonElement | null>(null);
+  const phaseRef2 = useRef<Phase>("idle");
+  const spaceHeldRef = useRef(false);
   const [scrolledUp, setScrolledUp] = useState(false);
   const [thinkStageIdx, setThinkStageIdx] = useState(0);
   const reduced = useReducedMotion();
+
+  // Keep phaseRef2 in sync so global keyboard handlers can read latest phase.
+  useEffect(() => {
+    phaseRef2.current = phase;
+  }, [phase]);
+
 
   // Auto-scroll transcript ONLY when the user hasn't scrolled up to read history.
   useEffect(() => {
@@ -357,6 +365,46 @@ function JarvisPage() {
     setThreads(list);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
+
+  /**
+   * Push-to-talk: hold Space to start listening, release to send.
+   * Ignored while the user is typing in an input/textarea/contenteditable,
+   * during auto-repeat, or when any modifier is held (Cmd/Ctrl/Alt/Meta).
+   */
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null) => {
+      const t = el as HTMLElement | null;
+      if (!t) return false;
+      const tag = t.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
+    };
+    const onDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || e.repeat) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (isEditable(e.target)) return;
+      if (phaseRef2.current !== "idle") return;
+      e.preventDefault();
+      spaceHeldRef.current = true;
+      startListening();
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      if (!spaceHeldRef.current) return;
+      spaceHeldRef.current = false;
+      if (isEditable(e.target)) return;
+      e.preventDefault();
+      if (phaseRef2.current === "listening") stopListening();
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
 
   /* ---------- TTS settings ---------- */
 
@@ -890,7 +938,7 @@ function JarvisPage() {
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
         <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5 mt-2 sm:mt-16 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
-          <div className="relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[160px] [@media(max-height:640px)]:h-[160px]">
+          <div className="relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden">
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
                 phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
@@ -966,33 +1014,8 @@ function JarvisPage() {
           )}
         </div>
 
-        {/* Bottom zone — mic button + transcript + composer, stacked together. */}
+        {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
         <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3">
-          {/* Mic button — sits just above the transcript. */}
-          <button
-            ref={micButtonRef}
-            onClick={handleMicClick}
-            className="relative -mt-6 sm:-mt-10 w-20 h-20 sm:w-24 sm:h-24 [@media(max-height:640px)]:w-16 [@media(max-height:640px)]:h-16 [@media(max-height:640px)]:-mt-4 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            aria-label={statusLabel}
-            aria-live="polite"
-          >
-            {phase === "listening" && !recPaused && !reduced && (
-              <>
-                <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
-                <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
-              </>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {phase === "thinking" ? (
-                <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-jarvis motion-safe:animate-spin" />
-              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
-              ) : (
-                <Mic className="w-7 h-7 sm:w-8 sm:h-8 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
-              )}
-            </div>
-          </button>
-
           <div className="relative w-full">
 
           <div
@@ -1001,7 +1024,7 @@ function JarvisPage() {
           >
             {messages.length === 0 && !partial && (
               <p className="text-center text-sm text-muted-foreground italic">
-                Say hello to begin — tap the mic and speak.
+                Say hello to begin — tap the mic, type a message, or hold Space to talk.
               </p>
             )}
             {messages.map((m, i) => (
@@ -1031,14 +1054,40 @@ function JarvisPage() {
             )}
           </div>
 
-          {/* Text composer — type a message as an alternative to voice. */}
+          {/* Unified composer — mic + textarea + send/stop in one row. */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleTextSend();
+              if (phase === "thinking") stopGenerating();
+              else handleTextSend();
             }}
             className="mt-3 flex items-end gap-2 rounded-2xl border border-jarvis/25 bg-background/70 backdrop-blur-md p-2 focus-within:border-jarvis/60 transition-colors"
           >
+            {/* Mic button — inline, leading position */}
+            <button
+              type="button"
+              ref={micButtonRef}
+              onClick={handleMicClick}
+              className="relative shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-xl border border-jarvis/40 bg-background/60 flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis"
+              aria-label={statusLabel}
+            >
+              {phase === "listening" && !recPaused && !reduced && (
+                <span className="absolute inset-0 rounded-xl border border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
+              )}
+              {phase === "thinking" ? (
+                <Loader2 className="w-5 h-5 text-jarvis motion-safe:animate-spin" />
+              ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
+                <>
+                  <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
+                  <span className="sr-only">
+                    {phase === "speaking" ? "JARVIS is speaking" : "Listening to your voice"}
+                  </span>
+                </>
+              ) : (
+                <Mic className="w-5 h-5 text-jarvis" />
+              )}
+            </button>
+
             <Textarea
               value={composerText}
               onChange={(e) => setComposerText(e.target.value)}
@@ -1050,28 +1099,42 @@ function JarvisPage() {
               }}
               placeholder={
                 phase === "idle"
-                  ? "Type a message… (Enter to send, Shift+Enter for newline)"
+                  ? "Type a message, or hold Space to talk…"
                   : phase === "speaking"
                   ? "JARVIS is speaking — tap mic to interrupt…"
                   : phase === "listening"
                   ? "Listening…"
-                  : "Thinking…"
+                  : "Thinking… tap Stop to cancel"
               }
               disabled={phase !== "idle"}
               rows={1}
-              className="min-h-[40px] max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2 text-sm"
+              className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-sm"
               aria-label="Message JARVIS"
             />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={phase !== "idle" || !composerText.trim()}
-              className="shrink-0 rounded-xl"
-              aria-label="Send message"
-            >
-              <SendHorizontal className="w-4 h-4" />
-            </Button>
+
+            {phase === "thinking" ? (
+              <Button
+                type="submit"
+                size="icon"
+                variant="destructive"
+                className="shrink-0 min-h-11 min-w-11 rounded-xl"
+                aria-label="Stop generating"
+              >
+                <Square className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                size="icon"
+                disabled={phase !== "idle" || !composerText.trim()}
+                className="shrink-0 min-h-11 min-w-11 rounded-xl"
+                aria-label="Send message"
+              >
+                <SendHorizontal className="w-4 h-4" />
+              </Button>
+            )}
           </form>
+
 
 
           {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
