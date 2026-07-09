@@ -863,9 +863,11 @@ function JarvisPage() {
     try {
       if (localStorage.getItem("jarvis:coachmark:v1")) return;
       const t = setTimeout(() => {
+        const isTouch = window.matchMedia?.("(hover: none)").matches;
         toast("Tap the orb to talk", {
-          description:
-            "Hold Space to speak, release to send. Press Esc to cancel. Tap orb again while I'm speaking to interrupt.",
+          description: isTouch
+            ? "Tap once to start recording. Tap again to send. Tap while I'm speaking to interrupt."
+            : "Hold Space to speak, release to send. Press Esc to cancel. Tap orb again while I'm speaking to interrupt.",
           duration: 8000,
         });
         localStorage.setItem("jarvis:coachmark:v1", "1");
@@ -1823,7 +1825,7 @@ function JarvisPage() {
               JARVIS
             </span>
             <span className="mt-0.5 text-[9px] uppercase tracking-[0.35em] text-muted-foreground/70 whitespace-nowrap">
-              Voice only
+              Voice AI
             </span>
           </div>
         </div>
@@ -2297,9 +2299,12 @@ function JarvisPage() {
               // Always show side buttons (mic on left, stop on right) so the
               // controls are visible from the first moment — matches perfect1.
               const showSides = true;
-              const core = isEmpty ? 200 : 140;
-              const innerRing = core + 40;
-              const outerRing = core + 100;
+              // Shrink the orb on narrow viewports so it fits without clipping
+              // and leaves room for subtitle + chips below the fold.
+              const isNarrow = typeof window !== "undefined" && window.innerWidth < 640;
+              const core = isEmpty ? (isNarrow ? 168 : 200) : (isNarrow ? 120 : 140);
+              const innerRing = core + (isNarrow ? 28 : 40);
+              const outerRing = core + (isNarrow ? 64 : 100);
               const orbScale =
                 phase === "listening" ? 1 + Math.min(0.18, micLevel * 0.5)
                 : phase === "speaking" ? 1.04
@@ -2329,14 +2334,16 @@ function JarvisPage() {
                 >
                   <div className="relative flex items-center justify-center gap-8 sm:gap-14">
                     {showSides && (
-                      <OrbSideButton
-                        icon={<Mic className="h-4 w-4" />}
-                        hue={hue}
-                        level={phase === "listening" ? micLevel : 0}
-                        showArc
-                        onClick={handleMicClick}
-                        ariaLabel={phase === "idle" ? "Start listening" : "Toggle mic"}
-                      />
+                      <div className="hidden sm:block">
+                        <OrbSideButton
+                          icon={<Mic className="h-4 w-4" />}
+                          hue={hue}
+                          level={phase === "listening" ? micLevel : 0}
+                          showArc
+                          onClick={handleMicClick}
+                          ariaLabel={phase === "idle" ? "Start listening" : "Toggle mic"}
+                        />
+                      </div>
                     )}
 
                     <button
@@ -2403,15 +2410,17 @@ function JarvisPage() {
                     </button>
 
                     {showSides && (
-                      <OrbSideButton
-                        icon={<Square className="h-3.5 w-3.5 fill-current" />}
-                        hue={hue}
-                        level={0}
-                        onClick={stopHandler}
-                        ariaLabel={stopAria}
-                        muted
-                        disabled={stopDisabled}
-                      />
+                      <div className="hidden sm:block">
+                        <OrbSideButton
+                          icon={<Square className="h-3.5 w-3.5 fill-current" />}
+                          hue={hue}
+                          level={0}
+                          onClick={stopHandler}
+                          ariaLabel={stopAria}
+                          muted
+                          disabled={stopDisabled}
+                        />
+                      </div>
                     )}
                   </div>
 
@@ -2470,7 +2479,9 @@ function JarvisPage() {
                           ? "🧠 Chat model is generating a reply"
                           : phase === "speaking"
                             ? "🔊 TTS is speaking · tap orb to interrupt"
-                            : "Push-to-talk · hold Space or tap the orb"}
+                            : (typeof window !== "undefined" && window.matchMedia?.("(hover: none)").matches)
+                              ? "Tap the orb to talk"
+                              : "Push-to-talk · hold Space or tap the orb"}
                   </div>
 
                   {/* Slow-thinking progress hint — reassures the user that
@@ -2510,7 +2521,7 @@ function JarvisPage() {
                           key={prompt}
                           type="button"
                           onClick={() => { void sendToChat(prompt); }}
-                          className="glass-pill rounded-full px-3 py-1.5 text-xs text-foreground/80 hover:text-foreground hover:bg-white/[0.08] transition-colors border border-white/10"
+                          className="glass-pill rounded-full px-4 min-h-11 inline-flex items-center text-xs text-foreground/80 hover:text-foreground hover:bg-white/[0.08] transition-colors border border-white/10"
                         >
                           {prompt}
                         </button>
