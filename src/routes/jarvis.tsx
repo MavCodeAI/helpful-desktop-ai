@@ -827,8 +827,8 @@ function JarvisPage() {
               />
             </svg>
           </div>
-          <div className="flex flex-col leading-none min-w-0">
-            <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">
+          <div className="flex flex-col leading-none shrink-0">
+            <span className="font-display tracking-[0.25em] text-sm text-jarvis whitespace-nowrap">
               JARVIS
             </span>
           </div>
