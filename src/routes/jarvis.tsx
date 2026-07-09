@@ -2036,12 +2036,21 @@ function JarvisPage() {
                 : phase === "speaking" ? 1.04
                 : 1;
 
+              // Stop-button doubles as a start toggle: in idle it kicks off
+              // listening (same as the orb), otherwise it cancels the current
+              // phase. This makes it a single tap-target for start↔stop.
               const stopHandler = () => {
-                if (phase === "listening") cancelRecording();
+                if (phase === "idle") void startListening();
+                else if (phase === "listening") cancelRecording();
                 else if (phase === "thinking") stopGenerating();
                 else if (phase === "speaking") stopPlayback();
               };
-              const stopDisabled = phase === "idle";
+              const stopDisabled = false;
+              const stopAria =
+                phase === "idle" ? "Start listening"
+                : phase === "listening" ? "Stop recording"
+                : phase === "thinking" ? "Stop generating"
+                : "Stop playback";
 
               return (
                 <div
