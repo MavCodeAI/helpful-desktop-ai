@@ -61,6 +61,8 @@ import {
   loadTTSSettings,
   saveTTSSettings,
   VOICE_OPTIONS,
+  SPEED_PRESETS,
+  paceLabel,
   type TTSSettings,
   type TTSVoice,
 } from "@/lib/tts-settings";
