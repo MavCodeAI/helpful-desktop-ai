@@ -1070,6 +1070,9 @@ function JarvisPage() {
         const sttController = new AbortController();
         abortRef.current = sttController;
         const sttT0 = performance.now();
+        // Hoisted so the catch below can report exactly what was uploaded.
+        let uploadBlob: Blob = blob;
+        let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
         try {
           // POST the recording; on ANY "unsupported/corrupted" rejection
           // (415 from our proxy, or 400 from upstream with codes like
@@ -1105,8 +1108,6 @@ function JarvisPage() {
           // round-trip we'd otherwise spend discovering the format is rejected.
           // If AudioContext.decodeAudioData can't parse the blob (rare), fall
           // back to shipping the original bytes and let the retry path handle it.
-          let uploadBlob: Blob = blob;
-          let uploadName = `recording.${mime.includes("mp4") ? "mp4" : "webm"}`;
           try {
             uploadBlob = await transcodeToWav(blob);
             uploadName = "recording.wav";
@@ -1128,6 +1129,8 @@ function JarvisPage() {
             try {
               const wav = await transcodeToWav(blob);
               toast.message("Retrying with a different audio format…", { duration: 2500 });
+              uploadBlob = wav;
+              uploadName = "recording.wav";
               res = await postAudio(wav, "recording.wav");
               if (!res.ok) peekBody = await res.clone().text().catch(() => "");
             } catch (transcodeErr) {
@@ -1175,9 +1178,18 @@ function JarvisPage() {
           setRtUserPartial("");
           const ex = e as { sttStatus?: number; sttBody?: string; name?: string };
           const detail = sttErrorDetail(ex.sttStatus ?? null, ex.sttBody ?? "", e);
+          // Attach the actually-uploaded MIME + byte count so the user sees
+          // immediately whether the browser captured audio, what container
+          // was sent, and how big it was.
+          const sentType = uploadBlob.type || "unknown";
+          const originalType = mime || "unknown";
+          const fileLine =
+            uploadName === "recording.wav" && originalType !== sentType
+              ? `File: ${sentType} · ${uploadBlob.size.toLocaleString()} bytes (transcoded from ${originalType})`
+              : `File: ${sentType} · ${uploadBlob.size.toLocaleString()} bytes`;
           toast.error(detail.title, {
-            description: `${detail.cause}\n→ ${detail.next}`,
-            duration: 8000,
+            description: `${detail.cause}\n${fileLine}\n→ ${detail.next}`,
+            duration: 10000,
           });
           setPhase("idle");
         } finally {
@@ -2036,12 +2048,21 @@ function JarvisPage() {
                 : phase === "speaking" ? 1.04
                 : 1;
 
+              // Stop-button doubles as a start toggle: in idle it kicks off
+              // listening (same as the orb), otherwise it cancels the current
+              // phase. This makes it a single tap-target for start↔stop.
               const stopHandler = () => {
-                if (phase === "listening") cancelRecording();
+                if (phase === "idle") void startListening();
+                else if (phase === "listening") cancelRecording();
                 else if (phase === "thinking") stopGenerating();
                 else if (phase === "speaking") stopPlayback();
               };
-              const stopDisabled = phase === "idle";
+              const stopDisabled = false;
+              const stopAria =
+                phase === "idle" ? "Start listening"
+                : phase === "listening" ? "Stop recording"
+                : phase === "thinking" ? "Stop generating"
+                : "Stop playback";
 
               return (
                 <div
@@ -2130,7 +2151,7 @@ function JarvisPage() {
                         hue={hue}
                         level={0}
                         onClick={stopHandler}
-                        ariaLabel="Stop"
+                        ariaLabel={stopAria}
                         muted
                         disabled={stopDisabled}
                       />
