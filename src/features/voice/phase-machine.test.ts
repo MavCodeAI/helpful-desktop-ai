@@ -98,6 +98,9 @@ describe("voiceReducer", () => {
     expect(voiceReducer(thinking, { type: "START_THINKING" })).toBe(thinking);
     const speaking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "speaking" };
     expect(voiceReducer(speaking, { type: "START_SPEAKING" })).toBe(speaking);
+  });
+
+
 
   it("has hue + caption for every phase", () => {
     for (const p of ["idle", "listening", "thinking", "speaking"] as const) {
