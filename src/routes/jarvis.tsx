@@ -1203,7 +1203,7 @@ function JarvisPage() {
         toast.success("Live connection open", { duration: 1500 });
       } else if (e.type === "disconnected") {
         setRealtimeOn(false);
-        setPhase("idle");
+        dispatch({ type: "CANCEL" });
       } else if (e.type === "user_transcript") {
         setRtUserPartial(e.text);
         if (e.final && e.text.trim() && e.text !== rtMirroredUserRef.current) {
