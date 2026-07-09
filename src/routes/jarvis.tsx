@@ -243,6 +243,13 @@ function JarvisPage() {
   }, [partial, rtUserPartial, rtAsstPartial, messages, scrolledUp]);
 
   // Track whether the user has scrolled up; if so, show a "scroll to bottom" pill.
+  // Idle-prefetch the markdown chunk so the first assistant bubble
+  // renders formatted text without a Suspense fallback flicker. Fires
+  // once per mount; a no-op on subsequent mounts.
+  useEffect(() => {
+    prefetchMarkdown();
+  }, []);
+
   useEffect(() => {
     const el = transcriptRef.current;
     if (!el) return;
