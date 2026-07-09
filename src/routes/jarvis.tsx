@@ -1597,52 +1597,9 @@ function JarvisPage() {
               );
             })()}
 
-            {/* Empty-state welcome + suggestion chips (below orb, left column) */}
-            {messages.length === 0 && !partial && !lastFailed && (
-              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center gap-5 px-4 sm:px-6 pb-4 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
-                <div className="space-y-2 max-w-md">
-                  <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-[1.1]">
-                    <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
-                      Good to see you.
-                    </span>
-                  </h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Talk, type, or hold{" "}
-                    <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">Space</kbd>{" "}
-                    to speak.
-                  </p>
-                </div>
-                <div className="w-full space-y-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">Try asking</div>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {[
-                      { text: "What can you do?", featured: true },
-                      { text: "Summarise today's news", featured: false },
-                      { text: "Help me draft an email", featured: false },
-                      { text: "Explain quantum computing simply", featured: false },
-                      { text: "Give me a 5-minute workout", featured: false },
-                    ].map(({ text, featured }) => (
-                      <button
-                        key={text}
-                        type="button"
-                        onClick={() => { setComposerText(""); void sendToChat(text); }}
-                        disabled={phase !== "idle"}
-                        className={`rounded-full text-xs sm:text-[13px] px-4 min-h-11 inline-flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
-                          featured
-                            ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
-                            : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
-                        }`}
-                      >
-                        {text}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Spacer to push composer to bottom (preview-parity: no welcome/chips) */}
+            <div className="flex-1 min-h-0" />
 
-            {/* Spacer to push composer to bottom when non-empty */}
-            {!(messages.length === 0 && !partial && !lastFailed) && <div className="flex-1 min-h-0" />}
 
             {/* Listening / speaking strips */}
             {(phase === "listening" || phase === "speaking") && (
