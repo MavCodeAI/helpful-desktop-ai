@@ -772,7 +772,7 @@ function JarvisPage() {
   }[phase];
 
   return (
-    <main className="h-dvh min-h-[560px] flex flex-col relative overflow-hidden">
+    <main className="flex flex-col relative overflow-hidden" style={{ height: "100dvh", minHeight: "560px" }}>
       {/* Aurora ambient background — the signature Liquid Glass look */}
       <div className="aurora-field" aria-hidden="true">
         <div className="aurora-accent" style={{ width: "40vmax", height: "40vmax", left: "30%", top: "40%", background: "radial-gradient(circle, var(--aurora-c), transparent 60%)" }} />
