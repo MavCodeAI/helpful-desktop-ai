@@ -567,7 +567,7 @@ function JarvisPage() {
         audio.volume = tts.volume;
         audioRef.current = audio;
         audio.onended = () => {
-          setPhase("idle");
+          dispatch({ type: "PLAYBACK_DONE" });
           setPlayPaused(false);
           haptic(8);
           toast.success("Ready for your next message", { duration: 1500 });
