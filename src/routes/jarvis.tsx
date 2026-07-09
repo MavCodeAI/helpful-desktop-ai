@@ -539,7 +539,9 @@ function JarvisPage() {
           return;
         }
         console.error(e);
-        toast.error(friendlyError(e, "JARVIS is unavailable"));
+        const reason = friendlyError(e, "JARVIS is unavailable");
+        toast.error(reason);
+        setLastFailed(userText);
         setPhase("idle");
       } finally {
         abortRef.current = null;
