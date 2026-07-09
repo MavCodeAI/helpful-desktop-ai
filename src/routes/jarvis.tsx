@@ -564,7 +564,6 @@ function JarvisPage() {
       const controller = new AbortController();
       abortRef.current = controller;
       let full = "";
-      let aborted = false;
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
@@ -607,13 +606,19 @@ function JarvisPage() {
         }
 
         setPartial("");
-        const finalText = full.trim() ? full : "";
-        setMessages([...next, { role: "assistant", content: finalText + (aborted ? " _(stopped)_" : "") }]);
-        if (finalText && !aborted) await speak(finalText);
-        else setPhase("idle");
+        const finalText = full.trim();
+        if (finalText) {
+          setMessages([...next, { role: "assistant", content: finalText }]);
+          await speak(finalText);
+        } else {
+          // Stream ended with no content — surface a real error instead of an empty bubble.
+          toast.error("Empty response — please retry.");
+          setMessages(messages);
+          setLastFailed(userText);
+          setPhase("idle");
+        }
       } catch (e: unknown) {
         if ((e as { name?: string })?.name === "AbortError") {
-          aborted = true;
           setPartial("");
           setMessages([
             ...next,
@@ -655,7 +660,11 @@ function JarvisPage() {
   /* ---------- Recording controls ---------- */
 
   const startListening = async () => {
-    if (phase !== "idle") return;
+    // Guard via ref, not `phase` closure — otherwise barge-in
+    // (stopPlayback → queueMicrotask(startListening)) reads the stale
+    // "speaking" phase from the render that scheduled the microtask
+    // and bails before the setPhase("idle") from stopPlayback commits.
+    if (mediaRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -669,6 +678,7 @@ function JarvisPage() {
 
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        mediaRef.current = null;
         setRecStartedAt(null);
         const blob = new Blob(chunksRef.current, { type: mime });
         if (blob.size < 1500) {
@@ -735,6 +745,7 @@ function JarvisPage() {
       // Replace onstop with a no-op teardown to skip STT.
       mediaRef.current.onstop = () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
+        mediaRef.current = null;
         setPhase("idle");
         setRecPaused(false);
         setRecStartedAt(null);
