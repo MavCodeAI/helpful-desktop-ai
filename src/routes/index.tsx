@@ -1,24 +1,89 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { validateLicenseKey, saveLicense, getLicense } from "@/lib/license";
+import { toast } from "sonner";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: LicenseGate,
+  head: () => ({
+    meta: [
+      { title: "JARVIS — Desktop AI Assistant" },
+      { name: "description", content: "Your personal voice-powered AI assistant. Enter your license key to activate JARVIS." },
+      { property: "og:title", content: "JARVIS — Desktop AI Assistant" },
+      { property: "og:description", content: "Voice-powered AI assistant inspired by Tony Stark's JARVIS." },
+    ],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function LicenseGate() {
+  const navigate = useNavigate();
+  const [key, setKey] = useState("");
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    if (getLicense()) navigate({ to: "/jarvis" });
+  }, [navigate]);
+
+  const activate = async () => {
+    setChecking(true);
+    await new Promise((r) => setTimeout(r, 400));
+    if (!validateLicenseKey(key)) {
+      toast.error("Invalid license key", { description: "Try JARVIS-DEMO-0001 to demo." });
+      setChecking(false);
+      return;
+    }
+    saveLicense(key);
+    toast.success("License activated. Welcome.");
+    navigate({ to: "/jarvis" });
+  };
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-jarvis/10 blur-3xl" />
+      </div>
+      <div className="relative z-10 w-full max-w-md">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border border-jarvis/40 jarvis-glow mb-6 relative">
+            <div className="w-10 h-10 rounded-full bg-jarvis animate-[jarvis-pulse_2s_ease-in-out_infinite]" />
+            <span className="absolute inset-0 rounded-full border border-jarvis/60 animate-[jarvis-ring_2s_ease-out_infinite]" />
+          </div>
+          <h1 className="font-display text-5xl font-bold tracking-[0.2em] text-jarvis jarvis-text-glow">
+            JARVIS
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground tracking-wider uppercase">
+            Desktop AI Assistant
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-jarvis/20 bg-card/60 backdrop-blur-xl p-6 space-y-4">
+          <div>
+            <label className="text-xs uppercase tracking-widest text-muted-foreground">
+              License Key
+            </label>
+            <Input
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && activate()}
+              placeholder="JARVIS-XXXX-XXXX"
+              className="mt-2 font-mono text-center tracking-wider bg-input/50 border-jarvis/30 focus-visible:ring-jarvis"
+              autoFocus
+            />
+          </div>
+          <Button
+            onClick={activate}
+            disabled={checking || !key.trim()}
+            className="w-full bg-jarvis text-primary-foreground hover:bg-jarvis/90 font-semibold tracking-wider"
+          >
+            {checking ? "Verifying…" : "Activate"}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Demo key: <span className="font-mono text-jarvis">JARVIS-DEMO-0001</span>
+          </p>
+        </div>
+      </div>
+    </main>
   );
 }
