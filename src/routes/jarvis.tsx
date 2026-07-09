@@ -979,41 +979,64 @@ function JarvisPage() {
           )}
         </div>
 
-        {/* Bottom zone — transcript pinned to the bottom, auto-scrolls as tokens stream in */}
-        <div
-          ref={transcriptRef}
-          className="relative z-10 w-full max-w-2xl space-y-4 max-h-[280px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
-        >
-          {messages.length === 0 && !partial && (
-            <p className="text-center text-sm text-muted-foreground italic">
-              Say hello to begin — tap the mic and speak.
-            </p>
-          )}
-          {messages.map((m, i) => (
-            <div key={i} className="text-sm">
-              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
-                {m.role === "user" ? "You" : "Jarvis"}
-              </span>
-              <div
-                className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
-                  m.role === "user" ? "text-foreground" : "text-jarvis/90"
-                }`}
-              >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+        {/* Bottom zone — wrapper for scroll-to-bottom pill overlay. */}
+        <div className="relative z-10 w-full max-w-2xl">
+          <div
+            ref={transcriptRef}
+            className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
+          >
+            {messages.length === 0 && !partial && (
+              <p className="text-center text-sm text-muted-foreground italic">
+                Say hello to begin — tap the mic and speak.
+              </p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className="text-sm">
+                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+                  {m.role === "user" ? "You" : "Jarvis"}
+                </span>
+                <div
+                  className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                    m.role === "user" ? "text-foreground" : "text-jarvis/90"
+                  }`}
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                </div>
               </div>
-            </div>
-          ))}
-          {partial && (
-            <div className="text-sm">
-              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
-                Jarvis
-              </span>
-              <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
-                <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
+            ))}
+            {partial && (
+              <div className="text-sm">
+                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+                  Jarvis
+                </span>
+                <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
+                  <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+
+          {/* Scroll-to-bottom pill — appears only when the user scrolled up during streaming. */}
+          {scrolledUp && (
+            <button
+              onClick={() => {
+                const el = transcriptRef.current;
+                if (el) el.scrollTop = el.scrollHeight;
+                setScrolledUp(false);
+              }}
+              className="absolute left-1/2 -translate-x-1/2 -top-4 flex items-center gap-1.5 rounded-full border border-jarvis/40 bg-background/90 backdrop-blur-md px-3 py-1.5 text-xs text-jarvis shadow-lg hover:bg-jarvis/10 transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1"
+              aria-label="Scroll to latest message"
+            >
+              <ArrowDown className="w-3.5 h-3.5" /> New reply
+            </button>
           )}
+
+          {/* SR-only live region — announces streaming chunks to assistive tech
+              (aria-live on the visual bubble would spam; polite here batches). */}
+          <div className="sr-only" aria-live="polite" aria-atomic="false">
+            {partial}
+          </div>
         </div>
       </div>
     </main>
