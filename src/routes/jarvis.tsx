@@ -1794,6 +1794,26 @@ function JarvisPage() {
                       <RecTimer startedAt={recStartedAt} paused={recPaused} />
                     </div>
 
+                    {/* Volume meter — instant pass/fail feedback so the user
+                        can tell if their voice is actually being captured. */}
+                    <div className="glass-pill flex items-center gap-3 rounded-full px-3 py-1.5">
+                      <VolumeMeter level={micLevel} peak={micPeak} />
+                    </div>
+
+                    {/* Live metrics — audio input latency + current TTS pace,
+                        so speed changes are quantified, not just felt. */}
+                    <div className="flex items-center gap-3 text-[10px] font-mono tabular-nums text-foreground/60">
+                      <span title="Audio input latency (browser-reported)">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Lat</span>
+                        {micLatency ? `${micLatency}ms` : "—"}
+                      </span>
+                      <span className="text-foreground/20">·</span>
+                      <span title="Current speaking rate preset">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Pace</span>
+                        {paceLabel(tts.speed)} {tts.speed.toFixed(2)}×
+                      </span>
+                    </div>
+
                     <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1" role="group" aria-label="Recording controls">
                       {recPaused ? (
                         <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-11 sm:h-8 rounded-full px-3" aria-label="Resume recording" title="Resume recording">
