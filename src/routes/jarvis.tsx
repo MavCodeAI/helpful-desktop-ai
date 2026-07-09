@@ -30,7 +30,6 @@ import {
   Plus,
   Trash2,
   ArrowDown,
-  SendHorizontal,
   Loader2,
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
@@ -1667,12 +1666,6 @@ function JarvisPage() {
                           <Pause className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Pause
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={stopListening} className="h-11 sm:h-8 rounded-full px-3" aria-label="Stop recording and send" aria-keyshortcuts="Space" title="Send (release Space)">
-                        <SendHorizontal className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Send
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-11 sm:h-8 rounded-full px-3 text-muted-foreground" aria-label="Cancel recording and discard audio" aria-keyshortcuts="Escape" title="Cancel (Esc)">
-                        Cancel
-                      </Button>
                     </div>
                   </div>
                 )}
@@ -1690,15 +1683,11 @@ function JarvisPage() {
                     <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Restart playback from beginning" title="Restart">
                       <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Restart
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-11 sm:h-8 rounded-full px-3" aria-label="Stop playback" aria-keyshortcuts="Escape" title="Stop (Esc)">
-                      <Square className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Stop
-                    </Button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Composer removed — voice-only interaction */}
           </div>
 
           {/* RIGHT — preview-style chat rail (dark cards) */}
@@ -1784,23 +1773,6 @@ function JarvisPage() {
 
 
 
-                {lastFailed && phase === "idle" && (
-                  <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
-                    <span className="text-destructive">Last message failed to send.</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-10 sm:h-7 text-xs px-3"
-                      onClick={() => {
-                        const t = lastFailed;
-                        setLastFailed(null);
-                        void sendToChat(t);
-                      }}
-                    >
-                      <RotateCcw className="w-3 h-3 mr-1" /> Retry
-                    </Button>
-                  </div>
-                )}
               </>
             )}
           </aside>
@@ -1824,7 +1796,7 @@ function JarvisPage() {
 
 
       {/* ==================================================================
-          BOTTOM RAIL — hints + SR-only live region (composer merged into shell)
+          BOTTOM RAIL — hints + SR-only live region
           ================================================================== */}
       <div
         className="relative z-30 w-full flex flex-col items-center px-3 sm:px-6 pb-2 sm:pb-3"
