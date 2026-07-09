@@ -1,8 +1,8 @@
 {
-  "name": "JARVIS — Voice Assistant",
-  "short_name": "JARVIS",
+  "name": "Alpha — Voice Assistant",
+  "short_name": "Alpha",
   "description": "Voice-powered AI assistant.",
-  "start_url": "/jarvis",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
