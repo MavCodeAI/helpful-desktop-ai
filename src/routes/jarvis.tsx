@@ -1033,8 +1033,14 @@ function JarvisPage() {
                 </div>
               </button>
 
-              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-3 py-1"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <span
+                  aria-hidden="true"
                   className={`w-1.5 h-1.5 rounded-full ${
                     phase === "idle"
                       ? "bg-jarvis/70"
