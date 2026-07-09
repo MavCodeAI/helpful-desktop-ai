@@ -705,29 +705,39 @@ function JarvisPage() {
           )}
         </div>
 
-        {/* Bottom zone — transcript pinned to the bottom */}
-        <div className="relative z-10 w-full max-w-2xl space-y-3 max-h-[240px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4">
+        {/* Bottom zone — transcript pinned to the bottom, auto-scrolls as tokens stream in */}
+        <div
+          ref={transcriptRef}
+          className="relative z-10 w-full max-w-2xl space-y-4 max-h-[280px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
+        >
           {messages.length === 0 && !partial && (
             <p className="text-center text-sm text-muted-foreground italic">
               Say hello to begin — tap the mic and speak.
             </p>
           )}
           {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`text-sm ${m.role === "user" ? "text-foreground" : "text-jarvis"}`}
-            >
-              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">
+            <div key={i} className="text-sm">
+              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
                 {m.role === "user" ? "You" : "Jarvis"}
               </span>
-              {m.content}
+              <div
+                className={`prose prose-sm prose-invert max-w-none ${
+                  m.role === "user" ? "text-foreground" : "text-jarvis/90"
+                }`}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+              </div>
             </div>
           ))}
           {partial && (
-            <div className="text-sm text-jarvis">
-              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">Jarvis</span>
-              {partial}
-              <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
+            <div className="text-sm">
+              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+                Jarvis
+              </span>
+              <div className="prose prose-sm prose-invert max-w-none text-jarvis/90">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
+                <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
+              </div>
             </div>
           )}
         </div>
