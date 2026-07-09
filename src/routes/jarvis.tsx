@@ -279,12 +279,39 @@ function JarvisPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const micButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [scrolledUp, setScrolledUp] = useState(false);
+  const [thinkStageIdx, setThinkStageIdx] = useState(0);
+  const reduced = useReducedMotion();
 
-  // Auto-scroll transcript to bottom as new tokens stream in
+  // Auto-scroll transcript ONLY when the user hasn't scrolled up to read history.
   useEffect(() => {
     const el = transcriptRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [partial, messages]);
+    if (!el || scrolledUp) return;
+    el.scrollTop = el.scrollHeight;
+  }, [partial, messages, scrolledUp]);
+
+  // Track whether the user has scrolled up; if so, show a "scroll to bottom" pill.
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setScrolledUp(distance > 60);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Cycle "Reading → Analyzing → Composing" while thinking (before first token).
+  useEffect(() => {
+    if (phase !== "thinking" || partial) {
+      setThinkStageIdx(0);
+      return;
+    }
+    const id = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
+    return () => clearInterval(id);
+  }, [phase, partial]);
 
 
   /* ---------- bootstrap ---------- */
