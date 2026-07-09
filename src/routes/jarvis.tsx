@@ -430,6 +430,28 @@ function JarvisPage() {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Re-pin transcript to bottom after viewport changes (window resize, mobile
+  // orientation flip, virtual-keyboard show/hide via visualViewport). Without
+  // this the aside can be left mid-scroll and bubbles appear cropped after a
+  // rotate. Skips when the user has intentionally scrolled up.
+  useEffect(() => {
+    const onResize = () => {
+      const el = transcriptRef.current;
+      if (!el || scrolledUp) return;
+      // Use `auto` (no smooth) since resize is a layout event, not content flow.
+      el.scrollTo({ top: el.scrollHeight, behavior: "auto" });
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    window.visualViewport?.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
+    };
+  }, [scrolledUp]);
+
+
   // Cycle "Reading → Analyzing → Composing" while thinking (before first token).
   useEffect(() => {
     if (phase !== "thinking" || partial) {
