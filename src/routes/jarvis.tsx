@@ -1391,6 +1391,70 @@ function JarvisPage() {
       className="flex flex-col relative overflow-hidden"
       style={{ height: "100dvh", minHeight: "560px" }}
     >
+      {/* Full-screen mic test overlay — pure diagnostic surface. Runs while
+          `micTestOpen` is true and, crucially, never touches the STT
+          pipeline: it only re-renders the ambient meter data that
+          `useMicLevel` already produces. Nothing here is sent anywhere. */}
+      {micTestOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-background/85 backdrop-blur-md flex items-center justify-center p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Microphone test"
+        >
+          <div className="glass-pill rounded-3xl px-6 py-6 w-full max-w-md flex flex-col items-center gap-5">
+            <div className="flex items-center justify-between w-full">
+              <span className="font-display tracking-widest text-jarvis text-sm">MIC TEST</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMicTestOpen(false)}
+                aria-label="Close mic test"
+                className="h-8 w-8 rounded-full p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Speak normally — nothing here is sent to the assistant.
+              Use the sensitivity slider to make the meter match your voice.
+            </p>
+            {/* Meter — full width, taller so it's easy to read from a distance. */}
+            <div className="w-full flex flex-col items-center gap-2">
+              <div className="w-full rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-2 flex items-center gap-3">
+                <VolumeMeter level={micLevel} peak={micPeak} sensitivity={tts.micSensitivity} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 w-full text-[10px] font-mono tabular-nums text-foreground/60">
+                <span className="text-center"><span className="uppercase tracking-[0.2em] text-foreground/40 block">Level</span>{Math.round(micLevel * 100)}%</span>
+                <span className="text-center"><span className="uppercase tracking-[0.2em] text-foreground/40 block">Peak</span>{Math.round(micPeak * 100)}%</span>
+                <span className="text-center"><span className="uppercase tracking-[0.2em] text-foreground/40 block">In</span>{micLatency}ms</span>
+              </div>
+            </div>
+            <div className="w-full">
+              <div className="flex justify-between mb-1.5">
+                <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Sensitivity
+                </label>
+                <span className="text-[11px] text-jarvis font-mono">{tts.micSensitivity.toFixed(2)}×</span>
+              </div>
+              <Slider
+                min={0.3}
+                max={3}
+                step={0.05}
+                value={[tts.micSensitivity]}
+                onValueChange={([v]) => updateTts({ micSensitivity: v })}
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setMicTestOpen(false)}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Aurora ambient background — the signature Liquid Glass look */}
       <div className="aurora-field" aria-hidden="true">
         <div
