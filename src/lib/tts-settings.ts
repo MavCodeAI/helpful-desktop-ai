@@ -12,13 +12,39 @@ export interface TTSSettings {
   voice: TTSVoice;
   speed: number;
   volume: number;
+  /** Multiplier applied to mic level/peak before the VolumeMeter classifies
+   *  the zone. 1.0 = raw signal; <1 tolerates louder rooms, >1 boosts quiet
+   *  mics. Persisted so a user's room calibration survives reloads. */
+  micSensitivity: number;
+  /** When true, JARVIS nudges TTS speed up slightly under high measured
+   *  round-trip latency so the perceived pace stays responsive. The user's
+   *  `speed` is treated as a baseline; the adjustment is bounded (±0.3×). */
+  autoAdaptivePace: boolean;
 }
 
 export const DEFAULT_TTS_SETTINGS: TTSSettings = {
   voice: "onyx",
   speed: 1.0,
   volume: 1.0,
+  micSensitivity: 1.0,
+  autoAdaptivePace: false,
 };
+
+/**
+ * Derive an effective speaking rate from a base user speed and recent
+ * pipeline latency (STT + TTS handshake, ms). When adaptive mode is off,
+ * returns the base unchanged. Adjustment is clamped so it never drifts
+ * more than ±0.3× from what the user set — nobody expects auto-mode to
+ * hijack their preferred pace, only to compensate for slow networks.
+ */
+export function adaptiveSpeed(base: number, latencyMs: number, enabled: boolean): number {
+  if (!enabled) return base;
+  // Under 1s round-trip everything already feels snappy — no adjustment.
+  // Beyond that, add ~0.1× per extra second, capped at +0.3×.
+  const extra = Math.max(0, latencyMs - 1000) / 1000;
+  const bump = Math.min(0.3, extra * 0.1);
+  return Math.min(2, Math.max(0.5, base + bump));
+}
 
 export const VOICE_OPTIONS: { id: TTSVoice; label: string }[] = [
   { id: "onyx", label: "Onyx — Deep butler" },

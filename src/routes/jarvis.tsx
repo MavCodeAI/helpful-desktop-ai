@@ -63,6 +63,7 @@ import {
   VOICE_OPTIONS,
   SPEED_PRESETS,
   paceLabel,
+  adaptiveSpeed,
   type TTSSettings,
   type TTSVoice,
 } from "@/lib/tts-settings";
@@ -352,13 +353,19 @@ function LiveWaveform({ level, paused }: { level: number; paused: boolean }) {
  *
  * Purely visual; the actual STT capture always proceeds regardless.
  */
-function VolumeMeter({ level, peak }: { level: number; peak: number }) {
-  const pct = Math.max(0, Math.min(1, level)) * 100;
-  const peakPct = Math.max(0, Math.min(1, peak)) * 100;
+function VolumeMeter({ level, peak, sensitivity = 1 }: { level: number; peak: number; sensitivity?: number }) {
+  // Sensitivity scales the raw signal BEFORE zone classification, so raising
+  // it lets a quiet mic still register "Good" while lowering it prevents a
+  // loud room from constantly showing "Clipping". The bar reflects the
+  // scaled value the user actually sees.
+  const scaledLevel = Math.max(0, Math.min(1, level * sensitivity));
+  const scaledPeak = Math.max(0, Math.min(1, peak * sensitivity));
+  const pct = scaledLevel * 100;
+  const peakPct = scaledPeak * 100;
   const zone =
-    peak < 0.05 ? "silent" :
-    level < 0.15 ? "quiet" :
-    peak > 0.9 ? "clip" :
+    scaledPeak < 0.05 ? "silent" :
+    scaledLevel < 0.15 ? "quiet" :
+    scaledPeak > 0.9 ? "clip" :
     "good";
   const barColor =
     zone === "silent" ? "bg-muted-foreground/40" :
@@ -387,7 +394,7 @@ function VolumeMeter({ level, peak }: { level: number; peak: number }) {
           aria-hidden="true"
         />
         {/* Peak-hold marker — 2px vertical line that decays slowly. */}
-        {peak > 0.02 && (
+        {scaledPeak > 0.02 && (
           <div
             className={`absolute top-0 bottom-0 w-[2px] ${zone === "clip" ? "bg-amber-200" : "bg-white/70"}`}
             style={{ left: `calc(${peakPct}% - 1px)` }}
@@ -453,6 +460,20 @@ function JarvisPage() {
   // --- TTS settings ---
   const [tts, setTts] = useState<TTSSettings>(loadTTSSettings);
   const lastSpokenRef = useRef<string>(""); // for "restart playback"
+
+  // --- Pipeline latency metrics (ms) ---
+  // sttMs   : time from POST /api/stt → final transcript resolved.
+  // ttsMs   : time from POST /api/tts → audio.play() resolved (first sound).
+  // Both are 0 until the first turn completes. They power the visible
+  // latency badges AND the auto-adaptive speaking rate — so "where is the
+  // delay coming from?" and "should I speak faster?" share one signal.
+  const [sttMs, setSttMs] = useState(0);
+  const [ttsMs, setTtsMs] = useState(0);
+
+  // --- Mic test overlay ---
+  // Continuously renders a big meter without touching the STT pipeline, so
+  // the user can confirm capture and calibrate sensitivity in isolation.
+  const [micTestOpen, setMicTestOpen] = useState(false);
 
   // --- Browser API refs ---
   const mediaRef = useRef<MediaRecorder | null>(null);
@@ -713,7 +734,11 @@ function JarvisPage() {
           ? `Speed: ${patch.speed.toFixed(2)}×`
           : patch.volume !== undefined
             ? `Volume: ${Math.round(patch.volume * 100)}%`
-            : "Settings saved";
+            : patch.micSensitivity !== undefined
+              ? `Mic sensitivity: ${patch.micSensitivity.toFixed(2)}×`
+              : patch.autoAdaptivePace !== undefined
+                ? `Auto-adaptive pace: ${patch.autoAdaptivePace ? "On" : "Off"}`
+                : "Settings saved";
     toast.success("Saved", { description: label, duration: 1400 });
   };
 
@@ -725,15 +750,25 @@ function JarvisPage() {
    */
   const speak = useCallback(
     async (text: string) => {
+      const t0 = performance.now();
       try {
         setPhase("speaking");
         setPlayPaused(false);
         lastSpokenRef.current = text;
 
+        // Adaptive pace: use the user's base speed unless auto-adaptive is
+        // on, in which case nudge it up in proportion to the most recent
+        // total pipeline latency (STT + TTS). Bounded inside adaptiveSpeed.
+        const effectiveSpeed = adaptiveSpeed(
+          tts.speed,
+          sttMs + ttsMs,
+          tts.autoAdaptivePace,
+        );
+
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voice: tts.voice, speed: tts.speed }),
+          body: JSON.stringify({ text, voice: tts.voice, speed: effectiveSpeed }),
         });
         if (!res.ok) throw new Error(await res.text());
         const blob = await res.blob();
@@ -753,13 +788,16 @@ function JarvisPage() {
           toast.success("Ready for your next message", { duration: 1500 });
         };
         await audio.play();
+        // Measured from request start to first audible playback — this is
+        // the metric that maps to "how long did I wait to hear a reply?".
+        setTtsMs(Math.round(performance.now() - t0));
       } catch (e) {
         console.error(e);
         setPhase("idle");
         toast.error(friendlyError(e, "Voice playback failed"));
       }
     },
-    [tts],
+    [tts, sttMs, ttsMs],
   );
 
   /* ---------- Chat (LLM streaming) ---------- */
@@ -931,6 +969,7 @@ function JarvisPage() {
         // silently complete and auto-send.
         const sttController = new AbortController();
         abortRef.current = sttController;
+        const sttT0 = performance.now();
         try {
           const fd = new FormData();
           const ext = mime.includes("mp4") ? "mp4" : "webm";
@@ -946,6 +985,9 @@ function JarvisPage() {
           // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
           // src/lib/stt-stream.test.ts for delta/final-commit tests.
           const finalText = await readSttResponse(res, (acc) => setRtUserPartial(acc));
+          // Measured from POST send to final-transcript resolution — covers
+          // upload + model inference + streaming completion.
+          setSttMs(Math.round(performance.now() - sttT0));
 
           const text = finalText.trim();
           if (!text) {
@@ -1349,6 +1391,70 @@ function JarvisPage() {
       className="flex flex-col relative overflow-hidden"
       style={{ height: "100dvh", minHeight: "560px" }}
     >
+      {/* Full-screen mic test overlay — pure diagnostic surface. Runs while
+          `micTestOpen` is true and, crucially, never touches the STT
+          pipeline: it only re-renders the ambient meter data that
+          `useMicLevel` already produces. Nothing here is sent anywhere. */}
+      {micTestOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-background/85 backdrop-blur-md flex items-center justify-center p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Microphone test"
+        >
+          <div className="glass-pill rounded-3xl px-6 py-6 w-full max-w-md flex flex-col items-center gap-5">
+            <div className="flex items-center justify-between w-full">
+              <span className="font-display tracking-widest text-jarvis text-sm">MIC TEST</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMicTestOpen(false)}
+                aria-label="Close mic test"
+                className="h-8 w-8 rounded-full p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Speak normally — nothing here is sent to the assistant.
+              Use the sensitivity slider to make the meter match your voice.
+            </p>
+            {/* Meter — full width, taller so it's easy to read from a distance. */}
+            <div className="w-full flex flex-col items-center gap-2">
+              <div className="w-full rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-2 flex items-center gap-3">
+                <VolumeMeter level={micLevel} peak={micPeak} sensitivity={tts.micSensitivity} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 w-full text-[10px] font-mono tabular-nums text-foreground/60">
+                <span className="text-center"><span className="uppercase tracking-[0.2em] text-foreground/40 block">Level</span>{Math.round(micLevel * 100)}%</span>
+                <span className="text-center"><span className="uppercase tracking-[0.2em] text-foreground/40 block">Peak</span>{Math.round(micPeak * 100)}%</span>
+                <span className="text-center"><span className="uppercase tracking-[0.2em] text-foreground/40 block">In</span>{micLatency}ms</span>
+              </div>
+            </div>
+            <div className="w-full">
+              <div className="flex justify-between mb-1.5">
+                <label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Sensitivity
+                </label>
+                <span className="text-[11px] text-jarvis font-mono">{tts.micSensitivity.toFixed(2)}×</span>
+              </div>
+              <Slider
+                min={0.3}
+                max={3}
+                step={0.05}
+                value={[tts.micSensitivity]}
+                onValueChange={([v]) => updateTts({ micSensitivity: v })}
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setMicTestOpen(false)}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Aurora ambient background — the signature Liquid Glass look */}
       <div className="aurora-field" aria-hidden="true">
         <div
@@ -1612,9 +1718,74 @@ function JarvisPage() {
                 >
                   <Volume2 className="w-4 h-4 mr-1.5" /> Test voice
                 </Button>
+
+                {/* ---------- Microphone section ---------- */}
+                {/* Sensitivity slider retunes the meter thresholds without
+                    touching the raw mic gain — so calibration is purely a
+                    visual/UX decision and never affects STT quality. The
+                    inline meter here IS the test mode: it renders live,
+                    unconditionally, and nothing captured here is sent to
+                    the assistant. */}
+                <div className="pt-4 border-t border-white/5">
+                  <div className="flex justify-between mb-2">
+                    <label className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Mic sensitivity
+                    </label>
+                    <span className="text-xs text-jarvis font-mono">{tts.micSensitivity.toFixed(2)}×</span>
+                  </div>
+                  <Slider
+                    min={0.3}
+                    max={3}
+                    step={0.05}
+                    value={[tts.micSensitivity]}
+                    onValueChange={([v]) => updateTts({ micSensitivity: v })}
+                    aria-label="Microphone meter sensitivity"
+                  />
+                  <p className="mt-1 text-[10px] text-muted-foreground/70">
+                    Adjusts the volume-meter zones only — raise for quiet mics, lower for loud rooms.
+                  </p>
+
+                  <div className="mt-3 rounded-lg bg-white/[0.03] border border-white/10 px-3 py-2.5 flex items-center gap-3">
+                    <VolumeMeter level={micLevel} peak={micPeak} sensitivity={tts.micSensitivity} />
+                    <span className="text-[10px] font-mono tabular-nums text-foreground/50 ml-auto">
+                      {micActive ? "live" : "off"}
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    className="w-full mt-3"
+                    onClick={() => setMicTestOpen((v) => !v)}
+                    aria-pressed={micTestOpen}
+                  >
+                    <Mic className="w-4 h-4 mr-1.5" />
+                    {micTestOpen ? "Close mic test" : "Full-screen mic test"}
+                  </Button>
+                </div>
+
+                {/* ---------- Auto-adaptive pace ---------- */}
+                <div className="pt-4 border-t border-white/5">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-jarvis"
+                      checked={tts.autoAdaptivePace}
+                      onChange={(e) => updateTts({ autoAdaptivePace: e.target.checked })}
+                    />
+                    <span className="flex-1">
+                      <span className="block text-xs uppercase tracking-widest text-muted-foreground">
+                        Auto-adaptive pace
+                      </span>
+                      <span className="block text-[10px] text-muted-foreground/70 mt-0.5">
+                        Nudges speaking rate up (max +0.3×) when STT + TTS round-trip exceeds ~1s, so replies feel responsive on slow networks.
+                      </span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
+
 
           {/* Account menu — replaces the raw license chip with a proper avatar dropdown */}
           <DropdownMenu>
@@ -1822,22 +1993,45 @@ function JarvisPage() {
                     {/* Volume meter — instant pass/fail feedback so the user
                         can tell if their voice is actually being captured. */}
                     <div className="glass-pill flex items-center gap-3 rounded-full px-3 py-1.5">
-                      <VolumeMeter level={micLevel} peak={micPeak} />
+                      <VolumeMeter level={micLevel} peak={micPeak} sensitivity={tts.micSensitivity} />
                     </div>
 
-                    {/* Live metrics — audio input latency + current TTS pace,
-                        so speed changes are quantified, not just felt. */}
-                    <div className="flex items-center gap-3 text-[10px] font-mono tabular-nums text-foreground/60">
+                    {/* Live metrics — input latency, last STT round-trip, last
+                        TTS round-trip, and the *effective* pace (adaptive if
+                        enabled). Splitting STT/TTS makes it obvious where
+                        delay actually comes from — network, model, or both. */}
+                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-mono tabular-nums text-foreground/60">
                       <span title="Audio input latency (browser-reported)">
-                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Lat</span>
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">In</span>
                         {micLatency ? `${micLatency}ms` : "—"}
                       </span>
                       <span className="text-foreground/20">·</span>
-                      <span title="Current speaking rate preset">
+                      <span title="Last speech-to-text round-trip (upload + transcription)">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">STT</span>
+                        {sttMs ? `${sttMs}ms` : "—"}
+                      </span>
+                      <span className="text-foreground/20">·</span>
+                      <span title="Last text-to-speech round-trip (request → first sound)">
+                        <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">TTS</span>
+                        {ttsMs ? `${ttsMs}ms` : "—"}
+                      </span>
+                      <span className="text-foreground/20">·</span>
+                      <span title={tts.autoAdaptivePace ? "Speaking rate — auto-adapts to pipeline latency" : "Speaking rate"}>
                         <span className="uppercase tracking-[0.2em] text-foreground/40 mr-1">Pace</span>
-                        {paceLabel(tts.speed)} {tts.speed.toFixed(2)}×
+                        {(() => {
+                          const eff = adaptiveSpeed(tts.speed, sttMs + ttsMs, tts.autoAdaptivePace);
+                          return (
+                            <>
+                              {paceLabel(eff)} {eff.toFixed(2)}×
+                              {tts.autoAdaptivePace && Math.abs(eff - tts.speed) > 0.01 && (
+                                <span className="ml-1 text-jarvis/80">auto</span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </span>
                     </div>
+
 
                     <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1" role="group" aria-label="Recording controls">
                       {recPaused ? (
