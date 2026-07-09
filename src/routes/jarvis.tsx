@@ -558,6 +558,18 @@ function JarvisPage() {
   // assistant audio frame. Reflects what the user actually feels.
   const [e2eMs, setE2eMs] = useState(0);
 
+  /**
+   * Rolling log of the last 10 STT attempts. Populated by the recorder
+   * pipeline (pre-transcode result, first HTTP status, retry reason, final
+   * outcome) so the user can open the diagnostics panel and see *why* a
+   * transcription failed — and whether the WAV pre-transcode is silently
+   * saving the day on this browser.
+   */
+  const [sttLog, setSttLog] = useState<SttAttempt[]>([]);
+  const pushSttLog = useCallback((entry: SttAttempt) => {
+    setSttLog((prev) => [entry, ...prev].slice(0, 10));
+  }, []);
+
   // Mic permission state (granted/denied/prompt/unknown) — surfaced as a
   // small dot in the listening strip so the user knows why capture may fail.
   const micPerm = useMicPermission();
