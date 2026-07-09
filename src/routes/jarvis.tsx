@@ -695,10 +695,11 @@ function JarvisPage() {
 
   if (!license) return null;
 
+  const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
     idle: "Ready. Tap to speak.",
     listening: recPaused ? "Paused" : "Listening…",
-    thinking: partial ? "Responding…" : "Thinking…",
+    thinking: partial ? "Responding…" : stagedThinkingLabel,
     speaking: playPaused ? "Paused" : "Speaking…",
   }[phase];
 
@@ -707,7 +708,7 @@ function JarvisPage() {
       {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
+          <div className="w-2.5 h-2.5 rounded-full bg-jarvis motion-safe:animate-pulse" />
           <span className="font-display tracking-[0.3em] text-sm text-jarvis">JARVIS</span>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
