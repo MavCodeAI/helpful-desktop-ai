@@ -331,6 +331,7 @@ function RecTimer({ startedAt, paused }: { startedAt: number | null; paused: boo
   );
 }
 
+function JarvisPage() {
   const navigate = useNavigate();
 
   // --- License gate ---
