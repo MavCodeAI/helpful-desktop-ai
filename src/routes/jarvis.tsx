@@ -108,6 +108,7 @@ function JarvisPage() {
   const audioUrlRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Auto-scroll transcript to bottom as new tokens stream in
   useEffect(() => {
@@ -220,17 +221,21 @@ function JarvisPage() {
       const next: ChatMsg[] = [...messages, { role: "user", content: userText }];
       setMessages(next);
       setPhase("thinking");
+      const controller = new AbortController();
+      abortRef.current = controller;
+      let full = "";
+      let aborted = false;
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages: next }),
+          signal: controller.signal,
         });
         if (!res.ok || !res.body) throw new Error(await res.text());
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let full = "";
         let buffer = "";
         setPartial("");
 
@@ -259,17 +264,35 @@ function JarvisPage() {
         }
 
         setPartial("");
-        setMessages([...next, { role: "assistant", content: full }]);
-        if (full.trim()) await speak(full);
+        const finalText = full.trim() ? full : "";
+        setMessages([...next, { role: "assistant", content: finalText + (aborted ? " _(stopped)_" : "") }]);
+        if (finalText && !aborted) await speak(finalText);
         else setPhase("idle");
-      } catch (e) {
+      } catch (e: unknown) {
+        if ((e as { name?: string })?.name === "AbortError") {
+          aborted = true;
+          setPartial("");
+          setMessages([
+            ...next,
+            { role: "assistant", content: (full.trim() || "_(no response)_") + " _(stopped)_" },
+          ]);
+          setPhase("idle");
+          return;
+        }
         console.error(e);
         toast.error("JARVIS is unavailable");
         setPhase("idle");
+      } finally {
+        abortRef.current = null;
       }
     },
     [messages, speak]
   );
+
+  /** Cancel an in-flight LLM stream; keeps whatever tokens already arrived. */
+  const stopGenerating = () => {
+    abortRef.current?.abort();
+  };
 
   /* ---------- Recording controls ---------- */
 
@@ -707,6 +730,12 @@ function JarvisPage() {
                 <Square className="w-4 h-4 mr-1.5" /> Stop
               </Button>
             </div>
+          )}
+
+          {phase === "thinking" && (
+            <Button variant="outline" size="sm" onClick={stopGenerating}>
+              <Square className="w-4 h-4 mr-1.5" /> Stop generating
+            </Button>
           )}
 
           {phase === "idle" && lastSpokenRef.current && (
