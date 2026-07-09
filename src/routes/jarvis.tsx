@@ -614,6 +614,9 @@ function JarvisPage() {
   const spaceHeldRef = useRef(false);
   const [scrolledUp, setScrolledUp] = useState(false);
   const [thinkStageIdx, setThinkStageIdx] = useState(0);
+  // How many ms we've been in "thinking" without a first token yet. Drives
+  // the slow-response progress hint so the user knows we're not frozen.
+  const [thinkElapsedMs, setThinkElapsedMs] = useState(0);
   const [lastFailed, setLastFailed] = useState<string | null>(null);
   const reduced = useReducedMotion();
 
@@ -666,14 +669,16 @@ function JarvisPage() {
   }, [scrolledUp]);
 
 
-  // Cycle "Reading → Analyzing → Composing" while thinking (before first token).
   useEffect(() => {
     if (phase !== "thinking" || partial) {
       setThinkStageIdx(0);
+      setThinkElapsedMs(0);
       return;
     }
-    const id = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
-    return () => clearInterval(id);
+    const started = Date.now();
+    const stageId = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
+    const tickId = setInterval(() => setThinkElapsedMs(Date.now() - started), 500);
+    return () => { clearInterval(stageId); clearInterval(tickId); };
   }, [phase, partial]);
 
   /* ---------- bootstrap ---------- */
@@ -2441,6 +2446,29 @@ function JarvisPage() {
                             ? "🔊 TTS is speaking · tap orb to interrupt"
                             : "Push-to-talk · hold Space or tap the orb"}
                   </div>
+
+                  {/* Slow-thinking progress hint — reassures the user that
+                      the app isn't frozen when the model takes a while to
+                      produce the first token. Escalates copy at 4s / 10s / 20s. */}
+                  {phase === "thinking" && !partial && thinkElapsedMs >= 3500 && (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="flex items-center gap-2 text-[11px] text-amber-300/90 motion-safe:animate-fade-in max-w-[24rem] text-center leading-snug"
+                    >
+                      <span
+                        className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 motion-safe:animate-pulse"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        {thinkElapsedMs >= 20000
+                          ? `Still working (${Math.round(thinkElapsedMs / 1000)}s) · press Esc to cancel`
+                          : thinkElapsedMs >= 10000
+                            ? `Taking longer than usual (${Math.round(thinkElapsedMs / 1000)}s) — model or network is slow`
+                            : `Thinking… (${(thinkElapsedMs / 1000).toFixed(1)}s)`}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Empty-state sample prompts — give a new user something to
                       try instead of a silent orb. Tapping a chip commits it
