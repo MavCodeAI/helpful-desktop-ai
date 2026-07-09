@@ -120,6 +120,13 @@ function friendlyError(e: unknown, fallback: string): string {
 /** Cycle short verbs during the "thinking" phase so it feels alive. */
 const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
 
+/**
+ * Hard cap on a single composed message. Mirrors the server's zod schema
+ * in /api/chat so we can reject over-long input in the UI with a friendly
+ * toast instead of round-tripping to a 400.
+ */
+const MAX_MESSAGE_CHARS = 8000;
+
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
   ssr: false,
