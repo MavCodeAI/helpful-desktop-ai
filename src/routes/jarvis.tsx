@@ -33,9 +33,11 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
-import { RealtimeClient } from "@/lib/realtime-client";
+import { loadVoiceMode, saveVoiceMode, type VoiceMode } from "@/lib/voice-mode";
+import { RealtimeClient, RealtimeError } from "@/lib/realtime-client";
 import { readSttResponse } from "@/lib/stt-stream";
+import { useMicPermission } from "@/hooks/useMicPermission";
+import { useQuotaCooldown } from "@/hooks/useQuotaCooldown";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
