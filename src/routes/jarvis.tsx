@@ -1527,6 +1527,7 @@ function JarvisPage() {
                 }
                 disabled={phase !== "idle"}
                 rows={1}
+                maxLength={MAX_MESSAGE_CHARS}
                 className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
                 aria-label="Message JARVIS"
                 aria-keyshortcuts="Enter Escape"
