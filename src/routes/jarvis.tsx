@@ -2405,15 +2405,17 @@ function JarvisPage() {
                     </button>
 
                     {showSides && (
-                      <OrbSideButton
-                        icon={<Square className="h-3.5 w-3.5 fill-current" />}
-                        hue={hue}
-                        level={0}
-                        onClick={stopHandler}
-                        ariaLabel={stopAria}
-                        muted
-                        disabled={stopDisabled}
-                      />
+                      <div className="hidden sm:block">
+                        <OrbSideButton
+                          icon={<Square className="h-3.5 w-3.5 fill-current" />}
+                          hue={hue}
+                          level={0}
+                          onClick={stopHandler}
+                          ariaLabel={stopAria}
+                          muted
+                          disabled={stopDisabled}
+                        />
+                      </div>
                     )}
                   </div>
 
