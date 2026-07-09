@@ -8,8 +8,8 @@ export const Route = createFileRoute("/api/stt")({
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
         const inbound = await request.formData();
-        const file = inbound.get("file");
-        if (!(file instanceof File) && !(file instanceof Blob)) {
+        const file = inbound.get("file") as File | Blob | null;
+        if (!file || typeof (file as Blob).arrayBuffer !== "function") {
           return new Response("file required", { status: 400 });
         }
 
