@@ -126,6 +126,87 @@ function friendlyError(e: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * Map an STT failure (server text + HTTP status) into a structured toast:
+ * { title, cause, next } — so the user sees exactly what broke and what to do.
+ * Server-side reasons come from /api/stt (short blob, unsupported mime, etc).
+ */
+function sttErrorDetail(
+  status: number | null,
+  raw: string,
+  networkErr?: unknown,
+): { title: string; cause: string; next: string } {
+  const body = (raw || "").trim();
+  const low = body.toLowerCase();
+
+  if (!navigator.onLine) return {
+    title: "You're offline",
+    cause: "Browser reports no network connection.",
+    next: "Reconnect Wi-Fi / data, then tap the orb to retry.",
+  };
+  if (networkErr && (networkErr as { name?: string }).name === "TypeError") return {
+    title: "Network error",
+    cause: "Couldn't reach the transcription server.",
+    next: "Check your connection and retry in a moment.",
+  };
+
+  if (status === 402 || low.includes("credit")) return {
+    title: "AI credits exhausted",
+    cause: "The Lovable AI workspace is out of credits.",
+    next: "Top up credits in Settings → Plans & credits, then retry.",
+  };
+  if (status === 429 || low.includes("rate")) return {
+    title: "Rate limited",
+    cause: "Too many transcription requests in a short window.",
+    next: "Wait a few seconds and try again.",
+  };
+  if (status === 401 || low.includes("unauthorized")) return {
+    title: "Session expired",
+    cause: "Your login token is no longer valid.",
+    next: "Sign in again, then retry.",
+  };
+  if (status === 413 || low.includes("too long") || low.includes("25 mb")) return {
+    title: "Recording too long",
+    cause: "Audio exceeds the 25 MB upstream cap.",
+    next: "Speak in shorter turns (under ~10 minutes).",
+  };
+  if (low.includes("too short")) return {
+    title: "Recording too short",
+    cause: body.match(/\d+/) ? `Only ${body.match(/\d+/)?.[0]} bytes captured.` : "Almost no audio was captured.",
+    next: "Hold the orb (or Space) and speak for at least 1 second.",
+  };
+  if (low.includes("unsupported audio")) return {
+    title: "Unsupported audio format",
+    cause: body.replace(/^.*?:\s*/, "Browser sent: ") || "Browser codec is not accepted upstream.",
+    next: "Reload the page — a different codec will be negotiated.",
+  };
+  if (low.includes("audio file required") || low.includes("invalid form")) return {
+    title: "Recording didn't reach the server",
+    cause: body || "The upload was empty or malformed.",
+    next: "Retry once — if it repeats, reload the page.",
+  };
+  if (status === 500 && low.includes("not configured")) return {
+    title: "Voice service not configured",
+    cause: "LOVABLE_API_KEY is missing on the server.",
+    next: "Ask the project owner to enable Lovable AI.",
+  };
+  if (status === 502) return {
+    title: "Transcription service unreachable",
+    cause: "Gateway timed out or refused the connection.",
+    next: "Retry in a few seconds.",
+  };
+  if (status && status >= 500) return {
+    title: "Transcription server error",
+    cause: body || `Upstream returned ${status}.`,
+    next: "Retry — if it keeps failing, check server logs.",
+  };
+  return {
+    title: "Transcription failed",
+    cause: body || (status ? `HTTP ${status}` : "Unknown error"),
+    next: "Retry, or reload the page if it persists.",
+  };
+}
+
 /** Cycle short verbs during the "thinking" phase so it feels alive. */
 const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
 
@@ -1001,7 +1082,10 @@ function JarvisPage() {
           if (!res.ok) {
             const body = await res.text().catch(() => "");
             await cooldown.startFromResponse(res);
-            throw new Error(body || `${res.status}`);
+            const err = new Error(body || `${res.status}`) as Error & { sttStatus?: number; sttBody?: string };
+            err.sttStatus = res.status;
+            err.sttBody = body;
+            throw err;
           }
 
           // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
@@ -1014,7 +1098,9 @@ function JarvisPage() {
           const text = finalText.trim();
           if (!text) {
             setRtUserPartial("");
-            toast.error("Didn't catch that");
+            toast.error("Didn't catch that", {
+              description: "The model returned an empty transcript. Speak a bit louder and retry.",
+            });
             setPhase("idle");
             return;
           }
@@ -1032,7 +1118,12 @@ function JarvisPage() {
           }
           console.error(e);
           setRtUserPartial("");
-          toast.error(friendlyError(e, "Transcription failed"));
+          const ex = e as { sttStatus?: number; sttBody?: string; name?: string };
+          const detail = sttErrorDetail(ex.sttStatus ?? null, ex.sttBody ?? "", e);
+          toast.error(detail.title, {
+            description: `${detail.cause}\n→ ${detail.next}`,
+            duration: 8000,
+          });
           setPhase("idle");
         } finally {
           // Reader cleanup lives inside readSttResponse's finally block.
