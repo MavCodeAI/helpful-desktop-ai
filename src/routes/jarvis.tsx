@@ -1867,7 +1867,126 @@ function JarvisPage() {
             </SheetContent>
           </Sheet>
 
+          {/* STT diagnostics drawer — rolling log of the last 10 transcription
+              attempts (pre-transcode result, HTTP status, retry reason). Lets
+              the user see *why* a transcription failed at a glance. */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`STT diagnostics${sttLog.some((e) => e.finalStatus !== "ok" && e.finalStatus !== "aborted") ? " — recent failures" : ""}`}
+                title="STT diagnostics"
+                className="relative text-muted-foreground hover:text-foreground min-h-11 min-w-11 h-11 w-11 rounded-full"
+              >
+                <Activity className="w-4 h-4" />
+                {sttLog[0] && sttLog[0].finalStatus !== "ok" && sttLog[0].finalStatus !== "aborted" && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-400 ring-2 ring-background"
+                  />
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[92vw] sm:w-[420px] flex flex-col">
+              <SheetHeader>
+                <SheetTitle className="font-display tracking-widest text-jarvis">
+                  STT Diagnostics
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Last {sttLog.length} of 10 attempts · newest first
+              </div>
+              <div className="mt-4 flex-1 overflow-y-auto space-y-3">
+                {sttLog.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">
+                    No transcription attempts yet. Tap the orb to record.
+                  </p>
+                )}
+                {sttLog.map((e, i) => {
+                  const ok = e.finalStatus === "ok";
+                  const aborted = e.finalStatus === "aborted";
+                  const statusColor = ok
+                    ? "text-emerald-400 border-emerald-400/30"
+                    : aborted
+                    ? "text-muted-foreground border-border"
+                    : "text-red-400 border-red-400/40";
+                  const statusLabel = ok ? "OK" : aborted ? "Cancelled" : `Failed (${e.finalStatus})`;
+                  const preLabel = e.preTranscode === "ok"
+                    ? "WAV transcode: ok"
+                    : e.preTranscode === "failed"
+                    ? "WAV transcode: failed → sent original"
+                    : "WAV transcode: skipped";
+                  const nextStep = ok
+                    ? null
+                    : aborted
+                    ? "You cancelled this attempt."
+                    : e.retryReason
+                    ? "Retry didn't help — check network / credits, or reload."
+                    : e.preTranscode === "failed"
+                    ? "Browser couldn't decode the audio. Reload the page."
+                    : e.finalStatus === "network-error"
+                    ? "Check your network and try again."
+                    : e.finalStatus === 402
+                    ? "Top up AI credits."
+                    : e.finalStatus === 429
+                    ? "Rate limited — wait a few seconds."
+                    : "Retry once; if it repeats, reload the page.";
+                  return (
+                    <div key={`${e.ts}-${i}`} className="rounded-md border border-border/60 bg-card/40 p-3 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-muted-foreground">
+                          {new Date(e.ts).toLocaleTimeString()}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full border ${statusColor} font-mono`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="text-foreground/80">
+                        <span className="text-muted-foreground">Input:</span>{" "}
+                        {e.origMime} · {e.origBytes.toLocaleString()} b
+                      </div>
+                      <div className="text-foreground/80">
+                        <span className="text-muted-foreground">Sent:</span>{" "}
+                        {e.sentMime} · {e.sentBytes.toLocaleString()} b · {e.ms} ms
+                      </div>
+                      <div className={e.preTranscode === "ok" ? "text-emerald-400/90" : e.preTranscode === "failed" ? "text-amber-400/90" : "text-muted-foreground"}>
+                        {preLabel}
+                      </div>
+                      {e.retryReason && (
+                        <div className="text-amber-400/90">
+                          Retry: {e.retryReason}
+                        </div>
+                      )}
+                      {e.errorBody && (
+                        <div className="text-red-400/80 font-mono text-[10px] break-all">
+                          {e.errorBody}
+                        </div>
+                      )}
+                      {nextStep && (
+                        <div className="text-jarvis pt-1 border-t border-border/40">
+                          → {nextStep}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {sttLog.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSttLog([])}
+                  className="mt-3 text-muted-foreground"
+                >
+                  Clear log
+                </Button>
+              )}
+            </SheetContent>
+          </Sheet>
+
           {/* TTS settings drawer */}
+
           <Sheet>
             <SheetTrigger asChild>
               <Button
