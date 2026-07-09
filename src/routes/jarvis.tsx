@@ -2406,17 +2406,41 @@ function JarvisPage() {
                     className="text-[10px] sm:text-[11px] tracking-[0.35em] font-mono select-none"
                     style={{ color: `hsl(${hue} 30% 68%)` }}
                     aria-hidden="true"
+                    title={(() => {
+                      // Which backend service is doing the work right now.
+                      if (mode === "realtime") {
+                        return realtimeOn
+                          ? "OpenAI Realtime API — streaming voice-to-voice over WebRTC"
+                          : "Realtime mode — tap orb to connect";
+                      }
+                      if (phase === "listening") return "Whisper STT via Lovable AI Gateway";
+                      if (phase === "thinking") return "Chat LLM (Gemini) via Lovable AI Gateway";
+                      if (phase === "speaking") return "OpenAI TTS via Lovable AI Gateway";
+                      return "Push-to-talk — hold Space or tap orb";
+                    })()}
                   >
                     {phase === "thinking" && partial ? "RESPONDING" : PHASE_CAPTION[phase]}
                   </div>
 
-                  {/* Speaking phase — visible barge-in hint. The interrupt
-                      gesture existed but was undiscoverable. */}
-                  {phase === "speaking" && (
-                    <div className="text-[10px] sm:text-[11px] font-medium text-foreground/60 motion-safe:animate-fade-in">
-                      Tap the orb to interrupt
-                    </div>
-                  )}
+                  {/* Which "tool" (pipeline step) is active right now — plain-
+                      language subtitle so the user always knows what the app
+                      is doing behind the orb. */}
+                  <div
+                    className="text-[10px] sm:text-[11px] text-foreground/50 motion-safe:animate-fade-in max-w-[22rem] text-center leading-snug"
+                    aria-live="polite"
+                  >
+                    {mode === "realtime"
+                      ? realtimeOn
+                        ? "🔴 OpenAI Realtime — live voice stream"
+                        : "Realtime mode ready — tap orb to connect"
+                      : phase === "listening"
+                        ? "🎙️ Recording → will send to Whisper (STT)"
+                        : phase === "thinking"
+                          ? "🧠 Chat model is generating a reply"
+                          : phase === "speaking"
+                            ? "🔊 TTS is speaking · tap orb to interrupt"
+                            : "Push-to-talk · hold Space or tap the orb"}
+                  </div>
 
                   {/* Empty-state sample prompts — give a new user something to
                       try instead of a silent orb. Tapping a chip commits it
