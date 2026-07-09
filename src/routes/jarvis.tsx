@@ -1013,6 +1013,8 @@ function JarvisPage() {
                 ref={micButtonRef}
                 onClick={handleMicClick}
                 aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+                aria-keyshortcuts={phase === "idle" ? "Space" : "Escape"}
+                title={phase === "idle" ? "Hold Space to talk" : "Press Esc to cancel"}
                 className={`group relative flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-500 motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite] ${
                   messages.length === 0 && !partial && !lastFailed
                     ? "w-[96px] h-[96px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px]"
