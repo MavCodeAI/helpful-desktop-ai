@@ -61,6 +61,9 @@ import {
 import { HologramSafe } from "@/components/HologramSafe";
 import { useMicLevel } from "@/hooks/useMicLevel";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -104,6 +107,14 @@ function JarvisPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll transcript to bottom as new tokens stream in
+  useEffect(() => {
+    const el = transcriptRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [partial, messages]);
+
 
   /* ---------- bootstrap ---------- */
 
@@ -445,7 +456,7 @@ function JarvisPage() {
   const statusLabel = {
     idle: "Ready. Tap to speak.",
     listening: recPaused ? "Paused" : "Listening…",
-    thinking: "Processing…",
+    thinking: partial ? "Responding…" : "Thinking…",
     speaking: playPaused ? "Paused" : "Speaking…",
   }[phase];
 
@@ -705,29 +716,39 @@ function JarvisPage() {
           )}
         </div>
 
-        {/* Bottom zone — transcript pinned to the bottom */}
-        <div className="relative z-10 w-full max-w-2xl space-y-3 max-h-[240px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4">
+        {/* Bottom zone — transcript pinned to the bottom, auto-scrolls as tokens stream in */}
+        <div
+          ref={transcriptRef}
+          className="relative z-10 w-full max-w-2xl space-y-4 max-h-[280px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
+        >
           {messages.length === 0 && !partial && (
             <p className="text-center text-sm text-muted-foreground italic">
               Say hello to begin — tap the mic and speak.
             </p>
           )}
           {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`text-sm ${m.role === "user" ? "text-foreground" : "text-jarvis"}`}
-            >
-              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">
+            <div key={i} className="text-sm">
+              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
                 {m.role === "user" ? "You" : "Jarvis"}
               </span>
-              {m.content}
+              <div
+                className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                  m.role === "user" ? "text-foreground" : "text-jarvis/90"
+                }`}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+              </div>
             </div>
           ))}
           {partial && (
-            <div className="text-sm text-jarvis">
-              <span className="text-xs uppercase tracking-widest opacity-60 mr-2">Jarvis</span>
-              {partial}
-              <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
+            <div className="text-sm">
+              <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+                Jarvis
+              </span>
+              <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
+                <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
+              </div>
             </div>
           )}
         </div>
