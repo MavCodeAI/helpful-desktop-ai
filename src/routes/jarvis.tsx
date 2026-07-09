@@ -766,8 +766,6 @@ function JarvisPage() {
   // uses its own independent stream, so both can coexist.
   const { level: micLevel, active: micActive } = useMicLevel(!!license);
 
-  if (!license) return null;
-
   const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
     idle: "Ready. Tap to speak.",
@@ -780,12 +778,16 @@ function JarvisPage() {
   // screen-reader live region only speaks after the phase has been stable for
   // ~450ms. Rapid transitions (idle→listening→idle during a hot-key stutter,
   // or thinking-stage cycling) collapse into a single announcement so VO/TB
-  // don't queue overlapping speech.
+  // don't queue overlapping speech. MUST live above the license early return
+  // so hook order stays stable across the null→licensed transition.
   const [announcedLabel, setAnnouncedLabel] = useState(statusLabel);
   useEffect(() => {
     const t = setTimeout(() => setAnnouncedLabel(statusLabel), 450);
     return () => clearTimeout(t);
   }, [statusLabel]);
+
+  if (!license) return null;
+
 
 
   return (
