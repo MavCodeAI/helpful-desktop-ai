@@ -465,15 +465,16 @@ function JarvisPage() {
           <div className="w-2.5 h-2.5 rounded-full bg-jarvis animate-pulse" />
           <span className="font-display tracking-[0.3em] text-sm text-jarvis">JARVIS</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <History className="w-4 h-4 mr-1.5" /> History
+              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+                <History className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">History</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[320px] flex flex-col">
+            <SheetContent side="left" className="w-[85vw] sm:w-[320px] flex flex-col">
+
               <SheetHeader>
                 <SheetTitle className="font-display tracking-widest text-jarvis">Conversations</SheetTitle>
               </SheetHeader>
