@@ -1071,8 +1071,12 @@ function JarvisPage() {
         abortRef.current = sttController;
         const sttT0 = performance.now();
         try {
-          // POST the recording; on 415 (unsupported format) auto-retry once
-          // with a WAV transcode so codec mismatches don't fail transcription.
+          // POST the recording; on ANY "unsupported/corrupted" rejection
+          // (415 from our proxy, or 400 from upstream with codes like
+          // `invalid_value` / "Audio file might be corrupted or unsupported")
+          // auto-retry once with a WAV transcode. WAV is universally decodable
+          // and sidesteps browser codec mismatches (Safari fragmented MP4,
+          // Opus variants, missing container headers).
           const postAudio = async (b: Blob, filename: string): Promise<Response> => {
             const fd = new FormData();
             fd.append("file", b, filename);
@@ -1082,25 +1086,48 @@ function JarvisPage() {
               signal: sttController.signal,
             });
           };
+
+          const needsTranscodeRetry = (status: number, body: string): boolean => {
+            if (status === 415) return true;
+            if (status !== 400) return false;
+            const low = body.toLowerCase();
+            return (
+              low.includes("corrupted") ||
+              low.includes("unsupported") ||
+              low.includes("invalid_value") ||
+              low.includes("could not decode") ||
+              low.includes("decode")
+            );
+          };
+
           const ext = mime.includes("mp4") ? "mp4" : "webm";
           let res = await postAudio(blob, `recording.${ext}`);
-          if (res.status === 415) {
-            console.warn("[stt] 415 unsupported — retrying with WAV transcode");
+          let peekBody = "";
+          if (!res.ok) {
+            // Peek the body once so we can both decide-to-retry and, if we
+            // don't retry, still surface the original error text below.
+            peekBody = await res.clone().text().catch(() => "");
+          }
+          if (!res.ok && needsTranscodeRetry(res.status, peekBody)) {
+            console.warn("[stt] upstream rejected format — retrying with WAV transcode", {
+              status: res.status,
+              body: peekBody.slice(0, 200),
+            });
             try {
               const wav = await transcodeToWav(blob);
               toast.message("Retrying with a different audio format…", { duration: 2500 });
               res = await postAudio(wav, "recording.wav");
+              if (!res.ok) peekBody = await res.clone().text().catch(() => "");
             } catch (transcodeErr) {
               console.error("[stt] WAV transcode failed", transcodeErr);
-              // Fall through — original 415 response is still `res` for error UI.
+              // Fall through — original response is still `res` for error UI.
             }
           }
           if (!res.ok) {
-            const body = await res.text().catch(() => "");
             await cooldown.startFromResponse(res);
-            const err = new Error(body || `${res.status}`) as Error & { sttStatus?: number; sttBody?: string };
+            const err = new Error(peekBody || `${res.status}`) as Error & { sttStatus?: number; sttBody?: string };
             err.sttStatus = res.status;
-            err.sttBody = body;
+            err.sttBody = peekBody;
             throw err;
           }
 
