@@ -152,7 +152,7 @@ const PHASE_HUE: Record<Phase, number> = {
   speaking: 258,   // violet — assistant replying
 };
 const PHASE_CAPTION: Record<Phase, string> = {
-  idle: "TAP TO SPEAK",
+  idle: "TAP TO START",
   listening: "LISTENING",
   thinking: "THINKING",
   speaking: "SPEAKING",
@@ -1467,7 +1467,7 @@ function JarvisPage() {
       <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-5 pb-2">
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 relative">
           {/* LEFT — orb stage, welcome, strips, composer */}
-          <div className="lg:col-span-8 glass-card rounded-[24px] sm:rounded-[32px] flex flex-col min-h-0 overflow-hidden">
+          <div className="lg:col-span-8 flex flex-col min-h-0 overflow-hidden">
             {/* Orb cluster — preview-parity: side buttons flanking a color-coded orb. */}
             {(() => {
               const hue = PHASE_HUE[phase];
@@ -1678,7 +1678,7 @@ function JarvisPage() {
                 if (phase === "thinking") stopGenerating();
                 else handleTextSend();
               }}
-              className="shrink-0 flex items-end gap-2 border-t border-white/[0.06] px-3 sm:px-4 py-2.5"
+              className="shrink-0 flex items-end gap-2 glass-pill rounded-full mx-3 sm:mx-4 mb-3 px-3 py-1.5"
             >
               <Textarea
                 ref={composerRef}
