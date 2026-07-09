@@ -204,3 +204,15 @@
   60%  { transform: scale(1.03) translateY(-2px); opacity: 1; }
   100% { transform: scale(1) translateY(0); opacity: 1; }
 }
+
+/* Forced-colors (Windows High Contrast) fallback:
+   the app's focus indicators use `focus-visible:ring-*`, which compiles to
+   box-shadow. Forced-colors strips box-shadow, so add a real outline that
+   uses system colors and survives that mode. */
+@media (forced-colors: active) {
+  *:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+}
+
