@@ -286,6 +286,7 @@ function JarvisPage() {
   const spaceHeldRef = useRef(false);
   const [scrolledUp, setScrolledUp] = useState(false);
   const [thinkStageIdx, setThinkStageIdx] = useState(0);
+  const [lastFailed, setLastFailed] = useState<string | null>(null);
   const reduced = useReducedMotion();
 
   // Keep phaseRef2 in sync so global keyboard handlers can read latest phase.
@@ -475,6 +476,7 @@ function JarvisPage() {
     async (userText: string) => {
       const next: ChatMsg[] = [...messages, { role: "user", content: userText }];
       setMessages(next);
+      setLastFailed(null);
       setPhase("thinking");
       const controller = new AbortController();
       abortRef.current = controller;
@@ -538,7 +540,11 @@ function JarvisPage() {
           return;
         }
         console.error(e);
-        toast.error(friendlyError(e, "JARVIS is unavailable"));
+        const reason = friendlyError(e, "JARVIS is unavailable");
+        toast.error(reason);
+        // Roll back the optimistic user message so retry doesn't duplicate it.
+        setMessages(messages);
+        setLastFailed(userText);
         setPhase("idle");
       } finally {
         abortRef.current = null;
@@ -769,10 +775,38 @@ function JarvisPage() {
     <main className="min-h-dvh flex flex-col relative overflow-hidden">
       {/* Orb is rendered inside the mic cluster (below) so it always hugs the button. */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-jarvis/15 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-jarvis motion-safe:animate-pulse" />
-          <span className="font-display tracking-[0.3em] text-sm text-jarvis">JARVIS</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Hex logo mark — geometric identity, not generic Sparkles */}
+          <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              <defs>
+                <linearGradient id="jarvis-mark-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="var(--jarvis)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--jarvis)" stopOpacity="0.4" />
+                </linearGradient>
+              </defs>
+              <polygon
+                points="16,2 29,9 29,23 16,30 3,23 3,9"
+                fill="none"
+                stroke="url(#jarvis-mark-grad)"
+                strokeWidth="1.5"
+              />
+              <polygon
+                points="16,8 24,12.5 24,19.5 16,24 8,19.5 8,12.5"
+                fill="url(#jarvis-mark-grad)"
+                opacity="0.25"
+              />
+              <circle cx="16" cy="16" r="2.5" fill="var(--jarvis)" className="motion-safe:animate-pulse" />
+            </svg>
+          </div>
+          <div className="flex flex-col leading-none min-w-0">
+            <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">JARVIS</span>
+            <span className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground mt-0.5 hidden sm:inline">
+              Voice Intelligence
+            </span>
+          </div>
         </div>
+
         <div className="flex items-center gap-1 sm:gap-2">
           {/* History drawer */}
           <Sheet>
@@ -959,60 +993,15 @@ function JarvisPage() {
 
         </div>
 
-        {/* Middle zone — control clusters */}
+        {/* Middle zone — only idle-state replay affordance now; active controls live above the composer. */}
         <div className="relative z-10 flex flex-col items-center gap-3 min-h-[40px]">
-          {phase === "listening" && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {recPaused ? (
-                <Button variant="outline" size="sm" onClick={resumeRecording}>
-                  <Play className="w-4 h-4 mr-1.5" /> Resume
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={pauseRecording}>
-                  <Pause className="w-4 h-4 mr-1.5" /> Pause
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={stopListening}>
-                <Square className="w-4 h-4 mr-1.5" /> Send
-              </Button>
-              <Button variant="ghost" size="sm" onClick={cancelRecording}>
-                Cancel
-              </Button>
-            </div>
-          )}
-
-          {phase === "speaking" && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {playPaused ? (
-                <Button variant="outline" size="sm" onClick={resumePlayback}>
-                  <Play className="w-4 h-4 mr-1.5" /> Resume
-                </Button>
-              ) : (
-                <Button variant="outline" size="sm" onClick={pausePlayback}>
-                  <Pause className="w-4 h-4 mr-1.5" /> Pause
-                </Button>
-              )}
-              <Button variant="outline" size="sm" onClick={restartPlayback}>
-                <RotateCcw className="w-4 h-4 mr-1.5" /> Restart
-              </Button>
-              <Button variant="outline" size="sm" onClick={stopPlayback}>
-                <Square className="w-4 h-4 mr-1.5" /> Stop
-              </Button>
-            </div>
-          )}
-
-          {phase === "thinking" && (
-            <Button variant="outline" size="sm" onClick={stopGenerating}>
-              <Square className="w-4 h-4 mr-1.5" /> Stop generating
-            </Button>
-          )}
-
           {phase === "idle" && lastSpokenRef.current && (
             <Button variant="ghost" size="sm" onClick={restartPlayback}>
               <RotateCcw className="w-4 h-4 mr-1.5" /> Replay last reply
             </Button>
           )}
         </div>
+
 
         {/* Bottom zone — transcript + unified composer row (mic + textarea + send/stop). */}
         <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3">
@@ -1022,19 +1011,24 @@ function JarvisPage() {
             ref={transcriptRef}
             className="w-full space-y-4 max-h-[280px] sm:max-h-[340px] [@media(max-height:640px)]:max-h-[140px] overflow-y-auto rounded-xl border border-jarvis/20 bg-background/70 backdrop-blur-md p-4 scroll-smooth"
           >
-            {messages.length === 0 && !partial && (
+            {messages.length === 0 && !partial && !lastFailed && (
               <p className="text-center text-sm text-muted-foreground italic">
                 Say hello to begin — tap the mic, type a message, or hold Space to talk.
               </p>
             )}
             {messages.map((m, i) => (
-              <div key={i} className="text-sm">
-                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+              <div
+                key={i}
+                className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+              >
+                <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1 px-1">
                   {m.role === "user" ? "You" : "Jarvis"}
                 </span>
                 <div
-                  className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
-                    m.role === "user" ? "text-foreground" : "text-jarvis/90"
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                    m.role === "user"
+                      ? "bg-jarvis/10 border border-jarvis/20 text-foreground rounded-tr-sm"
+                      : "bg-transparent text-jarvis/90 rounded-tl-sm"
                   }`}
                 >
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
@@ -1042,17 +1036,75 @@ function JarvisPage() {
               </div>
             ))}
             {partial && (
-              <div className="text-sm">
-                <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] uppercase tracking-widest opacity-60 mb-1 px-1">
                   Jarvis
                 </span>
-                <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
+                <div className="max-w-[85%] rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
                   <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                 </div>
               </div>
             )}
+            {lastFailed && phase === "idle" && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+                <span className="text-destructive">Last message failed to send.</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    const t = lastFailed;
+                    setLastFailed(null);
+                    void sendToChat(t);
+                  }}
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" /> Retry
+                </Button>
+              </div>
+            )}
           </div>
+
+
+          {/* Inline mini-controls — appear directly above the composer during active phases. */}
+          {phase === "listening" && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-jarvis/25 bg-background/60 backdrop-blur-md px-2 py-1.5">
+              {recPaused ? (
+                <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8">
+                  <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8">
+                  <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={stopListening} className="h-8">
+                <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+              </Button>
+              <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 text-muted-foreground">
+                Cancel
+              </Button>
+            </div>
+          )}
+          {phase === "speaking" && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-jarvis/25 bg-background/60 backdrop-blur-md px-2 py-1.5">
+              {playPaused ? (
+                <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8">
+                  <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8">
+                  <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8">
+                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
+              </Button>
+              <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8">
+                <Square className="w-3.5 h-3.5 mr-1" /> Stop
+              </Button>
+            </div>
+          )}
 
           {/* Unified composer — mic + textarea + send/stop in one row. */}
           <form
