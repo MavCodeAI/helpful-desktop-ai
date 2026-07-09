@@ -1696,14 +1696,14 @@ function JarvisPage() {
             role="log"
             aria-label="Conversation"
             aria-live="polite"
-            className="lg:col-span-4 self-stretch lg:self-center flex flex-col gap-3 min-h-0 lg:max-h-[70dvh] max-h-full overflow-y-auto pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+            className="lg:col-span-4 self-stretch lg:self-center flex flex-col gap-3 min-w-0 min-h-0 lg:max-h-[70dvh] max-h-full overflow-y-auto overflow-x-hidden pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
             {messages.length === 0 && !partial && !rtUserPartial && !rtAsstPartial && !lastFailed && phase === "idle" ? null : (
               <>
                 {messages.map((m, i) => (
                   <div
                     key={i}
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div
@@ -1712,7 +1712,7 @@ function JarvisPage() {
                     >
                       {m.role === "user" ? "You" : "Assistant"}
                     </div>
-                    <div className="font-sans text-sm leading-relaxed text-white/90 [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis">
+                    <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] sm:[&_code]:text-xs [&_code]:break-words [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:break-all [&_a]:text-jarvis">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                     </div>
                   </div>
@@ -1720,14 +1720,14 @@ function JarvisPage() {
 
                 {(phase === "listening" || rtUserPartial) && (
                   <div
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(180 90% 65%)" }}>
                       You
                     </div>
                     {rtUserPartial ? (
-                      <div className="font-sans text-sm leading-relaxed text-white/80 italic">
+                      <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/80 italic break-words [overflow-wrap:anywhere] hyphens-auto">
                         {rtUserPartial}
                         <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
@@ -1739,7 +1739,7 @@ function JarvisPage() {
 
                 {phase === "thinking" && !partial && !rtAsstPartial && (
                   <div
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(48 90% 70%)" }}>
@@ -1751,15 +1751,15 @@ function JarvisPage() {
                 )}
 
                 {(phase === "speaking" || partial || rtAsstPartial) && (
-                  <div
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
+                <div
+                    className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(258 90% 75%)" }}>
                       {partial || rtAsstPartial ? "Responding" : "Speaking"}
                     </div>
                     {partial || rtAsstPartial ? (
-                      <div className="font-sans text-sm leading-relaxed text-white/90 [&_p]:my-1">
+                      <div className="font-sans text-[15px] sm:text-sm leading-[1.65] sm:leading-relaxed text-white/90 break-words [overflow-wrap:anywhere] hyphens-auto [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] sm:[&_code]:text-xs [&_code]:break-words [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_a]:underline [&_a]:break-all [&_a]:text-jarvis">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
                         <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                       </div>
