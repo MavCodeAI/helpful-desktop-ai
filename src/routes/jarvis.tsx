@@ -1055,22 +1055,7 @@ function JarvisPage() {
     setPhase(realtimeOn ? "listening" : "idle");
   }, [mode, realtimeOn]);
 
-  const changeMode = useCallback(
-    (m: VoiceMode) => {
-      if (m === mode) return;
-      // Cancel any in-flight voice work before switching interaction model.
-      if (phase === "listening") cancelRecording();
-      if (phase === "speaking") stopPlayback();
-      setMode(m);
-      saveVoiceMode(m);
-      toast(`${VOICE_MODE_META[m].label} mode`, {
-        description: VOICE_MODE_META[m].desc,
-        duration: 2200,
-      });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, phase],
-  );
+  // changeMode removed — Auto-VAD is the only supported mode.
 
   const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
