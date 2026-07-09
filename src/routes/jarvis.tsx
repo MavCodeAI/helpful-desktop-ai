@@ -31,7 +31,6 @@ import {
   Trash2,
   ArrowDown,
   SendHorizontal,
-  Radio,
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
