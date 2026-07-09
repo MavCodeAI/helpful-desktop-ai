@@ -1756,27 +1756,30 @@ function JarvisPage() {
                 {messages.map((m, i) => (
                   <div
                     key={i}
-                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
                   >
                     <div
                       className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase"
                       style={{ color: m.role === "user" ? "hsl(180 90% 65%)" : "hsl(258 90% 75%)" }}
                     >
-                      {m.role === "user" ? "You" : "Jarvis"}
+                      {m.role === "user" ? "You" : "Assistant"}
                     </div>
-                    <div className="text-sm leading-relaxed text-white/90 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground space-y-2">
+                    <div className="font-sans text-sm leading-relaxed text-white/90 [&_p]:my-1 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                     </div>
                   </div>
                 ))}
 
                 {rtUserPartial && (
-                  <div className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl">
+                  <div
+                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl"
+                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
+                  >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(180 90% 65%)" }}>
-                      You · Listening
+                      You
                     </div>
-                    <div className="text-sm leading-relaxed text-white/80 italic">
+                    <div className="font-sans text-sm leading-relaxed text-white/80 italic">
                       {rtUserPartial}
                       <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
                     </div>
@@ -1784,16 +1787,20 @@ function JarvisPage() {
                 )}
 
                 {(partial || rtAsstPartial) && (
-                  <div className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl">
+                  <div
+                    className="rounded-2xl border border-white/10 bg-[#0d1220]/80 p-4 backdrop-blur-xl"
+                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
+                  >
                     <div className="mb-1.5 text-[10px] font-semibold tracking-[0.25em] uppercase" style={{ color: "hsl(258 90% 75%)" }}>
-                      Jarvis{rtAsstPartial ? " · Speaking" : ""}
+                      Assistant
                     </div>
-                    <div className="text-sm leading-relaxed text-white/90 [&_p]:my-1 space-y-2">
+                    <div className="font-sans text-sm leading-relaxed text-white/90 [&_p]:my-1">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
                       <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                     </div>
                   </div>
                 )}
+
 
                 {lastFailed && phase === "idle" && (
                   <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
