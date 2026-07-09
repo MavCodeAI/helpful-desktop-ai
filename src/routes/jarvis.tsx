@@ -841,7 +841,7 @@ function JarvisPage() {
           <div
             role="status"
             aria-live="polite"
-            aria-label={micActive ? "Microphone active" : "Microphone inactive"}
+            aria-atomic="true"
             title={micActive ? "Mic active" : "Mic inactive"}
             className={`inline-flex items-center gap-1.5 rounded-full glass-pill px-2 py-1 transition-colors ${
               micActive ? "text-emerald-400" : "text-muted-foreground/60"
@@ -852,6 +852,13 @@ function JarvisPage() {
             ) : (
               <MicOff className="w-3.5 h-3.5" aria-hidden="true" />
             )}
+            {/* Visible-to-SR-only text: TalkBack and older VoiceOver builds
+                announce live-region CHANGES only when text-node children
+                change, not when aria-label alone flips. Keeping the state
+                word in DOM text guarantees the transition is announced. */}
+            <span className="sr-only">
+              {micActive ? "Microphone active" : "Microphone inactive"}
+            </span>
             <span
               aria-hidden="true"
               className={`w-1.5 h-1.5 rounded-full ${
