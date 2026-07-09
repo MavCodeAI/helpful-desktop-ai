@@ -263,6 +263,7 @@ function JarvisPage() {
   // --- Chat phase + streaming ---
   const [phase, setPhase] = useState<Phase>("idle");
   const [partial, setPartial] = useState("");
+  const [composerText, setComposerText] = useState("");
 
   // --- Voice control sub-states ---
   const [recPaused, setRecPaused] = useState(false);
