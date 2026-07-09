@@ -1097,7 +1097,7 @@ function JarvisPage() {
       {/* ==================================================================
           BOTTOM DOCK — orb (mic) + composer pill + hints
           ================================================================== */}
-      <div className="relative z-30 w-full flex flex-col items-center gap-3 px-3 sm:px-6 pt-4 pb-4 sm:pb-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}>
+      <div className="relative z-30 w-full flex flex-col items-center gap-2 sm:gap-3 px-3 sm:px-6 pt-2 sm:pt-4 pb-3 sm:pb-6" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}>
         {/* Active playback / listening strips */}
         {phase === "listening" && (
           <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
