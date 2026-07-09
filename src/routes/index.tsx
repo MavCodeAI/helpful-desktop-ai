@@ -125,6 +125,10 @@ function LicenseGate() {
               placeholder="JARVIS-XXXX-XXXX"
               className="mt-2 font-mono text-center tracking-wider bg-input/50 border-jarvis/30 focus-visible:ring-jarvis"
               autoFocus
+              maxLength={32}
+              autoComplete="off"
+              spellCheck={false}
+              aria-label="License key"
             />
           </div>
           <Button
