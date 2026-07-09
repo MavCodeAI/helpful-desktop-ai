@@ -732,7 +732,7 @@ function JarvisPage() {
                 {m.role === "user" ? "You" : "Jarvis"}
               </span>
               <div
-                className={`prose prose-sm prose-invert max-w-none ${
+                className={`leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
                   m.role === "user" ? "text-foreground" : "text-jarvis/90"
                 }`}
               >
@@ -745,7 +745,7 @@ function JarvisPage() {
               <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">
                 Jarvis
               </span>
-              <div className="prose prose-sm prose-invert max-w-none text-jarvis/90">
+              <div className="leading-relaxed space-y-2 [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground text-jarvis/90">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
                 <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle animate-pulse" />
               </div>
