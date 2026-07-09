@@ -820,14 +820,55 @@ function JarvisPage() {
           return;
         }
         setPhase("thinking");
+        setRtUserPartial("");
         try {
           const fd = new FormData();
           const ext = mime.includes("mp4") ? "mp4" : "webm";
           fd.append("file", blob, `recording.${ext}`);
-          const res = await fetch("/api/stt", { method: "POST", body: fd });
+          // Stream so partial transcript deltas appear as words are recognized.
+          const res = await fetch("/api/stt?stream=1", { method: "POST", body: fd });
           if (!res.ok) throw new Error(await res.text());
-          const json = await res.json();
-          const text = (json.text || "").trim();
+
+          let finalText = "";
+          if (res.body && (res.headers.get("content-type") || "").includes("text/event-stream")) {
+            // SSE: parse `data:` lines → transcript.text.delta / .done
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            let acc = "";
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n");
+              buffer = lines.pop() ?? "";
+              for (const raw of lines) {
+                const l = raw.trim();
+                if (!l.startsWith("data:")) continue;
+                const data = l.slice(5).trim();
+                if (!data || data === "[DONE]") continue;
+                try {
+                  const evt = JSON.parse(data);
+                  if (evt.type === "transcript.text.delta" && typeof evt.delta === "string") {
+                    acc += evt.delta;
+                    setRtUserPartial(acc);
+                  } else if (evt.type === "transcript.text.done" && typeof evt.text === "string") {
+                    finalText = evt.text;
+                  }
+                } catch {
+                  /* skip keepalives / malformed frames */
+                }
+              }
+            }
+            if (!finalText) finalText = acc;
+          } else {
+            // Non-streaming fallback (older gateway / proxy strips SSE).
+            const json = await res.json();
+            finalText = json.text || "";
+          }
+
+          const text = finalText.trim();
+          setRtUserPartial("");
           if (!text) {
             toast.error("Didn't catch that");
             setPhase("idle");
@@ -836,6 +877,7 @@ function JarvisPage() {
           await sendToChat(text);
         } catch (e) {
           console.error(e);
+          setRtUserPartial("");
           toast.error(friendlyError(e, "Transcription failed"));
           setPhase("idle");
         }
@@ -879,6 +921,7 @@ function JarvisPage() {
       mediaRef.current.onstop = () => {
         streamRef.current?.getTracks().forEach((t) => t.stop());
         mediaRef.current = null;
+        setRtUserPartial("");
         setPhase("idle");
         setRecPaused(false);
         setRecStartedAt(null);
@@ -1737,7 +1780,7 @@ function JarvisPage() {
                   </div>
                 )}
 
-                {phase === "thinking" && !partial && !rtAsstPartial && (
+                {phase === "thinking" && !partial && !rtAsstPartial && !rtUserPartial && (
                   <div
                     className="min-w-0 max-w-full rounded-2xl border border-white/10 bg-[#0d1220]/80 p-3.5 sm:p-4 backdrop-blur-xl motion-safe:animate-fade-in"
                     style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.35)" }}
