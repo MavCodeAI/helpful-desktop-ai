@@ -617,6 +617,14 @@ function JarvisPage() {
   // How many ms we've been in "thinking" without a first token yet. Drives
   // the slow-response progress hint so the user knows we're not frozen.
   const [thinkElapsedMs, setThinkElapsedMs] = useState(0);
+  // Mobile tap-to-expand: reveal the full technical explanation of the
+  // active pipeline step. Auto-collapses after ~6s so it never lingers.
+  const [tipOpen, setTipOpen] = useState(false);
+  useEffect(() => {
+    if (!tipOpen) return;
+    const t = setTimeout(() => setTipOpen(false), 6000);
+    return () => clearTimeout(t);
+  }, [tipOpen]);
   const [lastFailed, setLastFailed] = useState<string | null>(null);
   const reduced = useReducedMotion();
 
