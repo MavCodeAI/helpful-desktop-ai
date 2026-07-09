@@ -504,6 +504,15 @@ function JarvisPage() {
     abortRef.current?.abort();
   };
 
+  /** Send a typed message via the text composer. */
+  const handleTextSend = () => {
+    const text = composerText.trim();
+    if (!text || phase !== "idle") return;
+    setComposerText("");
+    haptic(8);
+    void sendToChat(text);
+  };
+
   /* ---------- Recording controls ---------- */
 
   const startListening = async () => {
