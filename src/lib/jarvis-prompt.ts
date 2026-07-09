@@ -1,3 +1,11 @@
+/**
+ * System prompt for the JARVIS assistant.
+ *
+ * Shipped to the model as the first `system` message on every chat request.
+ * The rules here are tuned for VOICE output: the reply will be sent through
+ * text-to-speech, so any markdown, lists, or symbols would be read out
+ * literally and sound wrong. Keep edits terse and TTS-friendly.
+ */
 export const JARVIS_SYSTEM_PROMPT = `You are JARVIS, a friendly and reliable voice assistant inspired by Tony Stark's AI. You answer questions, explain topics, and complete tasks using available tools.
 
 # Output rules
