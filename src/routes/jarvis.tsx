@@ -1049,9 +1049,43 @@ function JarvisPage() {
             className="w-full flex-1 space-y-5 min-h-[140px] sm:min-h-[200px] max-h-[45dvh] lg:max-h-[calc(100dvh-24rem)] overflow-y-auto rounded-2xl p-3 sm:p-5 scroll-smooth [scrollbar-width:thin] [scrollbar-color:oklch(0.4_0.08_220)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
-              <p className="text-center text-sm text-muted-foreground italic">
-                Say hello to begin — tap the mic, type a message, or hold Space to talk.
-              </p>
+              <div className="flex flex-col items-center text-center gap-5 py-4 sm:py-6">
+                <div className="space-y-2 max-w-md">
+                  <h2 className="font-display tracking-[0.3em] text-jarvis text-sm sm:text-base">
+                    HELLO, I'M JARVIS
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Your voice-first intelligence. Talk, type, or hold <kbd className="rounded border border-jarvis/25 bg-background/60 px-1 py-0.5 font-mono text-[10px] text-jarvis/80">Space</kbd> to speak — I'll answer with voice and text in real time.
+                  </p>
+                </div>
+                <div className="w-full space-y-2">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/60">
+                    Try asking
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {[
+                      "What can you do?",
+                      "Summarise today's news",
+                      "Help me draft an email",
+                      "Explain quantum computing simply",
+                      "Give me a 5-minute workout",
+                    ].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          setComposerText("");
+                          void sendToChat(s);
+                        }}
+                        disabled={phase !== "idle"}
+                        className="group rounded-full border border-jarvis/25 bg-background/50 hover:bg-jarvis/10 hover:border-jarvis/60 text-xs sm:text-[13px] px-3 py-1.5 text-foreground/85 hover:text-jarvis transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
             {messages.map((m, i) => (
               <div
