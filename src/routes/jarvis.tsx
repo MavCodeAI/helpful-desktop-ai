@@ -379,10 +379,13 @@ function JarvisPage() {
   }, [phase]);
 
   // Auto-scroll transcript ONLY when the user hasn't scrolled up to read history.
+  // Smooth-follow so streaming partials glide into view instead of snapping.
   useEffect(() => {
     const el = transcriptRef.current;
     if (!el || scrolledUp) return;
-    el.scrollTop = el.scrollHeight;
+    const prefersReduced = typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ top: el.scrollHeight, behavior: prefersReduced ? "auto" : "smooth" });
   }, [partial, rtUserPartial, rtAsstPartial, messages, scrolledUp]);
 
   // Track whether the user has scrolled up; if so, show a "scroll to bottom" pill.
@@ -1855,7 +1858,7 @@ function JarvisPage() {
             <button
               onClick={() => {
                 const el = transcriptRef.current;
-                if (el) el.scrollTop = el.scrollHeight;
+                if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
                 setScrolledUp(false);
               }}
               className="absolute right-6 bottom-6 flex items-center gap-1.5 glass-pill rounded-full px-3.5 py-1.5 text-xs text-foreground hover:bg-white/[0.1] transition-colors motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2"
