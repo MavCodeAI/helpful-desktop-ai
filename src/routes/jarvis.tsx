@@ -887,39 +887,17 @@ function JarvisPage() {
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
         <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5 mt-2 sm:mt-16 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[160px] [@media(max-height:640px)]:h-[160px]">
             <div
-              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[160px] [@media(max-height:640px)]:h-[160px] transition-opacity duration-500 ${
+              className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
                 phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
               } ${reduced ? "opacity-30" : ""}`}
               aria-hidden="true"
             >
               <HologramSafe level={reduced ? 0 : micLevel} />
             </div>
-            <button
-              ref={micButtonRef}
-              onClick={handleMicClick}
-              className="relative w-32 h-32 sm:w-44 sm:h-44 [@media(max-height:640px)]:w-24 [@media(max-height:640px)]:h-24 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              aria-label={statusLabel}
-              aria-live="polite"
-            >
-              {phase === "listening" && !recPaused && !reduced && (
-                <>
-                  <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite]" />
-                  <span className="absolute inset-0 rounded-full border-2 border-jarvis animate-[jarvis-ring_1.5s_ease-out_infinite_0.5s]" />
-                </>
-              )}
-              <div className="absolute inset-0 flex items-center justify-center">
-                {phase === "thinking" ? (
-                  <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-jarvis motion-safe:animate-spin" />
-                ) : phase === "speaking" || (phase === "listening" && !recPaused) ? (
-                  <WaveBars level={micLevel} active={phase === "speaking" || !recPaused} mode={phase === "speaking" ? "speaking" : "listening"} />
-                ) : (
-                  <Mic className="w-10 h-10 sm:w-11 sm:h-11 text-jarvis drop-shadow-[0_0_12px_var(--jarvis-glow)]" />
-                )}
-              </div>
-            </button>
           </div>
+
 
 
 
