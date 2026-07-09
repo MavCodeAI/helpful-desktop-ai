@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
+import { readSttResponse } from "@/lib/stt-stream";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
