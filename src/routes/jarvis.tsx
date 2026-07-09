@@ -2297,9 +2297,12 @@ function JarvisPage() {
               // Always show side buttons (mic on left, stop on right) so the
               // controls are visible from the first moment — matches perfect1.
               const showSides = true;
-              const core = isEmpty ? 200 : 140;
-              const innerRing = core + 40;
-              const outerRing = core + 100;
+              // Shrink the orb on narrow viewports so it fits without clipping
+              // and leaves room for subtitle + chips below the fold.
+              const isNarrow = typeof window !== "undefined" && window.innerWidth < 640;
+              const core = isEmpty ? (isNarrow ? 168 : 200) : (isNarrow ? 120 : 140);
+              const innerRing = core + (isNarrow ? 28 : 40);
+              const outerRing = core + (isNarrow ? 64 : 100);
               const orbScale =
                 phase === "listening" ? 1 + Math.min(0.18, micLevel * 0.5)
                 : phase === "speaking" ? 1.04
