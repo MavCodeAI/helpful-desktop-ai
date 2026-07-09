@@ -12,19 +12,28 @@
  * dead-simple.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { JARVIS_SYSTEM_PROMPT } from "@/lib/jarvis-prompt";
 
-/** One message in the conversation, matching OpenAI's chat schema. */
-interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-/** Shape of the JSON body the client POSTs to this endpoint. */
-interface ChatRequestBody {
-  /** Complete history (excluding the system prompt, which is added server-side). */
-  messages?: ChatMessage[];
-}
+/**
+ * Wire schema for the chat body.
+ *
+ * - The `system` role is intentionally excluded — we prepend our own system
+ *   prompt server-side and never let a client override it.
+ * - `content` is capped at 8 KB per message and the whole conversation at
+ *   100 turns to cap upstream cost and keep responses bounded.
+ */
+const chatBodySchema = z.object({
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().min(1, "Empty message").max(8000, "Message too long"),
+      }),
+    )
+    .min(1, "At least one message is required")
+    .max(100, "Conversation too long — start a new one"),
+});
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -37,40 +46,61 @@ export const Route = createFileRoute("/api/chat")({
        *   or a plain-text error body with the upstream status on failure.
        */
       POST: async ({ request }) => {
-        // Parse and validate input up front — a bad body is the caller's bug,
-        // not something to forward to the upstream model.
-        const { messages } = (await request.json()) as ChatRequestBody;
-        if (!Array.isArray(messages)) {
-          return new Response("messages required", { status: 400 });
+        // 1. Parse the JSON body defensively — a malformed body is a 400,
+        //    not a 500. `request.json()` throws on bad JSON.
+        let raw: unknown;
+        try {
+          raw = await request.json();
+        } catch {
+          return new Response("Invalid JSON body", { status: 400 });
         }
 
-        // Secret must stay server-side. Read at request time (Cloudflare
-        // Workers inject env per-request; module scope may be undefined).
+        // 2. Validate shape / length / roles with zod. The first issue's
+        //    message is returned so the client can surface something
+        //    specific ("Message too long", "Conversation too long", …).
+        const parsed = chatBodySchema.safeParse(raw);
+        if (!parsed.success) {
+          const issue = parsed.error.issues[0];
+          return new Response(issue?.message || "Invalid request body", { status: 400 });
+        }
+        const { messages } = parsed.data;
+
+        // 3. Secret must stay server-side. Read at request time (Cloudflare
+        //    Workers inject env per-request; module scope may be undefined).
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!key) return new Response("AI service is not configured", { status: 500 });
 
-        // Prepend the JARVIS system prompt so the caller can never override it.
-        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            stream: true,
-            messages: [{ role: "system", content: JARVIS_SYSTEM_PROMPT }, ...messages],
-          }),
-        });
+        // 4. Call the upstream gateway. Network failure here is separate
+        //    from a non-2xx response and needs its own catch.
+        let upstream: Response;
+        try {
+          upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${key}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              stream: true,
+              messages: [{ role: "system", content: JARVIS_SYSTEM_PROMPT }, ...messages],
+            }),
+          });
+        } catch (e) {
+          console.error("[/api/chat] upstream fetch failed", e);
+          return new Response("Cannot reach AI service — please retry.", { status: 502 });
+        }
 
-        // Surface upstream failures verbatim so the UI can show a real reason.
+        // 5. Surface upstream failures verbatim so the UI can show a real
+        //    reason (client's `friendlyError` maps 429/402/401 to copy).
         if (!upstream.ok) {
           const text = await upstream.text().catch(() => "");
           return new Response(text || "Upstream error", { status: upstream.status });
         }
 
-        // Pass the SSE body straight through — do NOT wrap in a TransformStream,
-        // that would force the runtime to buffer and defeat progressive rendering.
+        // 6. Pass the SSE body straight through — do NOT wrap in a
+        //    TransformStream, that would force the runtime to buffer and
+        //    defeat progressive rendering.
         return new Response(upstream.body, {
           headers: {
             "Content-Type": "text/event-stream",
