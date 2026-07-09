@@ -19,7 +19,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Mic,
   MicOff,
-  Loader2,
   LogOut,
   Volume2,
   Pause,
