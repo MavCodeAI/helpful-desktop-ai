@@ -1120,7 +1120,7 @@ function JarvisPage() {
             className="flex-1 min-h-0 overflow-y-auto space-y-5 scroll-smooth px-4 sm:px-6 pb-4 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
           >
             {messages.length === 0 && !partial && !lastFailed && (
-              <div className="flex flex-col items-center text-center gap-5 pt-2 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
+              <div className="min-h-full flex flex-col items-center justify-center text-center gap-5 py-6 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
                 <div className="space-y-2 max-w-md">
                   <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-[1.1]">
                     <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
