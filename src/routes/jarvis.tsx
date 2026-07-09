@@ -843,6 +843,48 @@ function JarvisPage() {
     };
   }, []);
 
+  // First-run coachmark — one-shot toast so a new user knows what the orb
+  // does before tapping. Persisted flag prevents re-showing on every visit.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (localStorage.getItem("jarvis:coachmark:v1")) return;
+      const t = setTimeout(() => {
+        toast("Tap the orb to talk", {
+          description:
+            "Hold Space to speak, release to send. Press Esc to cancel. Tap orb again while I'm speaking to interrupt.",
+          duration: 8000,
+        });
+        localStorage.setItem("jarvis:coachmark:v1", "1");
+      }, 900);
+      return () => clearTimeout(t);
+    } catch { /* localStorage blocked — skip */ }
+  }, []);
+
+  // "?" opens a shortcut cheat-sheet toast so keybindings are discoverable
+  // without cluttering the visible UI.
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null) => {
+      const t = el as HTMLElement | null;
+      if (!t) return false;
+      const tag = t.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || t.isContentEditable;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isEditable(e.target)) return;
+      e.preventDefault();
+      toast("Keyboard shortcuts", {
+        description:
+          "Space — hold to talk\nEsc — cancel current phase\nTap orb — start / send / interrupt\n? — show this sheet",
+        duration: 6000,
+      });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+
   /* ---------- TTS settings ---------- */
 
   const updateTts = (patch: Partial<TTSSettings>) => {
