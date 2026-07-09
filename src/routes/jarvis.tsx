@@ -821,23 +821,34 @@ function JarvisPage() {
         }
         setPhase("thinking");
         setRtUserPartial("");
+        // Wire STT into the same abort channel as the chat stream so Escape /
+        // stopGenerating cancel transcription mid-flight instead of letting it
+        // silently complete and auto-send.
+        const sttController = new AbortController();
+        abortRef.current = sttController;
+        let sttReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
         try {
           const fd = new FormData();
           const ext = mime.includes("mp4") ? "mp4" : "webm";
           fd.append("file", blob, `recording.${ext}`);
           // Stream so partial transcript deltas appear as words are recognized.
-          const res = await fetch("/api/stt?stream=1", { method: "POST", body: fd });
+          const res = await fetch("/api/stt?stream=1", {
+            method: "POST",
+            body: fd,
+            signal: sttController.signal,
+          });
           if (!res.ok) throw new Error(await res.text());
 
           let finalText = "";
-          if (res.body && (res.headers.get("content-type") || "").includes("text/event-stream")) {
+          const ctype = (res.headers.get("content-type") || "").toLowerCase();
+          if (res.body && ctype.includes("text/event-stream")) {
             // SSE: parse `data:` lines → transcript.text.delta / .done
-            const reader = res.body.getReader();
+            sttReader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = "";
             let acc = "";
             while (true) {
-              const { value, done } = await reader.read();
+              const { value, done } = await sttReader.read();
               if (done) break;
               buffer += decoder.decode(value, { stream: true });
               const lines = buffer.split("\n");
@@ -862,8 +873,9 @@ function JarvisPage() {
             }
             if (!finalText) finalText = acc;
           } else {
-            // Non-streaming fallback (older gateway / proxy strips SSE).
-            const json = await res.json();
+            // Non-streaming (JSON) response — either server chose not to stream
+            // or an upstream/proxy stripped SSE. Parse JSON body directly.
+            const json = await res.json().catch(() => ({}));
             finalText = json.text || "";
           }
 
@@ -876,10 +888,22 @@ function JarvisPage() {
           }
           await sendToChat(text);
         } catch (e) {
+          // User-initiated cancel (Escape / stopGenerating) — silent teardown.
+          if ((e as { name?: string })?.name === "AbortError") {
+            setRtUserPartial("");
+            setPhase("idle");
+            return;
+          }
           console.error(e);
           setRtUserPartial("");
           toast.error(friendlyError(e, "Transcription failed"));
           setPhase("idle");
+        } finally {
+          // Release the reader so a mid-stream abort doesn't leak the socket.
+          if (sttReader) sttReader.cancel().catch(() => {});
+          // Only clear abortRef if it still points at OUR controller — sendToChat
+          // may have overwritten it with its own controller for the LLM stream.
+          if (abortRef.current === sttController) abortRef.current = null;
         }
       };
 

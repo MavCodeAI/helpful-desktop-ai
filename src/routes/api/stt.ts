@@ -93,9 +93,13 @@ export const Route = createFileRoute("/api/stt")({
           return new Response(errText || "STT failed", { status: upstream.status });
         }
 
-        // 5a. Streaming: pipe the SSE body through unchanged so the client
-        //     can read `transcript.text.delta` / `transcript.text.done` events.
-        if (wantStream && upstream.body) {
+        // 5a. Streaming: only pipe as SSE if upstream actually returned SSE.
+        //     Some routes (or an intermediate proxy) may return JSON even when
+        //     `stream=true` was requested — advertise the true type so the
+        //     client falls through to its JSON parser instead of hanging on an
+        //     empty event stream.
+        const upstreamType = (upstream.headers.get("content-type") || "").toLowerCase();
+        if (wantStream && upstream.body && upstreamType.includes("text/event-stream")) {
           return new Response(upstream.body, {
             status: 200,
             headers: {
@@ -106,11 +110,11 @@ export const Route = createFileRoute("/api/stt")({
           });
         }
 
-        // 5b. Non-streaming: forward JSON body as-is.
+        // 5b. Non-streaming (or upstream declined to stream): forward body as-is.
         const text = await upstream.text().catch(() => "");
         return new Response(text, {
           status: 200,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": upstreamType || "application/json" },
         });
       },
     },
