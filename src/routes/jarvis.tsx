@@ -476,6 +476,7 @@ function JarvisPage() {
     async (userText: string) => {
       const next: ChatMsg[] = [...messages, { role: "user", content: userText }];
       setMessages(next);
+      setLastFailed(null);
       setPhase("thinking");
       const controller = new AbortController();
       abortRef.current = controller;
