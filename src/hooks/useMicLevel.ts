@@ -20,12 +20,21 @@ import { useEffect, useRef, useState } from "react";
 export interface MicStatus {
   /** Smoothed RMS amplitude, 0..1. Always 0 when the mic pipeline is down. */
   level: number;
+  /** Instantaneous peak (0..1) from the current analyser frame. Unsmoothed —
+   *  use this to drive a clip indicator or peak-hold marker; use `level` for
+   *  the animated bar. */
+  peak: number;
   /** True once the mic stream is live, wired to the analyser, and the RAF
    *  loop is producing samples. False while permission is pending, when the
    *  tab is hidden, when `active` is false, or after any failure/teardown.
    *  Use this to drive UI indicators — it reflects reality, not intent. */
   active: boolean;
+  /** AudioContext base latency (ms), rounded. 0 when the pipeline is down.
+   *  Reflects the browser's reported input→analyser delay; useful as a
+   *  visible metric next to the recording pill. */
+  latencyMs: number;
 }
+
 
 export function useMicLevel(active: boolean): MicStatus {
   const [level, setLevel] = useState(0);
