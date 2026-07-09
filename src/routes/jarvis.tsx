@@ -461,6 +461,20 @@ function JarvisPage() {
   const [tts, setTts] = useState<TTSSettings>(loadTTSSettings);
   const lastSpokenRef = useRef<string>(""); // for "restart playback"
 
+  // --- Pipeline latency metrics (ms) ---
+  // sttMs   : time from POST /api/stt → final transcript resolved.
+  // ttsMs   : time from POST /api/tts → audio.play() resolved (first sound).
+  // Both are 0 until the first turn completes. They power the visible
+  // latency badges AND the auto-adaptive speaking rate — so "where is the
+  // delay coming from?" and "should I speak faster?" share one signal.
+  const [sttMs, setSttMs] = useState(0);
+  const [ttsMs, setTtsMs] = useState(0);
+
+  // --- Mic test overlay ---
+  // Continuously renders a big meter without touching the STT pipeline, so
+  // the user can confirm capture and calibrate sensitivity in isolation.
+  const [micTestOpen, setMicTestOpen] = useState(false);
+
   // --- Browser API refs ---
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
