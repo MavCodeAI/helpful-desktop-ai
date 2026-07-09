@@ -13,6 +13,7 @@ import { Route as JarvisRouteImport } from './routes/jarvis'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as ApiSttRouteImport } from './routes/api/stt'
+import { Route as ApiRealtimeTokenRouteImport } from './routes/api/realtime-token'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const JarvisRoute = JarvisRouteImport.update({
@@ -35,6 +36,11 @@ const ApiSttRoute = ApiSttRouteImport.update({
   path: '/api/stt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRealtimeTokenRoute = ApiRealtimeTokenRouteImport.update({
+  id: '/api/realtime-token',
+  path: '/api/realtime-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/jarvis': typeof JarvisRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/realtime-token': typeof ApiRealtimeTokenRoute
   '/api/stt': typeof ApiSttRoute
   '/api/tts': typeof ApiTtsRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/jarvis': typeof JarvisRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/realtime-token': typeof ApiRealtimeTokenRoute
   '/api/stt': typeof ApiSttRoute
   '/api/tts': typeof ApiTtsRoute
 }
@@ -60,21 +68,42 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/jarvis': typeof JarvisRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/realtime-token': typeof ApiRealtimeTokenRoute
   '/api/stt': typeof ApiSttRoute
   '/api/tts': typeof ApiTtsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/jarvis' | '/api/chat' | '/api/stt' | '/api/tts'
+  fullPaths:
+    | '/'
+    | '/jarvis'
+    | '/api/chat'
+    | '/api/realtime-token'
+    | '/api/stt'
+    | '/api/tts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/jarvis' | '/api/chat' | '/api/stt' | '/api/tts'
-  id: '__root__' | '/' | '/jarvis' | '/api/chat' | '/api/stt' | '/api/tts'
+  to:
+    | '/'
+    | '/jarvis'
+    | '/api/chat'
+    | '/api/realtime-token'
+    | '/api/stt'
+    | '/api/tts'
+  id:
+    | '__root__'
+    | '/'
+    | '/jarvis'
+    | '/api/chat'
+    | '/api/realtime-token'
+    | '/api/stt'
+    | '/api/tts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JarvisRoute: typeof JarvisRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiRealtimeTokenRoute: typeof ApiRealtimeTokenRoute
   ApiSttRoute: typeof ApiSttRoute
   ApiTtsRoute: typeof ApiTtsRoute
 }
@@ -109,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSttRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/realtime-token': {
+      id: '/api/realtime-token'
+      path: '/api/realtime-token'
+      fullPath: '/api/realtime-token'
+      preLoaderRoute: typeof ApiRealtimeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -123,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JarvisRoute: JarvisRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiRealtimeTokenRoute: ApiRealtimeTokenRoute,
   ApiSttRoute: ApiSttRoute,
   ApiTtsRoute: ApiTtsRoute,
 }
