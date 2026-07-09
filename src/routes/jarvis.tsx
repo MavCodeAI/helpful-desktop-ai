@@ -972,16 +972,28 @@ function JarvisPage() {
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
         <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-5 mt-2 sm:mt-16 [@media(max-height:640px)]:mt-0 [@media(max-height:640px)]:gap-2">
-          <div className="relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden">
+          <button
+            type="button"
+            onClick={handleMicClick}
+            aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+            className="group relative flex items-center justify-center w-[240px] h-[240px] sm:w-[420px] sm:h-[420px] [@media(max-height:640px)]:w-[120px] [@media(max-height:640px)]:h-[120px] [@media(max-height:480px)]:hidden rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.02] motion-safe:active:scale-[0.98]"
+          >
             <div
               className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
-                phase === "idle" ? "opacity-50" : phase === "speaking" ? "opacity-95" : "opacity-80"
+                phase === "idle" ? "opacity-50 group-hover:opacity-75" : phase === "speaking" ? "opacity-95" : "opacity-80"
               } ${reduced ? "opacity-30" : ""}`}
               aria-hidden="true"
             >
               <HologramSafe level={reduced ? 0 : micLevel} />
             </div>
-          </div>
+            {/* Hint chip inside orb — shows only when idle so it doesn't fight active states */}
+            {phase === "idle" && (
+              <span className="pointer-events-none relative z-10 rounded-full border border-jarvis/40 bg-background/70 backdrop-blur-sm px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-jarvis/80 opacity-0 group-hover:opacity-100 motion-safe:transition-opacity">
+                Tap to talk
+              </span>
+            )}
+          </button>
+
 
 
 
@@ -1186,6 +1198,25 @@ function JarvisPage() {
               </Button>
             )}
           </form>
+
+          {/* Keyboard shortcut hints — subtle, so users discover push-to-talk without cluttering the composer */}
+          <div className="mt-1.5 hidden sm:flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-jarvis/25 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-jarvis/80">Space</kbd>
+              hold to talk
+            </span>
+            <span className="opacity-40">•</span>
+            <span className="inline-flex items-center gap-1">
+              <kbd className="rounded border border-jarvis/25 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] text-jarvis/80">Enter</kbd>
+              send
+            </span>
+            <span className="opacity-40">•</span>
+            <span className="inline-flex items-center gap-1">
+              tap orb to talk
+            </span>
+          </div>
+
+
 
 
 
