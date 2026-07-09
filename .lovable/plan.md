@@ -80,6 +80,11 @@ intentionally deferred.
     **339 KB → 189 KB (−44%)**; markdown deps become on-demand chunks
     fetched on the first assistant bubble. Fallback renders raw text so
     streaming shows immediately. See `.lovable/perf-baseline.md`.
+16. **Markdown chunk idle-prefetched.** `/jarvis` mount schedules a
+    `requestIdleCallback` (fallback `setTimeout 250 ms`) to warm the
+    `react-markdown` + `remark-gfm` chunks before the first LLM reply
+    arrives. Bundle stays split, but users almost never see the
+    `<Suspense>` fallback in practice.
 
 ## Deferred (each safe on its own)
 
