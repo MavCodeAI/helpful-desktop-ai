@@ -59,10 +59,7 @@ export const Route = createFileRoute("/api/chat")({
           body: JSON.stringify({
             model: "google/gemini-2.5-flash",
             stream: true,
-            messages: [
-              { role: "system", content: JARVIS_SYSTEM_PROMPT },
-              ...messages,
-            ],
+            messages: [{ role: "system", content: JARVIS_SYSTEM_PROMPT }, ...messages],
           }),
         });
 

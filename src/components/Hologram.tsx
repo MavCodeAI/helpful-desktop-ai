@@ -263,7 +263,8 @@ export function Hologram({ level = 0 }: { level?: number }) {
     composer.addPass(caPass);
 
     const ro = new ResizeObserver(() => {
-      const w = width(), h = height();
+      const w = width(),
+        h = height();
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       fitCamera();
