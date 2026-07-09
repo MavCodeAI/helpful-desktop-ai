@@ -362,10 +362,16 @@ function JarvisPage() {
     const next = { ...tts, ...patch };
     setTts(next);
     saveTTSSettings(next);
-    // Live-apply volume to any in-flight playback.
     if (audioRef.current && patch.volume !== undefined) {
       audioRef.current.volume = patch.volume;
     }
+    // Persistence confirmation — subtle, single-line so it doesn't fight sliders.
+    const label =
+      patch.voice !== undefined ? `Voice: ${patch.voice}`
+      : patch.speed !== undefined ? `Speed: ${patch.speed.toFixed(2)}×`
+      : patch.volume !== undefined ? `Volume: ${Math.round(patch.volume * 100)}%`
+      : "Settings saved";
+    toast.success("Saved", { description: label, duration: 1400 });
   };
 
   /* ---------- Speak (TTS) ---------- */
