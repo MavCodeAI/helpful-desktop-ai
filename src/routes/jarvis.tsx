@@ -1285,7 +1285,12 @@ function JarvisPage() {
           toast.error(detail.title, {
             description: `${detail.cause}\n${fileLine}\n→ ${detail.next}`,
             duration: 10000,
+            action: {
+              label: "Retry",
+              onClick: () => { void startListening(); },
+            },
           });
+
           setPhase("idle");
         } finally {
           trace.ms = Math.round(performance.now() - sttT0);
