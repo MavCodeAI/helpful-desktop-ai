@@ -693,6 +693,14 @@ function JarvisPage() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.onended = null;
+      audioRef.current = null;
+    }
+    // Release the blob URL so it doesn't leak if the user navigates away
+    // before `speak()` runs again (which would have revoked it).
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
     }
     setPhase("idle");
     setPlayPaused(false);
