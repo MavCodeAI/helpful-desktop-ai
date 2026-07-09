@@ -724,6 +724,7 @@ function JarvisPage() {
       // so the round-trip to Whisper feels noticeably snappier.
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          ...(activeMicIdRef.current ? { deviceId: { exact: activeMicIdRef.current } } : {}),
           channelCount: 1,
           sampleRate: 16000,
           echoCancellation: true,
