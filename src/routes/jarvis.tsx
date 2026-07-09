@@ -745,10 +745,10 @@ function JarvisPage() {
         const blob = new Blob(chunksRef.current, { type: mime });
         if (blob.size < 1500) {
           toast.error("Recording too short");
-          setPhase("idle");
+          dispatch({ type: "CANCEL" });
           return;
         }
-        setPhase("thinking");
+        dispatch({ type: "STOP_LISTENING" });
         setRtUserPartial("");
         // Wire STT into the same abort channel as the chat stream so Escape /
         // stopGenerating cancel transcription mid-flight instead of letting it
