@@ -50,23 +50,24 @@ intentionally deferred.
     audio device, and asserts each phase caption via `PHASE_CAPTION`.
     Guardrail for future setPhase → semantic-event migration.
 
-12. **Semantic events migrated at 8 hot sites** — recorder start
-    (`START_LISTENING`), recorder stop (`STOP_LISTENING`), cancel /
-    too-short / empty-transcript / STT-abort (`CANCEL`), TTS ended
-    (`PLAYBACK_DONE` ×2). Reducer guards now protect these transitions:
-    an out-of-phase call is a tested no-op instead of a silent state
-    jump. Cycle smoke stays green post-migration.
+12. **All meaningful `setPhase` sites migrated to semantic events.**
+    Reducer gained `START_THINKING` + `START_SPEAKING` (multi-entry:
+    idle from text/chip/restart, thinking from voice pipeline). Every
+    recorder/chat/TTS/realtime transition now dispatches a named event;
+    errors dispatch `ERROR` with the toast message so `state.error` is
+    the single source of truth. 13 reducer tests + cycle smoke green.
+    Only 2 `setPhase` calls remain — both intentional cross-phase jumps
+    inside the realtime state machine (thinking → listening on connect,
+    on/off sync effect) which has its own contract.
 
 ## Deferred (each safe on its own)
 
-- **Remaining `setPhase` sites** — the chat entry/exit (`sendToChat` +
-  errors) and `speak()` are called from mixed phases (idle from text
-  input / restart button, thinking from voice flow). Migrating requires
-  either broadening reducer transitions or dispatching per entry point;
-  keep `SET_PHASE` for now.
-- **Realtime paths** (`setPhase` at L1187/1192/1201/1205/1280) — the
-  realtime client has its own state machine; unify only if it lands
-  under the same reducer.
+- **Realtime state machine unification.** The 2 remaining `setPhase`
+  calls (jarvis.tsx L1202, L1281) belong to `RealtimeClient` — fold them
+  into `voiceReducer` only if we merge the two state machines.
+- **Surface `state.error` in UI.** Reducer now stores the last error
+  message, but the UI still relies on toasts. Wire a subtle inline
+  error banner (or aria-live region) for accessibility.
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
   `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.

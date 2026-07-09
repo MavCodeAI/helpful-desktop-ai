@@ -533,7 +533,7 @@ function JarvisPage() {
     async (text: string) => {
       const t0 = performance.now();
       try {
-        setPhase("speaking");
+        dispatch({ type: "START_SPEAKING" });
         setPlayPaused(false);
         lastSpokenRef.current = text;
 
@@ -578,8 +578,9 @@ function JarvisPage() {
         setTtsMs(Math.round(performance.now() - t0));
       } catch (e) {
         console.error(e);
-        setPhase("idle");
-        toast.error(friendlyError(e, "Voice playback failed"));
+        const msg = friendlyError(e, "Voice playback failed");
+        dispatch({ type: "ERROR", message: msg });
+        toast.error(msg);
       }
     },
     [tts, sttMs, ttsMs],
@@ -597,7 +598,7 @@ function JarvisPage() {
       setMessages(next);
       setRtUserPartial("");
       setLastFailed(null);
-      setPhase("thinking");
+      dispatch({ type: "START_THINKING" });
       const controller = new AbortController();
       abortRef.current = controller;
       let full = "";
@@ -653,7 +654,7 @@ function JarvisPage() {
           toast.error("Empty response — please retry.");
           setMessages(messages);
           setLastFailed(userText);
-          setPhase("idle");
+          dispatch({ type: "CANCEL" });
         }
       } catch (e: unknown) {
         if ((e as { name?: string })?.name === "AbortError") {
@@ -662,7 +663,7 @@ function JarvisPage() {
             ...next,
             { role: "assistant", content: (full.trim() || "_(no response)_") + " _(stopped)_" },
           ]);
-          setPhase("idle");
+          dispatch({ type: "CANCEL" });
           return;
         }
         console.error(e);
@@ -671,7 +672,7 @@ function JarvisPage() {
         // Roll back the optimistic user message so retry doesn't duplicate it.
         setMessages(messages);
         setLastFailed(userText);
-        setPhase("idle");
+        dispatch({ type: "ERROR", message: reason });
       } finally {
         abortRef.current = null;
         // Return focus to the mic so keyboard users can immediately talk again.
@@ -904,7 +905,7 @@ function JarvisPage() {
             },
           });
 
-          setPhase("idle");
+          dispatch({ type: "ERROR", message: detail.title });
         } finally {
           trace.ms = Math.round(performance.now() - sttT0);
           pushSttLog(trace);
@@ -1184,12 +1185,12 @@ function JarvisPage() {
     setRealtimeOn(false);
     setRtUserPartial("");
     setRtAsstPartial("");
-    setPhase("idle");
+    dispatch({ type: "CANCEL" });
   }, []);
 
   const connectRealtime = useCallback(async () => {
     if (realtimeRef.current) return;
-    setPhase("thinking");
+    dispatch({ type: "START_THINKING" });
     // Dynamic import — first realtime click pays the load cost (~10-15 KB),
     // every subsequent click hits the module cache.
     const { RealtimeClient, RealtimeError } = await import("@/lib/realtime-client");
@@ -1202,7 +1203,7 @@ function JarvisPage() {
         toast.success("Live connection open", { duration: 1500 });
       } else if (e.type === "disconnected") {
         setRealtimeOn(false);
-        setPhase("idle");
+        dispatch({ type: "CANCEL" });
       } else if (e.type === "user_transcript") {
         setRtUserPartial(e.text);
         if (e.final && e.text.trim() && e.text !== rtMirroredUserRef.current) {

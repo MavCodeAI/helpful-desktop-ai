@@ -61,13 +61,21 @@ export type VoiceEvent =
   | { type: "START_LISTENING" }
   | { type: "PAUSE_RECORDING" }
   | { type: "RESUME_RECORDING" }
-  | { type: "STOP_LISTENING" }         // → thinking
-  | { type: "CANCEL" }                  // → idle
-  | { type: "THINKING_DONE" }           // → speaking
+  | { type: "STOP_LISTENING" }         // listening → thinking
+  | { type: "CANCEL" }                  // any → idle
+  | { type: "THINKING_DONE" }           // thinking → speaking
   | { type: "PAUSE_PLAYBACK" }
   | { type: "RESUME_PLAYBACK" }
-  | { type: "PLAYBACK_DONE" }           // → idle
-  | { type: "ERROR"; message: string }; // → idle + error
+  | { type: "PLAYBACK_DONE" }           // speaking → idle
+  /**
+   * Multi-entry semantic events. Unlike STOP_LISTENING / THINKING_DONE
+   * they don't require a source phase — they model "the app just decided
+   * to start X" from any state (text input, prompt chip, restart button,
+   * or the voice pipeline). Always clear pause flags + error.
+   */
+  | { type: "START_THINKING" }          // any → thinking
+  | { type: "START_SPEAKING" }          // any → speaking
+  | { type: "ERROR"; message: string }; // any → idle + error
 
 export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
   switch (event.type) {
@@ -100,6 +108,12 @@ export function voiceReducer(state: VoiceState, event: VoiceEvent): VoiceState {
     case "PLAYBACK_DONE":
       if (state.phase !== "speaking") return state;
       return INITIAL_VOICE_STATE;
+    case "START_THINKING":
+      if (state.phase === "thinking") return state;
+      return { phase: "thinking", recPaused: false, playPaused: false, error: null };
+    case "START_SPEAKING":
+      if (state.phase === "speaking") return state;
+      return { phase: "speaking", recPaused: false, playPaused: false, error: null };
     case "ERROR":
       return { ...INITIAL_VOICE_STATE, error: event.message };
     default:

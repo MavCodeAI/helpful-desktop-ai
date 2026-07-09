@@ -77,6 +77,31 @@ describe("voiceReducer", () => {
     expect(s).toBe(INITIAL_VOICE_STATE);
   });
 
+  it("START_THINKING jumps to thinking from any state", () => {
+    const idle = voiceReducer(INITIAL_VOICE_STATE, { type: "START_THINKING" });
+    expect(idle.phase).toBe("thinking");
+    const speaking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "speaking", playPaused: true };
+    const s = voiceReducer(speaking, { type: "START_THINKING" });
+    expect(s.phase).toBe("thinking");
+    expect(s.playPaused).toBe(false);
+  });
+
+  it("START_SPEAKING jumps to speaking from any state and clears pause", () => {
+    const idle = voiceReducer(INITIAL_VOICE_STATE, { type: "START_SPEAKING" });
+    expect(idle.phase).toBe("speaking");
+    const thinking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "thinking" };
+    expect(voiceReducer(thinking, { type: "START_SPEAKING" }).phase).toBe("speaking");
+  });
+
+  it("START_THINKING / START_SPEAKING are no-ops when already in that phase", () => {
+    const thinking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "thinking" };
+    expect(voiceReducer(thinking, { type: "START_THINKING" })).toBe(thinking);
+    const speaking: VoiceState = { ...INITIAL_VOICE_STATE, phase: "speaking" };
+    expect(voiceReducer(speaking, { type: "START_SPEAKING" })).toBe(speaking);
+  });
+
+
+
   it("has hue + caption for every phase", () => {
     for (const p of ["idle", "listening", "thinking", "speaking"] as const) {
       expect(PHASE_HUE[p]).toBeGreaterThan(0);
