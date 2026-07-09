@@ -968,8 +968,15 @@ function JarvisPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-6 pt-8 pb-6 [@media(max-height:640px)]:pt-2 [@media(max-height:640px)]:pb-2 [@media(max-height:640px)]:gap-2 relative gap-6">
+      <div className="flex-1 relative">
+        <div className="pointer-events-none absolute inset-0 bg-grid-jarvis opacity-40" aria-hidden="true" />
+        <div className="relative flex-1 grid lg:grid-cols-[minmax(320px,440px)_minmax(0,1fr)] lg:gap-8 xl:gap-12 items-stretch min-h-full px-4 sm:px-6 lg:px-10 pt-6 lg:pt-10 pb-6 gap-6">
         <h1 className="sr-only">JARVIS Voice Assistant</h1>
+
+        {/* LEFT COLUMN — orb + status panel */}
+        <aside className="flex flex-col items-center lg:items-stretch lg:justify-center gap-5 lg:gap-8 lg:sticky lg:top-8 lg:self-start">
+        {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
+            the orb + mic shrink so all three zones stay on one screen. */}
 
         {/* Top zone — orb wraps the mic button. On short/landscape screens (< 640px tall)
             the orb + mic shrink so all three zones stay on one screen. */}
