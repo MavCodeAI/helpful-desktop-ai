@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "JARVIS — Desktop AI Assistant" },
+      { title: "JARVIS — Voice AI Assistant" },
       {
         name: "description",
-        content: "Voice-powered desktop AI assistant. Talk to JARVIS naturally.",
+        content: "Voice-powered AI assistant. Talk to JARVIS naturally on any device.",
       },
       { name: "author", content: "JARVIS" },
-      { property: "og:title", content: "JARVIS — Desktop AI Assistant" },
-      { property: "og:description", content: "Voice-powered desktop AI assistant." },
+      { property: "og:title", content: "JARVIS — Voice AI Assistant" },
+      { property: "og:description", content: "Voice-powered AI assistant." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#0a1929" },
