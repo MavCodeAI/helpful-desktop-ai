@@ -672,7 +672,7 @@ function JarvisPage() {
         // Roll back the optimistic user message so retry doesn't duplicate it.
         setMessages(messages);
         setLastFailed(userText);
-        setPhase("idle");
+        dispatch({ type: "ERROR", message: reason });
       } finally {
         abortRef.current = null;
         // Return focus to the mic so keyboard users can immediately talk again.
