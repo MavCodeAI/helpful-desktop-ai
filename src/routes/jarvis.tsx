@@ -1145,7 +1145,16 @@ function JarvisPage() {
   // Live mic amplitude → volumetric orb density.
   // Passive analyser runs while page is mounted; the recording MediaRecorder
   // uses its own independent stream, so both can coexist.
-  const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license);
+  // Persisted mic-device selection. Validated against the live device list
+  // below — a stale id (permissions cleared, mic unplugged) falls back to
+  // the OS default rather than hard-failing getUserMedia with NotFoundError.
+  const [savedMicId, setSavedMicId] = useMicDeviceId();
+  const micDevices = useAudioInputDevices();
+  const activeMicId =
+    savedMicId && micDevices.devices.some((d) => d.deviceId === savedMicId)
+      ? savedMicId
+      : null;
+  const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license, activeMicId);
 
   /* ---------- Auto-VAD (mode === "vad") ---------- */
   //
