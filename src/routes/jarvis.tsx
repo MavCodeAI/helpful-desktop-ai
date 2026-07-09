@@ -1621,7 +1621,7 @@ function JarvisPage() {
               );
             })()}
 
-            {/* Spacer to push composer to bottom (preview-parity: no welcome/chips) */}
+            {/* Spacer to push controls to bottom (preview-parity: no welcome/chips) */}
             <div className="flex-1 min-h-0" />
 
 
