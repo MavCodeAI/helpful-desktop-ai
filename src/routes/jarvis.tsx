@@ -31,10 +31,8 @@ import {
   Trash2,
   ArrowDown,
   SendHorizontal,
-  Radio,
 } from "lucide-react";
-import { VoiceModeToggle } from "@/components/VoiceModeToggle";
-import { loadVoiceMode, saveVoiceMode, VOICE_MODE_META, type VoiceMode } from "@/lib/voice-mode";
+import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -1055,22 +1053,7 @@ function JarvisPage() {
     setPhase(realtimeOn ? "listening" : "idle");
   }, [mode, realtimeOn]);
 
-  const changeMode = useCallback(
-    (m: VoiceMode) => {
-      if (m === mode) return;
-      // Cancel any in-flight voice work before switching interaction model.
-      if (phase === "listening") cancelRecording();
-      if (phase === "speaking") stopPlayback();
-      setMode(m);
-      saveVoiceMode(m);
-      toast(`${VOICE_MODE_META[m].label} mode`, {
-        description: VOICE_MODE_META[m].desc,
-        duration: 2200,
-      });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, phase],
-  );
+  // changeMode removed — Auto-VAD is the only supported mode.
 
   const stagedThinkingLabel = `${THINKING_STAGES[thinkStageIdx]}…`;
   const statusLabel = {
@@ -1154,8 +1137,7 @@ function JarvisPage() {
           </div>
         </div>
 
-        {/* Voice-mode segmented control — desktop/tablet only (see md: gate). */}
-        <VoiceModeToggle mode={mode} onChange={changeMode} disabled={phase !== "idle"} />
+        {/* Auto-VAD is the only mode — toggle removed. */}
 
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
           {/* Mic activity — reflects the true state of the useMicLevel hook,
