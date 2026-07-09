@@ -461,7 +461,7 @@ function JarvisPage() {
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+              <Button variant="ghost" size="sm" aria-label="Conversation history" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3">
                 <History className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">History</span>
               </Button>
             </SheetTrigger>
@@ -511,7 +511,7 @@ function JarvisPage() {
           {/* TTS settings drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" aria-label="Voice settings" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
+              <Button variant="ghost" size="sm" aria-label="Voice settings" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3">
                 <Settings className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Voice</span>
               </Button>
             </SheetTrigger>
@@ -595,7 +595,7 @@ function JarvisPage() {
             size="sm"
             onClick={signOut}
             aria-label="Sign out"
-            className="text-muted-foreground hover:text-foreground px-2 sm:px-3"
+            className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-9 sm:min-w-0 px-2 sm:px-3"
           >
             <LogOut className="w-4 h-4 sm:mr-1.5" /> <span className="hidden sm:inline">Sign out</span>
           </Button>
