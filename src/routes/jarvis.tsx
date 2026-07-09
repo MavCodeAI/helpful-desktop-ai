@@ -607,10 +607,17 @@ function JarvisPage() {
         }
 
         setPartial("");
-        const finalText = full.trim() ? full : "";
-        setMessages([...next, { role: "assistant", content: finalText + (aborted ? " _(stopped)_" : "") }]);
-        if (finalText && !aborted) await speak(finalText);
-        else setPhase("idle");
+        const finalText = full.trim();
+        if (finalText) {
+          setMessages([...next, { role: "assistant", content: finalText }]);
+          await speak(finalText);
+        } else {
+          // Stream ended with no content — surface a real error instead of an empty bubble.
+          toast.error("Empty response — please retry.");
+          setMessages(messages);
+          setLastFailed(userText);
+          setPhase("idle");
+        }
       } catch (e: unknown) {
         if ((e as { name?: string })?.name === "AbortError") {
           aborted = true;
