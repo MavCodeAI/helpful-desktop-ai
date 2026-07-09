@@ -796,8 +796,8 @@ function JarvisPage() {
       </div>
 
       {/* Floating glass header pill — centered top, doesn't take vertical space */}
-      <header className="relative z-40 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <header className="relative z-40 flex items-center gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
           <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
             <svg viewBox="0 0 32 32" className="w-full h-full">
@@ -834,16 +834,18 @@ function JarvisPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Mic activity — reflects the true state of the useMicLevel hook,
               not user intent. Green pulses with input, dim when hook is down
-              (tab hidden, permission denied, not-yet-granted). */}
+              (tab hidden, permission denied, not-yet-granted). Hidden on
+              mobile to give the title room; orb aria-label already conveys
+              mic state to screen readers. */}
           <div
             role="status"
             aria-live="polite"
             aria-atomic="true"
             title={micActive ? "Mic active" : "Mic inactive"}
-            className={`inline-flex items-center gap-1.5 rounded-full glass-pill px-2 py-1 transition-colors ${
+            className={`hidden sm:inline-flex items-center gap-1.5 rounded-full glass-pill px-2 py-1 transition-colors ${
               micActive ? "text-emerald-400" : "text-muted-foreground/60"
             }`}
           >
