@@ -617,7 +617,7 @@ function JarvisPage() {
         <div className="relative z-10 flex flex-col items-center gap-5 mt-6 sm:mt-16">
           <button
             onClick={handleMicClick}
-            className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md shadow-[0_0_40px_-8px_theme(colors.jarvis.DEFAULT)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full border-2 border-jarvis/50 bg-background/70 backdrop-blur-md jarvis-glow flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={statusLabel}
           >
             {phase === "listening" && !recPaused && (
