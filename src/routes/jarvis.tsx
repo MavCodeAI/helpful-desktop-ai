@@ -542,6 +542,8 @@ function JarvisPage() {
         console.error(e);
         const reason = friendlyError(e, "JARVIS is unavailable");
         toast.error(reason);
+        // Roll back the optimistic user message so retry doesn't duplicate it.
+        setMessages(messages);
         setLastFailed(userText);
         setPhase("idle");
       } finally {
