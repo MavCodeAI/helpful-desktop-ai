@@ -43,8 +43,16 @@ export function loadTTSSettings(): TTSSettings {
   }
 }
 
-/** Persist settings to localStorage. */
+/**
+ * Persist settings to localStorage. Swallows quota/serialisation errors —
+ * settings are a convenience, not core data; losing them just resets to
+ * defaults on the next visit, which is preferable to a crash mid-slider.
+ */
 export function saveTTSSettings(s: TTSSettings) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(s));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(s));
+  } catch (e) {
+    console.warn("[tts-settings] persist failed", e);
+  }
 }
