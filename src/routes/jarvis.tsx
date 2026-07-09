@@ -1111,7 +1111,7 @@ function JarvisPage() {
   // Live mic amplitude → volumetric orb density.
   // Passive analyser runs while page is mounted; the recording MediaRecorder
   // uses its own independent stream, so both can coexist.
-  const { level: micLevel, active: micActive } = useMicLevel(!!license);
+  const { level: micLevel, peak: micPeak, active: micActive, latencyMs: micLatency } = useMicLevel(!!license);
 
   /* ---------- Auto-VAD (mode === "vad") ---------- */
   //
