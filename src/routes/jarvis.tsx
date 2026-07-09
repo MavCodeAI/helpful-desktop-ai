@@ -2477,7 +2477,9 @@ function JarvisPage() {
                           ? "🧠 Chat model is generating a reply"
                           : phase === "speaking"
                             ? "🔊 TTS is speaking · tap orb to interrupt"
-                            : "Push-to-talk · hold Space or tap the orb"}
+                            : (typeof window !== "undefined" && window.matchMedia?.("(hover: none)").matches)
+                              ? "Tap the orb to talk"
+                              : "Push-to-talk · hold Space or tap the orb"}
                   </div>
 
                   {/* Slow-thinking progress hint — reassures the user that
