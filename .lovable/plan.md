@@ -60,14 +60,17 @@ intentionally deferred.
     inside the realtime state machine (thinking → listening on connect,
     on/off sync effect) which has its own contract.
 
+13. **`state.error` surfaced in UI** — `role="alert" aria-live="assertive"`
+    banner at bottom-center reads `voiceState.error`. Reducer already
+    clears the field on every successful transition (any `START_*`,
+    `CANCEL`, `SET_PHASE`), so the banner auto-dismisses on recovery.
+    Complements toasts (fire-and-forget) with a persistent a11y surface.
+
 ## Deferred (each safe on its own)
 
 - **Realtime state machine unification.** The 2 remaining `setPhase`
   calls (jarvis.tsx L1202, L1281) belong to `RealtimeClient` — fold them
   into `voiceReducer` only if we merge the two state machines.
-- **Surface `state.error` in UI.** Reducer now stores the last error
-  message, but the UI still relies on toasts. Wire a subtle inline
-  error banner (or aria-live region) for accessibility.
 - **`realtime-token` unification.** That route hits `api.openai.com`
   directly (not the Lovable gateway), so it correctly stays outside
   `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.
