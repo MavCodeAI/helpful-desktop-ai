@@ -12,6 +12,13 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 
+/** Upstream STT model caps at 25 MB; enforce the same to fail fast. */
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+/** Any recording smaller than this is almost certainly silence / a tap. */
+const MIN_AUDIO_BYTES = 512;
+/** Whitelist of MIME types the browser MediaRecorder actually produces. */
+const ALLOWED_MIME_PREFIXES = ["audio/webm", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav"];
+
 export const Route = createFileRoute("/api/stt")({
   server: {
     handlers: {
@@ -26,31 +33,57 @@ export const Route = createFileRoute("/api/stt")({
        */
       POST: async ({ request }) => {
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!key) return new Response("Voice service is not configured", { status: 500 });
 
-        // Read the browser's multipart body. `file` may be a File or a Blob;
-        // structural check avoids TS `instanceof` complaints in edge runtimes.
-        const inbound = await request.formData();
-        const file = inbound.get("file") as File | Blob | null;
-        if (!file || typeof (file as Blob).arrayBuffer !== "function") {
-          return new Response("file required", { status: 400 });
+        // 1. Parse multipart defensively — a bad body should be a 400.
+        let inbound: FormData;
+        try {
+          inbound = await request.formData();
+        } catch {
+          return new Response("Invalid form body", { status: 400 });
         }
 
-        // Rebuild multipart so we can add `model` and ensure a filename with
-        // an extension the upstream STT can sniff.
+        // 2. Validate the `file` part: presence, shape, MIME, and size.
+        const file = inbound.get("file") as File | Blob | null;
+        if (!file || typeof (file as Blob).arrayBuffer !== "function") {
+          return new Response("Audio file required", { status: 400 });
+        }
+        const blob = file as Blob;
+        if (blob.size < MIN_AUDIO_BYTES) {
+          return new Response("Recording too short", { status: 400 });
+        }
+        if (blob.size > MAX_AUDIO_BYTES) {
+          return new Response("Recording too long (max 25 MB)", { status: 413 });
+        }
+        const mime = (blob.type || "").toLowerCase();
+        if (mime && !ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p))) {
+          return new Response("Unsupported audio format", { status: 415 });
+        }
+
+        // 3. Rebuild multipart so we can add `model` and ensure a filename
+        //    with an extension the upstream STT can sniff.
         const forward = new FormData();
         const name = (file as File).name || "recording.webm";
-        forward.append("file", file, name);
+        forward.append("file", blob, name);
         forward.append("model", "openai/gpt-4o-transcribe");
 
-        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
-          method: "POST",
-          // Do NOT set Content-Type: fetch computes the multipart boundary for us.
-          headers: { Authorization: `Bearer ${key}` },
-          body: forward,
-        });
+        // 4. Call the upstream gateway — catch network drops separately.
+        let upstream: Response;
+        try {
+          upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+            method: "POST",
+            // Do NOT set Content-Type: fetch computes the multipart boundary for us.
+            headers: { Authorization: `Bearer ${key}` },
+            body: forward,
+          });
+        } catch (e) {
+          console.error("[/api/stt] upstream fetch failed", e);
+          return new Response("Cannot reach transcription service — please retry.", {
+            status: 502,
+          });
+        }
 
-        const text = await upstream.text();
+        const text = await upstream.text().catch(() => "");
         if (!upstream.ok) return new Response(text || "STT failed", { status: upstream.status });
         // Body is already JSON; forward as-is so the client can `res.json()`.
         return new Response(text, {

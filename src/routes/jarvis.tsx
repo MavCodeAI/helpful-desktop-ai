@@ -120,6 +120,13 @@ function friendlyError(e: unknown, fallback: string): string {
 /** Cycle short verbs during the "thinking" phase so it feels alive. */
 const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
 
+/**
+ * Hard cap on a single composed message. Mirrors the server's zod schema
+ * in /api/chat so we can reject over-long input in the UI with a friendly
+ * toast instead of round-tripping to a 400.
+ */
+const MAX_MESSAGE_CHARS = 8000;
+
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
   ssr: false,
@@ -295,22 +302,44 @@ function JarvisPage() {
     }
     setLicense(k);
 
-    // Load threads; create the first one if empty.
-    const existing = loadThreads();
-    if (existing.length === 0) {
+    // Load threads; create the first one if empty. Bootstrap runs once so a
+    // storage failure here only warns — the app still works with in-memory
+    // messages that just won't persist across reloads.
+    try {
+      const existing = loadThreads();
+      if (existing.length === 0) {
+        const t = createThread();
+        const list = upsertThread(t);
+        setThreads(list);
+        setActiveId(t.id);
+        setMessages([]);
+      } else {
+        setThreads(existing);
+        setActiveId(existing[0].id);
+        setMessages(existing[0].messages);
+      }
+    } catch (e) {
+      console.error("[jarvis] bootstrap failed", e);
+      toast.warning("Conversation history unavailable", {
+        description: "Your messages this session won't be saved.",
+      });
+      // Fall back to an in-memory thread so the UI still has an activeId.
       const t = createThread();
-      const list = upsertThread(t);
-      setThreads(list);
+      setThreads([t]);
       setActiveId(t.id);
       setMessages([]);
-    } else {
-      setThreads(existing);
-      setActiveId(existing[0].id);
-      setMessages(existing[0].messages);
     }
   }, [navigate]);
 
-  /** Persist current messages into the active thread whenever they change. */
+  /**
+   * Persist current messages into the active thread whenever they change.
+   *
+   * Wrapped in try/catch because `upsertThread` can throw when localStorage
+   * is full (quota exceeded). We toast a single warning so the user knows
+   * their conversation isn't being saved, but the in-memory UI keeps
+   * working — losing persistence is not worth a crashed render.
+   */
+  const storageToastShownRef = useRef(false);
   useEffect(() => {
     if (!activeId) return;
     const current = threads.find((t) => t.id === activeId);
@@ -322,8 +351,18 @@ function JarvisPage() {
       updatedAt: Date.now(),
       messages,
     };
-    const list = upsertThread(updated);
-    setThreads(list);
+    try {
+      const list = upsertThread(updated);
+      setThreads(list);
+    } catch (e) {
+      console.error("[jarvis] persist thread failed", e);
+      if (!storageToastShownRef.current) {
+        storageToastShownRef.current = true;
+        toast.error(
+          e instanceof Error ? e.message : "Couldn't save conversation to browser storage.",
+        );
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
@@ -558,6 +597,14 @@ function JarvisPage() {
   const handleTextSend = () => {
     const text = composerText.trim();
     if (!text || phase !== "idle") return;
+    // Enforce the same cap the server enforces, but surface it here so the
+    // user doesn't wait for a 400 round-trip to learn their draft is too big.
+    if (text.length > MAX_MESSAGE_CHARS) {
+      toast.error("Message is too long", {
+        description: `Please keep it under ${MAX_MESSAGE_CHARS.toLocaleString()} characters.`,
+      });
+      return;
+    }
     setComposerText("");
     haptic(8);
     void sendToChat(text);
@@ -757,11 +804,18 @@ function JarvisPage() {
     if (phase === "listening") cancelRecording();
     if (phase === "speaking") stopPlayback();
     const t = createThread();
-    const list = upsertThread(t);
-    setThreads(list);
-    setActiveId(t.id);
-    setMessages([]);
-    setPartial("");
+    try {
+      const list = upsertThread(t);
+      setThreads(list);
+      setActiveId(t.id);
+      setMessages([]);
+      setPartial("");
+    } catch (e) {
+      console.error("[jarvis] newConversation failed", e);
+      toast.error(
+        e instanceof Error ? e.message : "Couldn't start a new conversation.",
+      );
+    }
   };
 
   const openThread = (id: string) => {
@@ -775,19 +829,26 @@ function JarvisPage() {
   };
 
   const removeThread = (id: string) => {
-    const list = deleteThread(id);
-    if (list.length === 0) {
-      const t = createThread();
-      const seeded = upsertThread(t);
-      setThreads(seeded);
-      setActiveId(t.id);
-      setMessages([]);
-    } else {
-      setThreads(list);
-      if (id === activeId) {
-        setActiveId(list[0].id);
-        setMessages(list[0].messages);
+    try {
+      const list = deleteThread(id);
+      if (list.length === 0) {
+        const t = createThread();
+        const seeded = upsertThread(t);
+        setThreads(seeded);
+        setActiveId(t.id);
+        setMessages([]);
+      } else {
+        setThreads(list);
+        if (id === activeId) {
+          setActiveId(list[0].id);
+          setMessages(list[0].messages);
+        }
       }
+    } catch (e) {
+      console.error("[jarvis] removeThread failed", e);
+      toast.error(
+        e instanceof Error ? e.message : "Couldn't delete that conversation.",
+      );
     }
   };
 
@@ -1466,6 +1527,7 @@ function JarvisPage() {
                 }
                 disabled={phase !== "idle"}
                 rows={1}
+                maxLength={MAX_MESSAGE_CHARS}
                 className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
                 aria-label="Message JARVIS"
                 aria-keyshortcuts="Enter Escape"

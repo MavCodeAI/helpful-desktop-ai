@@ -30,10 +30,32 @@ export function loadThreads(): Thread[] {
   }
 }
 
-/** Overwrite the thread list. */
-export function saveThreads(threads: Thread[]) {
+/**
+ * Overwrite the thread list.
+ *
+ * localStorage is capped (~5 MB per origin) and throws QuotaExceededError
+ * once full. When that happens we drop the oldest half of the threads and
+ * retry once — losing some history is strictly better than losing the write
+ * for the current conversation. If the retry still fails we surface a
+ * user-visible error the caller can toast.
+ */
+export function saveThreads(threads: Thread[]): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(threads));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(threads));
+  } catch {
+    if (threads.length > 1) {
+      try {
+        // Threads are already updatedAt-desc sorted; keep the freshest half.
+        const trimmed = threads.slice(0, Math.max(1, Math.ceil(threads.length / 2)));
+        localStorage.setItem(KEY, JSON.stringify(trimmed));
+        return;
+      } catch {
+        /* fall through to a caller-visible error */
+      }
+    }
+    throw new Error("Browser storage is full — delete some conversations and retry.");
+  }
 }
 
 /** Insert or update a thread by id. Returns the new sorted list. */

@@ -42,11 +42,21 @@ export function validateLicenseKey(key: string): boolean {
  * Persist the active license key in the browser so the user does not have
  * to re-enter it on every visit. Safe to call during SSR (no-op).
  *
+ * Returns `true` on success, `false` if storage is unavailable (private
+ * browsing, quota exceeded, disabled cookies). Callers can decide whether
+ * to warn or continue in-memory only.
+ *
  * @param key - The validated license key to store. Normalized to uppercase.
  */
-export function saveLicense(key: string) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, key.trim().toUpperCase());
+export function saveLicense(key: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    localStorage.setItem(STORAGE_KEY, key.trim().toUpperCase());
+    return true;
+  } catch (e) {
+    console.warn("[license] persist failed", e);
+    return false;
+  }
 }
 
 /**
