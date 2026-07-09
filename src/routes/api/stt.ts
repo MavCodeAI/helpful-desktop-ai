@@ -11,6 +11,7 @@
  * may not include a filename with the right extension).
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { gatewayFetch, readGatewayKey } from "@/lib/server/gateway-client";
 
 /** Upstream STT model caps at 25 MB; enforce the same to fail fast. */
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -32,8 +33,7 @@ export const Route = createFileRoute("/api/stt")({
        *           with the upstream status code.
        */
       POST: async ({ request }) => {
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Voice service is not configured", { status: 500 });
+        if (!readGatewayKey()) return new Response("Voice service is not configured", { status: 500 });
 
         // 0. Optional streaming: /api/stt?stream=1 forwards SSE deltas so the
         //    UI can render the transcript progressively as words arrive.
@@ -80,10 +80,9 @@ export const Route = createFileRoute("/api/stt")({
         // 4. Call the upstream gateway — catch network drops separately.
         let upstream: Response;
         try {
-          upstream = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+          upstream = await gatewayFetch("/audio/transcriptions", {
             method: "POST",
             // Do NOT set Content-Type: fetch computes the multipart boundary for us.
-            headers: { Authorization: `Bearer ${key}` },
             body: forward,
           });
         } catch (e) {
