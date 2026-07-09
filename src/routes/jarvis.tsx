@@ -79,31 +79,67 @@ export const Route = createFileRoute("/jarvis")({
 type Phase = "idle" | "listening" | "thinking" | "speaking";
 
 /**
- * Audio-reactive vertical bars. `level` (0..1) drives the average height;
- * each bar gets a phased sine offset so the row breathes even at low input.
+ * Audio-reactive vertical bars.
+ *  - `smoothLevel` ref lerps toward the incoming `level` each frame → no jitter.
+ *  - Per-bar heights are eased (lerp) toward their target → buttery motion.
+ *  - Gradient stops shift from cool cyan (quiet) to hot white-cyan (loud) so
+ *    the color itself communicates intensity.
  * Renders as SVG for crisp scaling and cheap per-frame updates.
  */
 function WaveBars({ level, active }: { level: number; active: boolean }) {
-  const [tick, setTick] = useState(0);
+  const BARS = 7;
+  const gradId = "wavebar-grad";
+  const heightsRef = useRef<number[]>(Array(BARS).fill(0.15));
+  const smoothLevelRef = useRef(0);
+  const [, force] = useState(0);
+  const phaseRef = useRef(0);
+
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      // On stop: gently drain to rest so bars don't snap flat.
+      smoothLevelRef.current = 0;
+      heightsRef.current = heightsRef.current.map(() => 0.15);
+      force((n) => n + 1);
+      return;
+    }
     let raf = 0;
     const loop = () => {
-      setTick((t) => (t + 1) % 10_000);
+      phaseRef.current += 0.11;
+      // Smooth incoming mic level (~120ms follow time @ 60fps).
+      const target = Math.min(1, Math.max(0, level));
+      smoothLevelRef.current += (target - smoothLevelRef.current) * 0.18;
+
+      const base = 0.18 + smoothLevelRef.current * 0.82;
+      const next = heightsRef.current.map((h, i) => {
+        const wobble = (Math.sin(phaseRef.current + i * 0.85) + 1) / 2;
+        const desired = Math.max(0.08, base * (0.5 + wobble * 0.5));
+        return h + (desired - h) * 0.35; // per-bar easing
+      });
+      heightsRef.current = next;
+      force((n) => (n + 1) % 1_000_000);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active]);
+  }, [active, level]);
 
-  const bars = 7;
-  const base = 0.15 + Math.min(1, Math.max(0, level)) * 0.85;
+  // Gradient intensity: quiet = deep cyan, loud = bright cyan/white.
+  const intensity = smoothLevelRef.current;
+  const topStop = `oklch(${0.78 + intensity * 0.17} ${0.16 - intensity * 0.06} ${215 - intensity * 15})`;
+  const midStop = `oklch(${0.7 + intensity * 0.15} 0.17 210)`;
+  const botStop = `oklch(${0.55 + intensity * 0.15} 0.18 220)`;
+
   return (
-    <svg viewBox="0 0 84 60" className="w-20 h-14 text-jarvis" aria-hidden="true">
-      {Array.from({ length: bars }).map((_, i) => {
-        const phase = tick * 0.12 + i * 0.9;
-        const wobble = (Math.sin(phase) + 1) / 2; // 0..1
-        const h = Math.max(6, (base * 0.55 + wobble * 0.45 * base) * 56);
+    <svg viewBox="0 0 84 60" className="w-20 h-14" aria-hidden="true">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={topStop} />
+          <stop offset="50%" stopColor={midStop} />
+          <stop offset="100%" stopColor={botStop} />
+        </linearGradient>
+      </defs>
+      {heightsRef.current.map((hNorm, i) => {
+        const h = Math.max(4, hNorm * 56);
         const y = (60 - h) / 2;
         return (
           <rect
@@ -113,8 +149,11 @@ function WaveBars({ level, active }: { level: number; active: boolean }) {
             width={8}
             height={h}
             rx={4}
-            fill="currentColor"
-            style={{ filter: "drop-shadow(0 0 6px var(--jarvis-glow))" }}
+            fill={`url(#${gradId})`}
+            style={{
+              filter: `drop-shadow(0 0 ${4 + intensity * 10}px var(--jarvis-glow))`,
+              transition: "filter 180ms ease-out",
+            }}
           />
         );
       })}
