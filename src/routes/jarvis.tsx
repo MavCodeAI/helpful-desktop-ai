@@ -655,7 +655,11 @@ function JarvisPage() {
   /* ---------- Recording controls ---------- */
 
   const startListening = async () => {
-    if (phase !== "idle") return;
+    // Guard via ref, not `phase` closure — otherwise barge-in
+    // (stopPlayback → queueMicrotask(startListening)) reads the stale
+    // "speaking" phase from the render that scheduled the microtask
+    // and bails before the setPhase("idle") from stopPlayback commits.
+    if (mediaRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
