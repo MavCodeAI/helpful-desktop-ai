@@ -106,16 +106,19 @@ function friendlyError(e: unknown, fallback: string): string {
   const err = e as { message?: string; name?: string };
   const msg = (err?.message || "").toLowerCase();
   if (!navigator.onLine) return "You're offline — check your connection.";
-  if (err?.name === "TypeError" || msg.includes("failed to fetch")) return "Network error — please retry.";
-  if (msg.includes("429") || msg.includes("rate")) return "Rate limit reached — slow down and retry.";
-  if (msg.includes("402") || msg.includes("credit")) return "AI credits exhausted — top up in your workspace.";
-  if (msg.includes("401") || msg.includes("unauthorized")) return "Session expired — please sign in again.";
+  if (err?.name === "TypeError" || msg.includes("failed to fetch"))
+    return "Network error — please retry.";
+  if (msg.includes("429") || msg.includes("rate"))
+    return "Rate limit reached — slow down and retry.";
+  if (msg.includes("402") || msg.includes("credit"))
+    return "AI credits exhausted — top up in your workspace.";
+  if (msg.includes("401") || msg.includes("unauthorized"))
+    return "Session expired — please sign in again.";
   return fallback;
 }
 
 /** Cycle short verbs during the "thinking" phase so it feels alive. */
 const THINKING_STAGES = ["Reading", "Analyzing", "Composing", "Refining"] as const;
-
 
 export const Route = createFileRoute("/jarvis")({
   component: JarvisPage,
@@ -161,19 +164,19 @@ function WaveBars({
   const profile =
     mode === "speaking"
       ? {
-          levelLerp: 0.09,        // slower level tracking
-          barLerp: 0.18,          // gentler bar easing
-          phaseStep: 0.07,        // slower wobble
-          barSpread: 0.75,        // wider wobble range → floatier
+          levelLerp: 0.09, // slower level tracking
+          barLerp: 0.18, // gentler bar easing
+          phaseStep: 0.07, // slower wobble
+          barSpread: 0.75, // wider wobble range → floatier
           // Warm violet → magenta → amber gradient
           top: (i: number) => `oklch(${0.82 + i * 0.12} ${0.16 + i * 0.04} ${300 - i * 20})`,
           mid: (i: number) => `oklch(${0.72 + i * 0.1} 0.2 ${325 - i * 10})`,
           bot: (i: number) => `oklch(${0.6 + i * 0.12} 0.2 ${350 - i * 5})`,
         }
       : {
-          levelLerp: 0.28,        // fast, reactive to voice
-          barLerp: 0.42,          // crisper bar snap
-          phaseStep: 0.13,        // livelier wobble
+          levelLerp: 0.28, // fast, reactive to voice
+          barLerp: 0.42, // crisper bar snap
+          phaseStep: 0.13, // livelier wobble
           barSpread: 0.5,
           // Cool cyan → electric blue gradient (existing JARVIS palette)
           top: (i: number) => `oklch(${0.78 + i * 0.17} ${0.16 - i * 0.06} ${215 - i * 15})`,
@@ -210,7 +213,15 @@ function WaveBars({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active, level, reduced, profile.phaseStep, profile.levelLerp, profile.barLerp, profile.barSpread]);
+  }, [
+    active,
+    level,
+    reduced,
+    profile.phaseStep,
+    profile.levelLerp,
+    profile.barLerp,
+    profile.barSpread,
+  ]);
 
   const intensity = smoothLevelRef.current;
   const topStop = profile.top(intensity);
@@ -282,13 +293,7 @@ function LiveWaveform({ level, paused }: { level: number; paused: boolean }) {
   const H = 24;
   const W = BARS * 3; // 2px bar + 1px gap
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      width={W}
-      height={H}
-      className="shrink-0"
-      aria-hidden="true"
-    >
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="shrink-0" aria-hidden="true">
       {bufferRef.current.map((v, i) => {
         const barH = Math.max(2, v * H);
         const x = i * 3;
@@ -377,7 +382,6 @@ function JarvisPage() {
     phaseRef2.current = phase;
   }, [phase]);
 
-
   // Auto-scroll transcript ONLY when the user hasn't scrolled up to read history.
   useEffect(() => {
     const el = transcriptRef.current;
@@ -406,7 +410,6 @@ function JarvisPage() {
     const id = setInterval(() => setThinkStageIdx((i) => (i + 1) % THINKING_STAGES.length), 900);
     return () => clearInterval(id);
   }, [phase, partial]);
-
 
   /* ---------- bootstrap ---------- */
 
@@ -488,8 +491,6 @@ function JarvisPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-
   /* ---------- TTS settings ---------- */
 
   const updateTts = (patch: Partial<TTSSettings>) => {
@@ -501,10 +502,13 @@ function JarvisPage() {
     }
     // Persistence confirmation — subtle, single-line so it doesn't fight sliders.
     const label =
-      patch.voice !== undefined ? `Voice: ${patch.voice}`
-      : patch.speed !== undefined ? `Speed: ${patch.speed.toFixed(2)}×`
-      : patch.volume !== undefined ? `Volume: ${Math.round(patch.volume * 100)}%`
-      : "Settings saved";
+      patch.voice !== undefined
+        ? `Voice: ${patch.voice}`
+        : patch.speed !== undefined
+          ? `Speed: ${patch.speed.toFixed(2)}×`
+          : patch.volume !== undefined
+            ? `Volume: ${Math.round(patch.volume * 100)}%`
+            : "Settings saved";
     toast.success("Saved", { description: label, duration: 1400 });
   };
 
@@ -550,7 +554,7 @@ function JarvisPage() {
         toast.error(friendlyError(e, "Voice playback failed"));
       }
     },
-    [tts]
+    [tts],
   );
 
   /* ---------- Chat (LLM streaming) ---------- */
@@ -640,7 +644,7 @@ function JarvisPage() {
         setTimeout(() => micButtonRef.current?.focus(), 0);
       }
     },
-    [messages, speak]
+    [messages, speak],
   );
 
   /** Cancel an in-flight LLM stream; keeps whatever tokens already arrived. */
@@ -869,16 +873,26 @@ function JarvisPage() {
   }[phase];
 
   return (
-    <main className="flex flex-col relative overflow-hidden" style={{ height: "100dvh", minHeight: "560px" }}>
+    <main
+      className="flex flex-col relative overflow-hidden"
+      style={{ height: "100dvh", minHeight: "560px" }}
+    >
       {/* Aurora ambient background — the signature Liquid Glass look */}
       <div className="aurora-field" aria-hidden="true">
-        <div className="aurora-accent" style={{ width: "40vmax", height: "40vmax", left: "30%", top: "40%", background: "radial-gradient(circle, var(--aurora-c), transparent 60%)" }} />
+        <div
+          className="aurora-accent"
+          style={{
+            width: "40vmax",
+            height: "40vmax",
+            left: "30%",
+            top: "40%",
+            background: "radial-gradient(circle, var(--aurora-c), transparent 60%)",
+          }}
+        />
       </div>
 
       {/* Floating glass header pill — centered top, doesn't take vertical space */}
       <header className="relative z-40 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-5 py-2.5 glass-pill rounded-full">
-
-
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Hex logo mark — geometric identity, not generic Sparkles */}
           <div className="relative w-8 h-8 shrink-0" aria-hidden="true">
@@ -900,28 +914,42 @@ function JarvisPage() {
                 fill="url(#jarvis-mark-grad)"
                 opacity="0.25"
               />
-              <circle cx="16" cy="16" r="2.5" fill="var(--jarvis)" className="motion-safe:animate-pulse" />
+              <circle
+                cx="16"
+                cy="16"
+                r="2.5"
+                fill="var(--jarvis)"
+                className="motion-safe:animate-pulse"
+              />
             </svg>
           </div>
           <div className="flex flex-col leading-none min-w-0">
-            <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">JARVIS</span>
+            <span className="font-display tracking-[0.3em] text-sm text-jarvis truncate">
+              JARVIS
+            </span>
           </div>
-
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
           {/* History drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Conversation history" title="History" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Conversation history"
+                title="History"
+                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full"
+              >
                 <History className="w-4 h-4" />
               </Button>
             </SheetTrigger>
 
             <SheetContent side="left" className="w-[85vw] sm:w-[320px] flex flex-col">
-
               <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">Conversations</SheetTitle>
+                <SheetTitle className="font-display tracking-widest text-jarvis">
+                  Conversations
+                </SheetTitle>
               </SheetHeader>
               <Button onClick={newConversation} className="mt-4" variant="outline">
                 <Plus className="w-4 h-4 mr-1.5" /> New conversation
@@ -939,10 +967,7 @@ function JarvisPage() {
                         : "border-border/50 hover:border-jarvis/30"
                     }`}
                   >
-                    <button
-                      onClick={() => openThread(t.id)}
-                      className="flex-1 text-left"
-                    >
+                    <button onClick={() => openThread(t.id)} className="flex-1 text-left">
                       <div className="text-sm truncate">{t.title}</div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         {new Date(t.updatedAt).toLocaleString()} · {t.messages.length} msgs
@@ -964,15 +989,22 @@ function JarvisPage() {
           {/* TTS settings drawer */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Voice settings" title="Voice" className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Voice settings"
+                title="Voice"
+                className="text-muted-foreground hover:text-foreground min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 rounded-full"
+              >
                 <Settings className="w-4 h-4" />
               </Button>
             </SheetTrigger>
 
             <SheetContent side="right" className="w-[85vw] sm:w-[340px]">
-
               <SheetHeader>
-                <SheetTitle className="font-display tracking-widest text-jarvis">Voice Settings</SheetTitle>
+                <SheetTitle className="font-display tracking-widest text-jarvis">
+                  Voice Settings
+                </SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-6">
                 <div>
@@ -1062,7 +1094,10 @@ function JarvisPage() {
                 <div className="mt-1 font-mono text-foreground truncate">{license}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                onClick={signOut}
+                className="text-destructive focus:text-destructive"
+              >
                 <LogOut className="w-4 h-4 mr-2" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -1078,288 +1113,336 @@ function JarvisPage() {
       <div className="flex-1 flex justify-center min-h-0 overflow-hidden px-3 sm:px-6 pt-3 sm:pt-5 pb-2">
         <div className="w-full max-w-3xl flex flex-col min-h-0 relative">
           <div className="glass-card rounded-[24px] sm:rounded-[32px] flex flex-col min-h-0 flex-1 overflow-hidden">
-
-          {/* Orb + status — hero identity, sits INSIDE the shell at top */}
-          <div className={`flex flex-col items-center shrink-0 transition-all duration-500 px-4 sm:px-6 ${
-            messages.length === 0 && !partial && !lastFailed
-              ? "gap-4 sm:gap-5 pt-6 sm:pt-8 pb-3"
-              : "gap-2 pt-4 sm:pt-5 pb-3"
-          }`}>
-            <button
-              type="button"
-              ref={micButtonRef}
-              onClick={handleMicClick}
-              aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-              className={`group relative flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-500 motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite] ${
+            {/* Orb + status — hero identity, sits INSIDE the shell at top */}
+            <div
+              className={`flex flex-col items-center shrink-0 transition-all duration-500 px-4 sm:px-6 ${
                 messages.length === 0 && !partial && !lastFailed
-                  ? "w-[96px] h-[96px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px]"
-                  : "w-[52px] h-[52px] sm:w-[60px] sm:h-[60px]"
+                  ? "gap-4 sm:gap-5 pt-6 sm:pt-8 pb-3"
+                  : "gap-2 pt-4 sm:pt-5 pb-3"
               }`}
             >
-              <div
-                className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
-                  phase === "idle" ? "opacity-70 group-hover:opacity-95" : phase === "speaking" ? "opacity-100" : "opacity-90"
-                } ${reduced ? "opacity-40" : ""}`}
-                aria-hidden="true"
-              >
-                <HologramSafe level={reduced ? 0 : micLevel} />
-              </div>
-            </button>
-
-            <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  phase === "idle"
-                    ? "bg-jarvis/70"
-                    : phase === "listening"
-                    ? "bg-emerald-400 motion-safe:animate-pulse"
-                    : phase === "speaking"
-                    ? "bg-jarvis motion-safe:animate-pulse"
-                    : "bg-amber-400 motion-safe:animate-pulse"
+              <button
+                type="button"
+                ref={micButtonRef}
+                onClick={handleMicClick}
+                aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
+                className={`group relative flex items-center justify-center rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-all duration-500 motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite] ${
+                  messages.length === 0 && !partial && !lastFailed
+                    ? "w-[96px] h-[96px] sm:w-[128px] sm:h-[128px] md:w-[150px] md:h-[150px]"
+                    : "w-[52px] h-[52px] sm:w-[60px] sm:h-[60px]"
                 }`}
-              />
-              <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">{statusLabel}</span>
-            </div>
-          </div>
-
-          {/* Transcript — scrolls; empty state renders welcome + chips inline */}
-          <div
-            ref={transcriptRef}
-            role="log"
-            aria-label="Conversation"
-            aria-live="polite"
-            className="flex-1 min-h-0 overflow-y-auto space-y-5 scroll-smooth px-4 sm:px-6 pb-4 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
-          >
-            {messages.length === 0 && !partial && !lastFailed && (
-              <div className="min-h-full flex flex-col items-center justify-center text-center gap-5 py-6 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
-                <div className="space-y-2 max-w-md">
-                  <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-[1.1]">
-                    <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
-                      Good to see you.
-                    </span>
-                  </h2>
-                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                    Talk, type, or hold{" "}
-                    <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">Space</kbd>{" "}
-                    to speak.
-                  </p>
-                </div>
-                <div className="w-full space-y-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
-                    Try asking
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {[
-                      { text: "What can you do?", featured: true },
-                      { text: "Summarise today's news", featured: false },
-                      { text: "Help me draft an email", featured: false },
-                      { text: "Explain quantum computing simply", featured: false },
-                      { text: "Give me a 5-minute workout", featured: false },
-                    ].map(({ text, featured }) => (
-                      <button
-                        key={text}
-                        type="button"
-                        onClick={() => {
-                          setComposerText("");
-                          void sendToChat(text);
-                        }}
-                        disabled={phase !== "idle"}
-                        className={`rounded-full text-xs sm:text-[13px] px-3.5 py-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
-                          featured
-                            ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
-                            : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
-                        }`}
-                      >
-                        {text}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`flex flex-col motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] ${m.role === "user" ? "items-end" : "items-start"}`}
               >
-                <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
-                  {m.role === "user" ? "You" : "Jarvis"}
-                </span>
                 <div
-                  className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed space-y-2 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
-                    m.role === "user"
-                      ? "glass-pill text-foreground rounded-tr-md"
-                      : "bg-transparent text-foreground/90 rounded-tl-md"
+                  className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
+                    phase === "idle"
+                      ? "opacity-70 group-hover:opacity-95"
+                      : phase === "speaking"
+                        ? "opacity-100"
+                        : "opacity-90"
+                  } ${reduced ? "opacity-40" : ""}`}
+                  aria-hidden="true"
+                >
+                  <HologramSafe level={reduced ? 0 : micLevel} />
+                </div>
+              </button>
+
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    phase === "idle"
+                      ? "bg-jarvis/70"
+                      : phase === "listening"
+                        ? "bg-emerald-400 motion-safe:animate-pulse"
+                        : phase === "speaking"
+                          ? "bg-jarvis motion-safe:animate-pulse"
+                          : "bg-amber-400 motion-safe:animate-pulse"
                   }`}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                </div>
-              </div>
-            ))}
-            {partial && (
-              <div className="flex flex-col items-start">
-                <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
-                  Jarvis
+                />
+                <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/70">
+                  {statusLabel}
                 </span>
-                <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
-                  <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
-                </div>
               </div>
-            )}
-            {lastFailed && phase === "idle" && (
-              <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
-                <span className="text-destructive">Last message failed to send.</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    const t = lastFailed;
-                    setLastFailed(null);
-                    void sendToChat(t);
-                  }}
-                >
-                  <RotateCcw className="w-3 h-3 mr-1" /> Retry
-                </Button>
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Active playback / listening strips — inline above composer */}
-          {(phase === "listening" || phase === "speaking") && (
-            <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
-              {phase === "listening" && (
-                <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
-                  {/* REC indicator + timer + live waveform */}
-                  <div
-                    className={`glass-pill flex items-center gap-3 rounded-full px-3 py-1.5 border ${
-                      recPaused ? "border-amber-400/40" : "border-emerald-400/40"
-                    }`}
-                    role="status"
-                    aria-live="polite"
-                    aria-label={recPaused ? "Recording paused" : "Recording in progress"}
-                  >
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          recPaused
-                            ? "bg-amber-400"
-                            : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)] motion-safe:animate-pulse"
-                        }`}
-                      />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/80">
-                        {recPaused ? "Paused" : "Rec"}
+            {/* Transcript — scrolls; empty state renders welcome + chips inline */}
+            <div
+              ref={transcriptRef}
+              role="log"
+              aria-label="Conversation"
+              aria-live="polite"
+              className="flex-1 min-h-0 overflow-y-auto space-y-5 scroll-smooth px-4 sm:px-6 pb-4 [scrollbar-width:thin] [scrollbar-color:oklch(0.6_0.05_240_/_0.3)_transparent]"
+            >
+              {messages.length === 0 && !partial && !lastFailed && (
+                <div className="min-h-full flex flex-col items-center justify-center text-center gap-5 py-6 motion-safe:animate-[spring-in_0.6s_cubic-bezier(0.34,1.56,0.64,1)]">
+                  <div className="space-y-2 max-w-md">
+                    <h2 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-[1.1]">
+                      <span className="bg-gradient-to-r from-[oklch(0.9_0.08_210)] via-[oklch(0.85_0.14_260)] to-[oklch(0.82_0.16_310)] bg-clip-text text-transparent">
+                        Good to see you.
                       </span>
-                    </span>
-                    <LiveWaveform level={micLevel} paused={recPaused} />
-                    <RecTimer startedAt={recStartedAt} paused={recPaused} />
+                    </h2>
+                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                      Talk, type, or hold{" "}
+                      <kbd className="rounded-md glass-pill px-1.5 py-0.5 font-mono text-[11px] text-foreground/90">
+                        Space
+                      </kbd>{" "}
+                      to speak.
+                    </p>
                   </div>
+                  <div className="w-full space-y-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/50">
+                      Try asking
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {[
+                        { text: "What can you do?", featured: true },
+                        { text: "Summarise today's news", featured: false },
+                        { text: "Help me draft an email", featured: false },
+                        { text: "Explain quantum computing simply", featured: false },
+                        { text: "Give me a 5-minute workout", featured: false },
+                      ].map(({ text, featured }) => (
+                        <button
+                          key={text}
+                          type="button"
+                          onClick={() => {
+                            setComposerText("");
+                            void sendToChat(text);
+                          }}
+                          disabled={phase !== "idle"}
+                          className={`rounded-full text-xs sm:text-[13px] px-3.5 py-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis motion-safe:hover:scale-[1.03] motion-safe:active:scale-[0.98] ${
+                            featured
+                              ? "bg-jarvis/15 border border-jarvis/40 text-foreground hover:bg-jarvis/25 hover:border-jarvis/60 shadow-[0_0_20px_-8px_var(--jarvis-glow)]"
+                              : "glass-pill text-foreground/70 hover:text-foreground hover:bg-white/[0.08]"
+                          }`}
+                        >
+                          {text}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                  {/* Controls */}
-                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1">
-                    {recPaused ? (
-                      <Button variant="ghost" size="sm" onClick={resumeRecording} className="h-8 rounded-full">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`flex flex-col motion-safe:animate-[spring-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] ${m.role === "user" ? "items-end" : "items-start"}`}
+                >
+                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
+                    {m.role === "user" ? "You" : "Jarvis"}
+                  </span>
+                  <div
+                    className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed space-y-2 [&_code]:bg-white/10 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-white/5 [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline [&_a]:text-jarvis [&_p]:my-1 [&_strong]:text-foreground ${
+                      m.role === "user"
+                        ? "glass-pill text-foreground rounded-tr-md"
+                        : "bg-transparent text-foreground/90 rounded-tl-md"
+                    }`}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                  </div>
+                </div>
+              ))}
+              {partial && (
+                <div className="flex flex-col items-start">
+                  <span className="text-[10px] uppercase tracking-[0.2em] opacity-50 mb-1.5 px-1">
+                    Jarvis
+                  </span>
+                  <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
+                    <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
+                  </div>
+                </div>
+              )}
+              {lastFailed && phase === "idle" && (
+                <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
+                  <span className="text-destructive">Last message failed to send.</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const t = lastFailed;
+                      setLastFailed(null);
+                      void sendToChat(t);
+                    }}
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" /> Retry
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Active playback / listening strips — inline above composer */}
+            {(phase === "listening" || phase === "speaking") && (
+              <div className="shrink-0 flex flex-col items-center gap-2 px-4 sm:px-6 pb-2">
+                {phase === "listening" && (
+                  <div className="flex flex-col items-center gap-2 motion-safe:animate-[spring-in_0.3s_ease-out] w-full max-w-md">
+                    {/* REC indicator + timer + live waveform */}
+                    <div
+                      className={`glass-pill flex items-center gap-3 rounded-full px-3 py-1.5 border ${
+                        recPaused ? "border-amber-400/40" : "border-emerald-400/40"
+                      }`}
+                      role="status"
+                      aria-live="polite"
+                      aria-label={recPaused ? "Recording paused" : "Recording in progress"}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            recPaused
+                              ? "bg-amber-400"
+                              : "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)] motion-safe:animate-pulse"
+                          }`}
+                        />
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/80">
+                          {recPaused ? "Paused" : "Rec"}
+                        </span>
+                      </span>
+                      <LiveWaveform level={micLevel} paused={recPaused} />
+                      <RecTimer startedAt={recStartedAt} paused={recPaused} />
+                    </div>
+
+                    {/* Controls */}
+                    <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1">
+                      {recPaused ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={resumeRecording}
+                          className="h-8 rounded-full"
+                        >
+                          <Play className="w-3.5 h-3.5 mr-1" /> Resume
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={pauseRecording}
+                          className="h-8 rounded-full"
+                        >
+                          <Pause className="w-3.5 h-3.5 mr-1" /> Pause
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={stopListening}
+                        className="h-8 rounded-full"
+                      >
+                        <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelRecording}
+                        className="h-8 rounded-full text-muted-foreground"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {phase === "speaking" && (
+                  <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
+                    {playPaused ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resumePlayback}
+                        className="h-8 rounded-full"
+                      >
                         <Play className="w-3.5 h-3.5 mr-1" /> Resume
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" onClick={pauseRecording} className="h-8 rounded-full">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={pausePlayback}
+                        className="h-8 rounded-full"
+                      >
                         <Pause className="w-3.5 h-3.5 mr-1" /> Pause
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" onClick={stopListening} className="h-8 rounded-full">
-                      <SendHorizontal className="w-3.5 h-3.5 mr-1" /> Send
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={restartPlayback}
+                      className="h-8 rounded-full"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={cancelRecording} className="h-8 rounded-full text-muted-foreground">
-                      Cancel
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={stopPlayback}
+                      className="h-8 rounded-full"
+                    >
+                      <Square className="w-3.5 h-3.5 mr-1" /> Stop
                     </Button>
                   </div>
-                </div>
-              )}
-              {phase === "speaking" && (
-                <div className="glass-pill flex flex-wrap items-center justify-center gap-1 rounded-full px-1.5 py-1 motion-safe:animate-[spring-in_0.3s_ease-out]">
-                  {playPaused ? (
-                    <Button variant="ghost" size="sm" onClick={resumePlayback} className="h-8 rounded-full">
-                      <Play className="w-3.5 h-3.5 mr-1" /> Resume
-                    </Button>
-                  ) : (
-                    <Button variant="ghost" size="sm" onClick={pausePlayback} className="h-8 rounded-full">
-                      <Pause className="w-3.5 h-3.5 mr-1" /> Pause
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={restartPlayback} className="h-8 rounded-full">
-                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restart
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={stopPlayback} className="h-8 rounded-full">
-                    <Square className="w-3.5 h-3.5 mr-1" /> Stop
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Composer — inside the same shell, separated by a subtle divider */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (phase === "thinking") stopGenerating();
-              else handleTextSend();
-            }}
-            className="shrink-0 flex items-end gap-2 border-t border-white/[0.06] px-3 sm:px-4 py-2.5"
-          >
-            <Textarea
-              value={composerText}
-              onChange={(e) => setComposerText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleTextSend();
-                }
-              }}
-              placeholder={
-                phase === "idle"
-                  ? "Message Jarvis, or hold Space to talk…"
-                  : phase === "speaking"
-                  ? "Jarvis is speaking — tap orb to interrupt…"
-                  : phase === "listening"
-                  ? "Listening…"
-                  : "Thinking… tap Stop to cancel"
-              }
-              disabled={phase !== "idle"}
-              rows={1}
-              className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
-              aria-label="Message JARVIS"
-            />
-
-            {phase === "thinking" ? (
-              <Button
-                type="submit"
-                size="icon"
-                variant="destructive"
-                className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full"
-                aria-label="Stop generating"
-              >
-                <Square className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                size="icon"
-                variant="ghost"
-                disabled={phase !== "idle" || !composerText.trim()}
-                className={`shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full transition-all ${
-                  composerText.trim()
-                    ? "bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110"
-                    : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
-                } disabled:shadow-none`}
-                aria-label="Send message"
-              >
-                <SendHorizontal className="w-4 h-4" />
-              </Button>
+                )}
+              </div>
             )}
-          </form>
 
+            {/* Composer — inside the same shell, separated by a subtle divider */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (phase === "thinking") stopGenerating();
+                else handleTextSend();
+              }}
+              className="shrink-0 flex items-end gap-2 border-t border-white/[0.06] px-3 sm:px-4 py-2.5"
+            >
+              <Textarea
+                value={composerText}
+                onChange={(e) => setComposerText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleTextSend();
+                  }
+                }}
+                placeholder={
+                  phase === "idle"
+                    ? "Message Jarvis, or hold Space to talk…"
+                    : phase === "speaking"
+                      ? "Jarvis is speaking — tap orb to interrupt…"
+                      : phase === "listening"
+                        ? "Listening…"
+                        : "Thinking… tap Stop to cancel"
+                }
+                disabled={phase !== "idle"}
+                rows={1}
+                className="min-h-11 max-h-32 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-2.5 text-[15px] placeholder:text-muted-foreground/60"
+                aria-label="Message JARVIS"
+              />
+
+              {phase === "thinking" ? (
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="destructive"
+                  className="shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full"
+                  aria-label="Stop generating"
+                >
+                  <Square className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="ghost"
+                  disabled={phase !== "idle" || !composerText.trim()}
+                  className={`shrink-0 min-h-11 min-w-11 h-11 w-11 rounded-full transition-all ${
+                    composerText.trim()
+                      ? "bg-gradient-to-br from-[oklch(0.85_0.15_210)] to-[oklch(0.75_0.16_260)] text-primary-foreground shadow-lg shadow-jarvis/30 hover:shadow-jarvis/50 hover:brightness-110"
+                      : "text-muted-foreground/50 hover:text-foreground/70 hover:bg-white/[0.05]"
+                  } disabled:shadow-none`}
+                  aria-label="Send message"
+                >
+                  <SendHorizontal className="w-4 h-4" />
+                </Button>
+              )}
+            </form>
           </div>
 
           {/* Scroll-to-bottom pill */}
@@ -1379,20 +1462,26 @@ function JarvisPage() {
         </div>
       </div>
 
-
       {/* ==================================================================
           BOTTOM RAIL — hints + SR-only live region (composer merged into shell)
           ================================================================== */}
-      <div className="relative z-30 w-full flex flex-col items-center px-3 sm:px-6 pb-2 sm:pb-3" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}>
+      <div
+        className="relative z-30 w-full flex flex-col items-center px-3 sm:px-6 pb-2 sm:pb-3"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
+      >
         {/* Keyboard shortcut hints — subtle */}
         <div className="hidden md:flex items-center justify-center gap-3 text-[9px] uppercase tracking-[0.25em] text-muted-foreground/40">
           <span className="inline-flex items-center gap-1">
-            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Space</kbd>
+            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
+              Space
+            </kbd>
             hold to talk
           </span>
           <span className="opacity-40">•</span>
           <span className="inline-flex items-center gap-1">
-            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">Enter</kbd>
+            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
+              Enter
+            </kbd>
             send
           </span>
         </div>
