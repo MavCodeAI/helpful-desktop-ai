@@ -1144,7 +1144,7 @@ function JarvisPage() {
           ref={micButtonRef}
           onClick={handleMicClick}
           aria-label={`${statusLabel} — tap orb to ${phase === "idle" ? "talk" : phase === "listening" ? "send" : phase === "speaking" ? "interrupt" : "stop"}`}
-          className="group relative flex items-center justify-center w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] [@media(max-height:640px)]:w-[90px] [@media(max-height:640px)]:h-[90px] rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite]"
+          className="group relative flex items-center justify-center w-[104px] h-[104px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px] [@media(max-height:720px)]:w-[84px] [@media(max-height:720px)]:h-[84px] [@media(max-height:620px)]:w-[68px] [@media(max-height:620px)]:h-[68px] rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-jarvis focus-visible:ring-offset-4 focus-visible:ring-offset-background transition-transform motion-safe:hover:scale-[1.04] motion-safe:active:scale-[0.96] motion-safe:animate-[float-orb_5s_ease-in-out_infinite]"
         >
           <div
             className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${
