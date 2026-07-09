@@ -294,7 +294,13 @@ function JarvisPage() {
 
   /* ---------- bootstrap ---------- */
 
+  // Guard so bootstrap runs exactly once even if TanStack's `navigate`
+  // identity changes between renders (which would otherwise re-load
+  // localStorage over live in-memory state and wipe an in-flight message).
+  const bootstrappedRef = useRef(false);
   useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
     const k = getLicense();
     if (!k) {
       navigate({ to: "/" });
@@ -330,6 +336,7 @@ function JarvisPage() {
       setMessages([]);
     }
   }, [navigate]);
+
 
   /**
    * Persist current messages into the active thread whenever they change.
