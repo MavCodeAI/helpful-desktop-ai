@@ -1838,13 +1838,6 @@ function JarvisPage() {
           <span className="opacity-40">•</span>
           <span className="inline-flex items-center gap-1">
             <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
-              Enter
-            </kbd>
-            send
-          </span>
-          <span className="opacity-40">•</span>
-          <span className="inline-flex items-center gap-1">
-            <kbd className="glass-pill rounded px-1.5 py-0.5 font-mono text-[10px] text-foreground/90">
               Esc
             </kbd>
             cancel
