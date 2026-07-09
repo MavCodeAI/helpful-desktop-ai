@@ -1689,20 +1689,35 @@ function JarvisPage() {
                   </div>
                 </div>
               ))}
-              {partial && (
+              {rtUserPartial && (
+                <div className="flex flex-col items-end">
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
+                    style={{ color: "hsl(180 90% 65%)" }}
+                  >
+                    You · Listening
+                  </span>
+                  <div className="max-w-[85%] rounded-3xl rounded-tr-md px-4 py-3 text-sm leading-relaxed glass-pill text-foreground/90 italic">
+                    {rtUserPartial}
+                    <span className="inline-block w-2 h-4 bg-cyan-400/70 ml-1 align-middle motion-safe:animate-pulse" />
+                  </div>
+                </div>
+              )}
+              {(partial || rtAsstPartial) && (
                 <div className="flex flex-col items-start">
                   <span
                     className="text-[10px] font-semibold uppercase tracking-[0.25em] mb-1.5 px-1"
                     style={{ color: "hsl(258 90% 75%)" }}
                   >
-                    Jarvis
+                    Jarvis{rtAsstPartial ? " · Speaking" : ""}
                   </span>
                   <div className="max-w-[85%] rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed space-y-2 text-foreground/90">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{partial || rtAsstPartial}</ReactMarkdown>
                     <span className="inline-block w-2 h-4 bg-jarvis/70 ml-1 align-middle motion-safe:animate-pulse" />
                   </div>
                 </div>
               )}
+
               {lastFailed && phase === "idle" && (
                 <div className="flex items-center justify-between gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 backdrop-blur-md px-3 py-2 text-xs">
                   <span className="text-destructive">Last message failed to send.</span>
