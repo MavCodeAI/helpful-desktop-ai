@@ -1797,7 +1797,7 @@ function JarvisPage() {
 
 
       {/* ==================================================================
-          BOTTOM RAIL — hints + SR-only live region (composer merged into shell)
+          BOTTOM RAIL — hints + SR-only live region
           ================================================================== */}
       <div
         className="relative z-30 w-full flex flex-col items-center px-3 sm:px-6 pb-2 sm:pb-3"
