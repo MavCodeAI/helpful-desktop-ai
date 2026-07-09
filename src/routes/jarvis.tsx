@@ -286,6 +286,7 @@ function JarvisPage() {
   const spaceHeldRef = useRef(false);
   const [scrolledUp, setScrolledUp] = useState(false);
   const [thinkStageIdx, setThinkStageIdx] = useState(0);
+  const [lastFailed, setLastFailed] = useState<string | null>(null);
   const reduced = useReducedMotion();
 
   // Keep phaseRef2 in sync so global keyboard handlers can read latest phase.
