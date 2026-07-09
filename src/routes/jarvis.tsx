@@ -914,7 +914,7 @@ function JarvisPage() {
 
       rec.start(100);
       setRecStartedAt(Date.now());
-      setPhase("listening");
+      dispatch({ type: "START_LISTENING" });
     } catch (e) {
       console.error(e);
       toast.error("Microphone access denied — enable it in browser settings.");
