@@ -78,6 +78,8 @@ import {
 } from "@/lib/chat-history";
 // HologramSafe removed — orb visuals are now inline in the preview-parity cluster below.
 import { useMicLevel } from "@/hooks/useMicLevel";
+import { useAudioInputDevices } from "@/hooks/useAudioInputDevices";
+import { useMicDeviceId } from "@/hooks/useMicDeviceId";
 import { toast } from "sonner";
 // Markdown is lazy-loaded via MarkdownMessage — keeps ~180 KB of
 // react-markdown/remark/mdast/micromark out of the initial jarvis chunk.
