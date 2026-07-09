@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { loadVoiceMode, type VoiceMode } from "@/lib/voice-mode";
 import { RealtimeClient } from "@/lib/realtime-client";
+import { readSttResponse } from "@/lib/stt-stream";
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -847,7 +848,6 @@ function JarvisPage() {
         // silently complete and auto-send.
         const sttController = new AbortController();
         abortRef.current = sttController;
-        let sttReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
         try {
           const fd = new FormData();
           const ext = mime.includes("mp4") ? "mp4" : "webm";
@@ -860,45 +860,9 @@ function JarvisPage() {
           });
           if (!res.ok) throw new Error(await res.text());
 
-          let finalText = "";
-          const ctype = (res.headers.get("content-type") || "").toLowerCase();
-          if (res.body && ctype.includes("text/event-stream")) {
-            // SSE: parse `data:` lines → transcript.text.delta / .done
-            sttReader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = "";
-            let acc = "";
-            while (true) {
-              const { value, done } = await sttReader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split("\n");
-              buffer = lines.pop() ?? "";
-              for (const raw of lines) {
-                const l = raw.trim();
-                if (!l.startsWith("data:")) continue;
-                const data = l.slice(5).trim();
-                if (!data || data === "[DONE]") continue;
-                try {
-                  const evt = JSON.parse(data);
-                  if (evt.type === "transcript.text.delta" && typeof evt.delta === "string") {
-                    acc += evt.delta;
-                    setRtUserPartial(acc);
-                  } else if (evt.type === "transcript.text.done" && typeof evt.text === "string") {
-                    finalText = evt.text;
-                  }
-                } catch {
-                  /* skip keepalives / malformed frames */
-                }
-              }
-            }
-            if (!finalText) finalText = acc;
-          } else {
-            // Non-streaming (JSON) response — either server chose not to stream
-            // or an upstream/proxy stripped SSE. Parse JSON body directly.
-            const json = await res.json().catch(() => ({}));
-            finalText = json.text || "";
-          }
+          // Unified reader (SSE ↔ JSON) — see src/lib/stt-stream.ts and
+          // src/lib/stt-stream.test.ts for delta/final-commit tests.
+          const finalText = await readSttResponse(res, (acc) => setRtUserPartial(acc));
 
           const text = finalText.trim();
           if (!text) {
@@ -924,8 +888,7 @@ function JarvisPage() {
           toast.error(friendlyError(e, "Transcription failed"));
           setPhase("idle");
         } finally {
-          // Release the reader so a mid-stream abort doesn't leak the socket.
-          if (sttReader) sttReader.cancel().catch(() => {});
+          // Reader cleanup lives inside readSttResponse's finally block.
           // Only clear abortRef if it still points at OUR controller — sendToChat
           // may have overwritten it with its own controller for the LLM stream.
           if (abortRef.current === sttController) abortRef.current = null;
