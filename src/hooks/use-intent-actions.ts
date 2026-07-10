@@ -176,10 +176,23 @@ export function useIntentActions(opts: Options = {}) {
           pushAction(intent, false);
         }
         break;
-      case "coming-soon":
-        toast(`${a.feature} — coming soon`, { description: "Will be added in a future update." });
+      case "coming-soon": {
+        const now = Date.now();
+        // throttle: only one smart-home toast per 8s to avoid spam
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const w = window as any;
+        if (!w.__alphaCsAt || now - w.__alphaCsAt > 8000) {
+          w.__alphaCsAt = now;
+          toast(`${a.feature} — ابھی available نہیں`, {
+            id: "coming-soon-smart-home",
+            description: "Smart Home features آنے والی update میں شامل ہوں گے۔ فی الحال آپ کہہ سکتے ہیں: \"timer 5 minute\", \"note likho\", \"screen dekho\", \"YouTube kholo\"۔",
+            duration: 5000,
+          });
+        }
         pushAction(intent, false);
         break;
+      }
+
     }
   }, [pushAction]);
 

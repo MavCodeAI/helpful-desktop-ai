@@ -103,15 +103,22 @@ export function detectIntent(raw: string): Intent | null {
   if (!text) return null;
 
   // ── 0a. Smart Home / IoT — Coming Soon ──────────────────────────────
-  if (/\b(smart home|home automation|iot|light|lights|fan|ac|air ?conditioner|tv|thermostat)\b.*\b(on|off|dim|kholo|band|chala|bujha)\b/.test(text)
-      || /\b(turn|switch)\s+(on|off)\b.*\b(light|lights|fan|tv|ac)\b/.test(text)) {
-    return {
-      kind: "coming-soon",
-      label: "Smart Home — Coming Soon",
-      url: "",
-      action: { type: "coming-soon", feature: "Smart Home / IoT control" },
-    };
+  {
+    const deviceMatch = text.match(/\b(light|lights|bulb|lamp|fan|ac|air ?conditioner|tv|thermostat|heater|geyser|plug|switch|curtain|door|lock|camera)\b/);
+    const actionMatch = text.match(/\b(on|off|dim|kholo|band|chala|bujha|open|close|lock|unlock|start|stop)\b/);
+    const isRoutine = /\b(smart home|home automation|iot|good morning|good night|away mode|routine|scene)\b/.test(text);
+    if ((deviceMatch && actionMatch) || isRoutine || /\b(turn|switch)\s+(on|off)\b.*\b(light|lights|fan|tv|ac)\b/.test(text)) {
+      const device = deviceMatch?.[1] ?? "Smart Home";
+      const pretty = device.charAt(0).toUpperCase() + device.slice(1);
+      return {
+        kind: "coming-soon",
+        label: `${pretty} — Coming Soon`,
+        url: "",
+        action: { type: "coming-soon", feature: isRoutine && !deviceMatch ? "Smart Home routines" : `${pretty} control` },
+      };
+    }
   }
+
 
   // ── 0b. Timer / Alarm ───────────────────────────────────────────────
   // "5 minute ka timer", "set a timer for 2 minutes 30 seconds", "10 second timer"
