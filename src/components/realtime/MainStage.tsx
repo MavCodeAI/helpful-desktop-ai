@@ -56,6 +56,7 @@ export function MainStage({
         threadCount={history.threads.length}
         onOpenHistory={onOpenHistory}
         onOpenSettings={onOpenSettings}
+        onOpenNotes={onOpenNotes}
       />
 
       <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 items-center gap-6 px-4 sm:px-6 pb-6">

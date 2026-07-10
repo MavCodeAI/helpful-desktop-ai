@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { useVoiceApp } from "@/hooks/use-voice-app";
 import { MainStage } from "@/components/realtime/MainStage";
 import { OverlayHost } from "@/components/realtime/OverlayHost";
+import { TimersBar } from "@/components/realtime/TimersBar";
+
+const NotesDrawer = lazy(() =>
+  import("@/components/realtime/NotesDrawer").then((m) => ({ default: m.NotesDrawer }))
+);
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -11,6 +17,7 @@ function Index() {
   const {
     overlays, settings, history, session, scroll, intents,
     liteActive, pageRef, active, disabled,
+    timers, showNotes, setShowNotes,
   } = useVoiceApp();
 
   return (
@@ -34,7 +41,10 @@ function Index() {
         disabled={disabled}
         onOpenHistory={() => overlays.setShowHistory(true)}
         onOpenSettings={() => overlays.setShowVoiceMenu(true)}
+        onOpenNotes={() => setShowNotes(true)}
       />
+
+      <TimersBar timers={timers.timers} onRemove={timers.remove} />
 
       <OverlayHost
         overlays={overlays}
@@ -44,6 +54,12 @@ function Index() {
         liteActive={liteActive}
         active={active}
       />
+
+      {showNotes && (
+        <Suspense fallback={null}>
+          <NotesDrawer open={showNotes} onClose={() => setShowNotes(false)} />
+        </Suspense>
+      )}
     </main>
   );
 }
