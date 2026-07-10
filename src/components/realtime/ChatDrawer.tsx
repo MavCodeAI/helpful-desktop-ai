@@ -11,9 +11,11 @@ interface Props {
   messages: VoiceMessage[];
   onSend: (text: string) => void | Promise<void>;
   busy: boolean;
+  onNote?: (text: string) => void | Promise<void>;
+  notePending?: boolean;
 }
 
-export function ChatDrawer({ open, onClose, messages, onSend, busy }: Props) {
+export function ChatDrawer({ open, onClose, messages, onSend, busy, onNote, notePending }: Props) {
   const ref = useRef<HTMLElement | null>(null);
   useSwipeClose(ref, "right", onClose, open);
   useFocusTrap(ref, open);
@@ -47,7 +49,7 @@ export function ChatDrawer({ open, onClose, messages, onSend, busy }: Props) {
           )}
         </div>
         <div className="shrink-0 p-3 border-t border-white/10">
-          <ChatComposer onSend={onSend} busy={busy} autoFocus />
+          <ChatComposer onSend={onSend} busy={busy} onNote={onNote} notePending={notePending} autoFocus />
         </div>
       </aside>
     </div>

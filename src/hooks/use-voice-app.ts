@@ -17,6 +17,10 @@ import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
 import { webSearchSummarize } from "@/lib/web-search.functions";
 import { extractMemoryFacts } from "@/lib/memories.functions";
 import { chatReply } from "@/lib/chat-reply.functions";
+import { generateNote } from "@/lib/note-ai.functions";
+import { addNoteRaw } from "@/lib/utilities/notes";
+import { matchNoteIntent } from "@/lib/intents";
+import { isAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
@@ -167,11 +171,29 @@ export function useVoiceApp() {
     return () => { offHk(); offTray(); };
   }, [active, disabled, session.start, session.stop]);
 
-  // Text chat: send user text → AI reply via gateway, reusing full pipeline.
+  // Text chat: send user text → intent-shortcut for notes, else AI reply.
   const [textBusy, setTextBusy] = useState(false);
   const sendText = useCallback(async (text: string) => {
     const userMsg: VoiceMessage = { role: "you", text };
     handleFinalMessage(userMsg, { atBottom: scroll.atBottom });
+
+    // Shortcut: "note: X" style commands → save directly + open drawer, skip AI.
+    const noteBody = matchNoteIntent(text);
+    if (noteBody) {
+      const saved = addNoteRaw(noteBody);
+      if (saved) {
+        const summary = saved.text.length > 60 ? saved.text.slice(0, 60) + "…" : saved.text;
+        toast.success("📝 Note saved", { description: summary });
+        overlays.setShowChat(false);
+        setShowNotes(true);
+        handleFinalMessage(
+          { role: "assistant", text: `✅ Note saved: "${summary}"` },
+          { atBottom: scroll.atBottom },
+        );
+      }
+      return;
+    }
+
     setTextBusy(true);
     try {
       const convo = [...messages, userMsg];
@@ -182,12 +204,44 @@ export function useVoiceApp() {
     } finally {
       setTextBusy(false);
     }
-  }, [handleFinalMessage, messages, settings.systemPrompt, scroll.atBottom]);
+  }, [handleFinalMessage, messages, settings.systemPrompt, scroll.atBottom, overlays, setShowNotes]);
+
+  // From ChatComposer's "Note" button: turn current text into an AI-crafted note.
+  const [notePending, setNotePending] = useState(false);
+  const createAiNote = useCallback(async (rawPrompt: string) => {
+    const t = rawPrompt.trim();
+    if (!t) { setShowNotes(true); return; }
+    if (!isAiNotesEnabled()) {
+      const saved = addNoteRaw(t);
+      if (saved) {
+        toast.success("📝 Note saved", { description: saved.text.slice(0, 60) });
+        overlays.setShowChat(false);
+        setShowNotes(true);
+      }
+      return;
+    }
+    setNotePending(true);
+    try {
+      const res = await generateNote({ data: { prompt: t } });
+      const saved = addNoteRaw(res.text);
+      if (saved) {
+        const summary = saved.text.length > 60 ? saved.text.slice(0, 60) + "…" : saved.text;
+        toast.success("✨ AI note saved", { description: summary });
+        overlays.setShowChat(false);
+        setShowNotes(true);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI note failed");
+    } finally {
+      setNotePending(false);
+    }
+  }, [overlays, setShowNotes]);
 
   return {
     overlays, settings, history, session, scroll, intents,
     liteActive, pageRef, active, disabled,
     timers, showNotes, setShowNotes,
     sendText, textBusy,
+    createAiNote, notePending,
   };
 }

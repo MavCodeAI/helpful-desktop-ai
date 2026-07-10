@@ -33,13 +33,15 @@ interface Props {
   onOpenChat: () => void;
   onSendText: (text: string) => void | Promise<void>;
   textBusy: boolean;
+  onCreateNote: (text: string) => void | Promise<void>;
+  notePending: boolean;
 }
 
 /** The visible page — aurora backdrop, header, orb, chat rail, status/actions. */
 export function MainStage({
   pageRef, settings, session, history, scroll, intents,
   active, disabled, onOpenHistory, onOpenSettings, onOpenNotes, onOpenChat,
-  onSendText, textBusy,
+  onSendText, textBusy, onCreateNote, notePending,
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
   const {
@@ -87,7 +89,7 @@ export function MainStage({
           />
           {showInlineComposer && (
             <div className="mt-3 animate-fade-in">
-              <ChatComposer onSend={onSendText} busy={textBusy} placeholder="Reply with text…" />
+              <ChatComposer onSend={onSendText} busy={textBusy} onNote={onCreateNote} notePending={notePending} placeholder="Reply with text…" />
             </div>
           )}
         </aside>

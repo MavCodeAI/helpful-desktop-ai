@@ -32,9 +32,11 @@ interface Props {
   active: boolean;
   onSendText: (text: string) => void | Promise<void>;
   textBusy: boolean;
+  onCreateNote: (text: string) => void | Promise<void>;
+  notePending: boolean;
 }
 
-export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy }: Props) {
+export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy, onCreateNote, notePending }: Props) {
   const {
     showHistory, setShowHistory,
     showVoiceMenu, setShowVoiceMenu,
@@ -135,6 +137,8 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           messages={history.messages}
           onSend={onSendText}
           busy={textBusy}
+          onNote={onCreateNote}
+          notePending={notePending}
         />
       )}
     </Suspense>

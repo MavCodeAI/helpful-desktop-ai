@@ -3,6 +3,7 @@ import { X, Trash2, StickyNote, Plus, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import { useNotes } from "@/lib/utilities/notes";
+import { useAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 import { generateNote } from "@/lib/note-ai.functions";
 
 interface Props {
@@ -15,6 +16,7 @@ export function NotesDrawer({ open, onClose }: Props) {
   useSwipeClose(ref, "left", onClose, open);
   useFocusTrap(ref, open);
   const { notes, add, remove, clear } = useNotes();
+  const [aiEnabled, setAiEnabled] = useAiNotesEnabled();
 
   const [draft, setDraft] = useState("");
   const [aiMode, setAiMode] = useState(false);
@@ -54,13 +56,14 @@ export function NotesDrawer({ open, onClose }: Props) {
     e?.preventDefault();
     const t = draft.trim();
     if (!t) return;
-    if (aiMode) {
+    if (aiMode && aiEnabled) {
       setAiBusy(true);
       try {
         const res = await generateNote({ data: { prompt: t } });
         add(res.text);
         setDraft("");
-        toast.success("✨ AI note added");
+        const summary = res.text.length > 60 ? res.text.slice(0, 60) + "…" : res.text;
+        toast.success("✨ AI note added", { description: summary });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "AI note failed");
       } finally {
@@ -89,6 +92,19 @@ export function NotesDrawer({ open, onClose }: Props) {
             <span className="text-[10px] text-white/50 tabular-nums">{notes.length}</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setAiEnabled(!aiEnabled); if (aiEnabled) setAiMode(false); }}
+              aria-pressed={aiEnabled}
+              title={aiEnabled ? "AI note generation is ON — click to disable" : "AI note generation is OFF — click to enable"}
+              className={`text-[10px] px-2 py-1 rounded-full border flex items-center gap-1 transition-colors ${
+                aiEnabled
+                  ? "bg-cyan-400/15 border-cyan-400/40 text-cyan-200"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              <Sparkles className="w-3 h-3" strokeWidth={1.75} />
+              <span>AI {aiEnabled ? "on" : "off"}</span>
+            </button>
             {notes.length > 0 && (
               <button
                 onClick={clear}
@@ -105,10 +121,17 @@ export function NotesDrawer({ open, onClose }: Props) {
           <button
             type="button"
             onClick={() => setAiMode((v) => !v)}
-            aria-pressed={aiMode}
-            title={aiMode ? "AI mode ON — write a rough idea" : "Toggle AI-generate mode"}
-            className={`shrink-0 w-8 h-8 grid place-items-center rounded-md border transition-colors ${
-              aiMode
+            disabled={!aiEnabled}
+            aria-pressed={aiMode && aiEnabled}
+            title={
+              !aiEnabled
+                ? "AI mode is disabled — enable it from the header"
+                : aiMode
+                  ? "AI mode ON — write a rough idea"
+                  : "Toggle AI-generate mode"
+            }
+            className={`shrink-0 w-8 h-8 grid place-items-center rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              aiMode && aiEnabled
                 ? "bg-cyan-400/20 border-cyan-400/50 text-cyan-200"
                 : "bg-white/5 border-white/10 text-white/60 hover:text-white/90"
             }`}
@@ -119,7 +142,7 @@ export function NotesDrawer({ open, onClose }: Props) {
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={aiMode ? "AI: rough idea → clean note…" : "Add a note…"}
+            placeholder={aiMode && aiEnabled ? "AI: rough idea → clean note…" : "Add a note…"}
             className="flex-1 bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-400/50"
           />
           <button
@@ -128,7 +151,7 @@ export function NotesDrawer({ open, onClose }: Props) {
             className="shrink-0 px-3 py-2 rounded-md bg-cyan-500/20 border border-cyan-400/40 text-cyan-100 text-sm hover:bg-cyan-500/30 disabled:opacity-40 flex items-center gap-1"
           >
             {aiBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            <span>{aiMode ? "AI" : "Add"}</span>
+            <span>{aiMode && aiEnabled ? "AI" : "Add"}</span>
           </button>
         </form>
 
