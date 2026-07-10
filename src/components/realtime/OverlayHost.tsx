@@ -137,6 +137,8 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           messages={history.messages}
           onSend={onSendText}
           busy={textBusy}
+          onNote={onCreateNote}
+          notePending={notePending}
         />
       )}
     </Suspense>
