@@ -41,6 +41,8 @@ export function useVoiceApp() {
   });
   const liteActive = useLiteMode(settings.liteMode);
 
+  const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
+
   const intents = useIntentActions({
     confirmBeforeOpen: settings.confirmBeforeOpen,
     lang: settings.lang,
@@ -48,8 +50,6 @@ export function useVoiceApp() {
     onAssistantReply: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "assistant", text }]),
     onUserContext: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "you", text }]),
   });
-
-  const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
 
   const history = useThreadHistory({
     onBeforeSwitch: () => sessionRef.current.stop(),
@@ -69,6 +69,7 @@ export function useVoiceApp() {
     hfVoice: settings.hfVoice, geminiVoice: settings.geminiVoice,
     pace: settings.pace, rate: settings.rate,
     sensitivity: settings.sensitivity, autoRate: settings.autoRate,
+    systemPrompt: settings.systemPrompt,
     onFinalMessage: handleFinalMessage,
     onRateAdapt: settings.setRate,
     onRequestKey: () => setShowKeyModal(true),
