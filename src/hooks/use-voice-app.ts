@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useOverlays } from "@/hooks/use-overlays";
 import { usePageInert } from "@/hooks/use-page-inert";
 import { useLiteMode } from "@/hooks/use-lite-mode";
@@ -9,6 +9,8 @@ import { useVoiceSettings } from "@/hooks/use-voice-settings";
 import { useIntentActions } from "@/hooks/use-intent-actions";
 import { useMutableRef } from "@/hooks/use-mutable-ref";
 import { useWakeTriggers } from "@/hooks/use-wake-triggers";
+import { useTimers } from "@/lib/utilities/timers";
+import { onGlobalHotkey, onTrayAction, isElectron } from "@/lib/electron-bridge";
 import type { VoiceMessage } from "@/lib/voice-providers";
 
 /**
@@ -19,7 +21,8 @@ import type { VoiceMessage } from "@/lib/voice-providers";
 export function useVoiceApp() {
   const overlays = useOverlays();
   const { setShowHistory, setShowKeyModal, anyOverlay } = overlays;
-  const intents = useIntentActions();
+  const [showNotes, setShowNotes] = useState(false);
+  const timers = useTimers();
 
   const sessionRef = useMutableRef<{
     stop: () => void;
@@ -36,6 +39,11 @@ export function useVoiceApp() {
     onRequestKey: () => setShowKeyModal(true),
   });
   const liteActive = useLiteMode(settings.liteMode);
+
+  const intents = useIntentActions({
+    confirmBeforeOpen: settings.confirmBeforeOpen,
+    onTimer: (seconds, label) => { timers.add(seconds, label); },
+  });
 
   const history = useThreadHistory({
     onBeforeSwitch: () => sessionRef.current.stop(),
@@ -60,8 +68,6 @@ export function useVoiceApp() {
   });
 
   const scroll = useAutoScroll({ messages, partial: session.partial, status: session.status });
-  // Narrow dep to the stable setter; the whole `session` object is a fresh
-  // reference on every render and would re-fire this effect needlessly.
   useEffect(() => { session.setAtBottom(scroll.atBottom); }, [scroll.atBottom, session.setAtBottom]);
 
   useEffect(() => {
@@ -92,5 +98,22 @@ export function useVoiceApp() {
     onTrigger: session.start,
   });
 
-  return { overlays, settings, history, session, scroll, intents, liteActive, pageRef, active, disabled };
+  // Electron: OS-level global hotkey + tray Start/Stop
+  useEffect(() => {
+    if (!isElectron()) return;
+    const offHk = onGlobalHotkey(() => {
+      if (!active && !disabled) session.start();
+    });
+    const offTray = onTrayAction((a) => {
+      if (a === "start" && !active && !disabled) session.start();
+      else if (a === "stop" && active) session.stop();
+    });
+    return () => { offHk(); offTray(); };
+  }, [active, disabled, session.start, session.stop]);
+
+  return {
+    overlays, settings, history, session, scroll, intents,
+    liteActive, pageRef, active, disabled,
+    timers, showNotes, setShowNotes,
+  };
 }
