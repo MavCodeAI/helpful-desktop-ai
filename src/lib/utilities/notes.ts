@@ -1,9 +1,12 @@
-// Simple localStorage-backed quick notes. Zero deps, zero server round-trip.
+// Simple localStorage-backed quick notes with cross-listener sync.
 import { useCallback, useEffect, useState } from "react";
 
 export type Note = { id: string; text: string; at: number };
 
 const KEY = "alpha_notes_v1";
+const listeners = new Set<() => void>();
+
+function notify() { listeners.forEach((fn) => fn()); }
 
 function read(): Note[] {
   if (typeof window === "undefined") return [];
@@ -18,37 +21,42 @@ function read(): Note[] {
 function write(notes: Note[]) {
   if (typeof window === "undefined") return;
   try { window.localStorage.setItem(KEY, JSON.stringify(notes.slice(0, 200))); } catch { /* quota */ }
+  notify();
 }
 
-export function addNoteRaw(text: string): Note {
-  const note: Note = { id: crypto.randomUUID(), text: text.trim(), at: Date.now() };
-  const list = [note, ...read()];
-  write(list);
+export function addNoteRaw(text: string): Note | null {
+  const t = text.trim();
+  if (!t) return null;
+  const existing = read();
+  // Dedupe: same text within 3s
+  if (existing.length > 0 && existing[0].text === t && Date.now() - existing[0].at < 3000) {
+    return existing[0];
+  }
+  const note: Note = { id: crypto.randomUUID(), text: t, at: Date.now() };
+  write([note, ...existing]);
   return note;
 }
 
+export function removeNoteRaw(id: string) {
+  write(read().filter((n) => n.id !== id));
+}
+
+export function clearNotesRaw() { write([]); }
+
 export function useNotes() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  useEffect(() => { setNotes(read()); }, []);
+  const [notes, setNotes] = useState<Note[]>(() => read());
 
-  const add = useCallback((text: string) => {
-    const n = addNoteRaw(text);
-    setNotes((prev) => [n, ...prev]);
-    return n;
+  useEffect(() => {
+    const sync = () => setNotes(read());
+    listeners.add(sync);
+    const onStorage = (e: StorageEvent) => { if (e.key === KEY) sync(); };
+    window.addEventListener("storage", onStorage);
+    return () => { listeners.delete(sync); window.removeEventListener("storage", onStorage); };
   }, []);
 
-  const remove = useCallback((id: string) => {
-    setNotes((prev) => {
-      const next = prev.filter((n) => n.id !== id);
-      write(next);
-      return next;
-    });
-  }, []);
-
-  const clear = useCallback(() => {
-    setNotes([]);
-    write([]);
-  }, []);
+  const add = useCallback((text: string) => addNoteRaw(text), []);
+  const remove = useCallback((id: string) => removeNoteRaw(id), []);
+  const clear = useCallback(() => clearNotesRaw(), []);
 
   return { notes, add, remove, clear };
 }
