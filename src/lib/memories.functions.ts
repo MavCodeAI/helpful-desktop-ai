@@ -6,7 +6,7 @@ import { z } from "zod";
  * returns new long-term facts worth remembering. Client owns storage.
  */
 export const extractMemoryFacts = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({
       transcript: z.string().trim().min(4).max(4000),
       existing: z.array(z.string()).max(400).default([]),
