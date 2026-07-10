@@ -5,9 +5,10 @@ interface Props {
   provider: ProviderId;
   changeProvider: (p: ProviderId) => void;
   geminiKeyReady: boolean;
+  geminiKeyError: string | null;
 }
 
-export function EngineSection({ active, provider, changeProvider, geminiKeyReady }: Props) {
+export function EngineSection({ active, provider, changeProvider, geminiKeyReady, geminiKeyError }: Props) {
   return (
     <section>
       <div className="flex items-baseline justify-between mb-2">
@@ -31,10 +32,14 @@ export function EngineSection({ active, provider, changeProvider, geminiKeyReady
         ))}
       </div>
       {provider === "gemini" && (
-        <div className="text-[10px] text-white/50 px-1">
+        <div
+          className={`text-[10px] px-1 leading-relaxed ${
+            geminiKeyReady ? "text-emerald-300/80" : "text-rose-300/90"
+          }`}
+        >
           {geminiKeyReady
             ? "✓ Gemini key configured on server"
-            : "⚠ Server key missing — set GEMINI_API_KEY env"}
+            : `⚠ ${geminiKeyError ?? "Server key missing — set GEMINI_API_KEY env"}`}
         </div>
       )}
     </section>
