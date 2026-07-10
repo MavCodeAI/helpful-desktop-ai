@@ -128,6 +128,15 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           clearMemories={settings.clearMemories}
         />
       )}
+      {showChat && (
+        <ChatDrawer
+          open={showChat}
+          onClose={() => setShowChat(false)}
+          messages={history.messages}
+          onSend={onSendText}
+          busy={textBusy}
+        />
+      )}
     </Suspense>
   );
 }
