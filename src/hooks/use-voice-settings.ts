@@ -26,6 +26,10 @@ type Options = {
   onRequestKey: () => void;
 };
 
+function isUsableGeminiKey(key: string) {
+  return key.trim().startsWith("AIza");
+}
+
 /**
  * All persisted voice/provider settings + their change handlers.
  * Bootstraps once from local storage, then resolves the server-side
@@ -76,14 +80,16 @@ export function useVoiceSettings({
     setCustomPromptState(loadCustomPrompt());
     setLangState(loadLang());
     setMemoriesState(loadMemories());
-    setGeminiKey(s.geminiKey);
+    const storedGeminiKey = isUsableGeminiKey(s.geminiKey) ? s.geminiKey.trim() : "";
+    setGeminiKey(storedGeminiKey);
     getGeminiKey()
       .then(({ key }) => {
-        let effectiveKey = s.geminiKey;
-        if (key && !s.geminiKey) {
-          setGeminiKey(key);
-          persist.geminiKey(key);
-          effectiveKey = key;
+        const serverKey = isUsableGeminiKey(key) ? key.trim() : "";
+        let effectiveKey = storedGeminiKey;
+        if (serverKey && !storedGeminiKey) {
+          setGeminiKey(serverKey);
+          persist.geminiKey(serverKey);
+          effectiveKey = serverKey;
         }
         const p = s.provider || (effectiveKey ? "gemini" : "hf");
         setProvider(p);
