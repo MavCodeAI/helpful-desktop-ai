@@ -1,4 +1,5 @@
 import { Settings2, History, StickyNote, MessageSquare } from "lucide-react";
+import { useNotes } from "@/lib/utilities/notes";
 import type { Pace, ProviderId } from "@/lib/voice-providers";
 
 type Props = {
@@ -16,6 +17,8 @@ type Props = {
 export function HeaderPill({
   provider, currentVoice, pace, rate, threadCount, onOpenHistory, onOpenSettings, onOpenNotes, onOpenChat,
 }: Props) {
+  const { notes } = useNotes();
+  const noteCount = notes.length;
   return (
     <header className="relative z-10 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-4 sm:px-6 py-2.5 glass-pill rounded-full">
       <div className="flex items-center gap-2">
