@@ -49,7 +49,7 @@ export function ChatDrawer({ open, onClose, messages, onSend, busy, onNote, note
           )}
         </div>
         <div className="shrink-0 p-3 border-t border-white/10">
-          <ChatComposer onSend={onSend} busy={busy} autoFocus />
+          <ChatComposer onSend={onSend} busy={busy} onNote={onNote} notePending={notePending} autoFocus />
         </div>
       </aside>
     </div>
