@@ -28,12 +28,13 @@ interface Props {
   disabled: boolean;
   onOpenHistory: () => void;
   onOpenSettings: () => void;
+  onOpenNotes: () => void;
 }
 
 /** The visible page — aurora backdrop, header, orb, chat rail, status/actions. */
 export function MainStage({
   pageRef, settings, session, history, scroll, intents,
-  active, disabled, onOpenHistory, onOpenSettings,
+  active, disabled, onOpenHistory, onOpenSettings, onOpenNotes,
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
   const {
