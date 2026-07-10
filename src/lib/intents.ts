@@ -79,6 +79,19 @@ function findApp(fragment: string): { key: string; app: { url: string; name: str
   return null;
 }
 
+const DUR_UNITS: Record<string, number> = {
+  s: 1, sec: 1, secs: 1, second: 1, seconds: 1,
+  m: 60, min: 60, mins: 60, minute: 60, minutes: 60,
+  h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600,
+};
+function parseDurationLocal(text: string): number | null {
+  const re = /(\d+(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h)\b/gi;
+  let total = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) total += parseFloat(m[1]) * (DUR_UNITS[m[2].toLowerCase()] ?? 0);
+  return total > 0 ? Math.round(total) : null;
+}
+
 /** Detect a Jarvis intent from a final user transcript. */
 export function detectIntent(raw: string): Intent | null {
   const text = norm(raw);
