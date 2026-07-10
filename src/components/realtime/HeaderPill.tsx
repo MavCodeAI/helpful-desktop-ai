@@ -51,8 +51,6 @@ export function HeaderPill({
           <span className="text-white/60 tabular-nums">{threadCount}</span>
         </button>
         <div className="hidden sm:flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-white/60">
-          <span className="text-cyan-300/80">{provider === "gemini" ? "Gemini" : "HF"}</span>
-          <span>·</span>
           <span className="truncate max-w-[80px] normal-case tracking-normal text-white/60">{currentVoice}</span>
           <span>·</span>
           <span className="normal-case tracking-normal text-white/60">{pace} · {rate}×</span>
