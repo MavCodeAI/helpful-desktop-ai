@@ -5,7 +5,7 @@ import {
   HF_VOICES,
   GEMINI_VOICES,
 } from "@/lib/voice-providers";
-import { getGeminiKey } from "@/lib/gemini-key.functions";
+
 import { DEFAULTS, type LiteMode } from "@/lib/realtime/constants";
 import { loadSettings, persist } from "@/lib/realtime/storage";
 import {
