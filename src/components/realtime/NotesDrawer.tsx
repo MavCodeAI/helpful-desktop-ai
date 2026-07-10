@@ -121,10 +121,17 @@ export function NotesDrawer({ open, onClose }: Props) {
           <button
             type="button"
             onClick={() => setAiMode((v) => !v)}
-            aria-pressed={aiMode}
-            title={aiMode ? "AI mode ON — write a rough idea" : "Toggle AI-generate mode"}
-            className={`shrink-0 w-8 h-8 grid place-items-center rounded-md border transition-colors ${
-              aiMode
+            disabled={!aiEnabled}
+            aria-pressed={aiMode && aiEnabled}
+            title={
+              !aiEnabled
+                ? "AI mode is disabled — enable it from the header"
+                : aiMode
+                  ? "AI mode ON — write a rough idea"
+                  : "Toggle AI-generate mode"
+            }
+            className={`shrink-0 w-8 h-8 grid place-items-center rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              aiMode && aiEnabled
                 ? "bg-cyan-400/20 border-cyan-400/50 text-cyan-200"
                 : "bg-white/5 border-white/10 text-white/60 hover:text-white/90"
             }`}
@@ -135,7 +142,7 @@ export function NotesDrawer({ open, onClose }: Props) {
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={aiMode ? "AI: rough idea → clean note…" : "Add a note…"}
+            placeholder={aiMode && aiEnabled ? "AI: rough idea → clean note…" : "Add a note…"}
             className="flex-1 bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-400/50"
           />
           <button
