@@ -1,14 +1,19 @@
 // Phase-1 Jarvis intents — pure client-side pattern matcher.
-// Zero network cost, zero latency. Returns a deep-link URL the app opens
-// in a new tab. If a message is included the target app (WhatsApp, mail,
-// SMS) opens pre-filled; the user hits Send. That's a browser-security
-// constraint, not a design choice.
+// Zero network cost, zero latency. Returns either a deep-link URL the app
+// opens in a new tab, or an in-app action (timer/note/clipboard/screenshot).
 
 export type Intent = {
-  kind: string;         // e.g. "open" | "whatsapp" | "search"
+  kind: string;         // "open" | "whatsapp" | "search" | "timer" | "note" | ...
   label: string;        // "Open WhatsApp" — for toast/log
-  url: string;          // where we navigate
+  url: string;          // where we navigate (empty for in-app kinds)
   prefilled?: string;   // when the target app is pre-filled with a message
+  action?:              // in-app action executed by use-intent-actions
+    | { type: "timer"; seconds: number; label: string }
+    | { type: "note"; text: string }
+    | { type: "clipboard-copy"; text: string }
+    | { type: "clipboard-read" }
+    | { type: "screenshot" }
+    | { type: "coming-soon"; feature: string };
 };
 
 // ── App aliases → home URLs ───────────────────────────────────────────
