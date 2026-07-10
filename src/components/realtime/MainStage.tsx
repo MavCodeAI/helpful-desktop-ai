@@ -33,6 +33,8 @@ interface Props {
   onOpenChat: () => void;
   onSendText: (text: string) => void | Promise<void>;
   textBusy: boolean;
+  onCreateNote: (text: string) => void | Promise<void>;
+  notePending: boolean;
 }
 
 /** The visible page — aurora backdrop, header, orb, chat rail, status/actions. */
