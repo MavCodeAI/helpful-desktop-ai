@@ -4,7 +4,7 @@ import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import type { LiteMode } from "@/lib/realtime/constants";
 import type { ProviderId, Pace } from "@/lib/voice-providers";
 import type { PersonaId, LangCode } from "@/lib/persona";
-import { EngineSection } from "@/components/realtime/settings/EngineSection";
+
 import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSection";
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
