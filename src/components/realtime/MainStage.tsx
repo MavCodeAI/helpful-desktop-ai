@@ -28,12 +28,13 @@ interface Props {
   disabled: boolean;
   onOpenHistory: () => void;
   onOpenSettings: () => void;
+  onOpenNotes: () => void;
 }
 
 /** The visible page — aurora backdrop, header, orb, chat rail, status/actions. */
 export function MainStage({
   pageRef, settings, session, history, scroll, intents,
-  active, disabled, onOpenHistory, onOpenSettings,
+  active, disabled, onOpenHistory, onOpenSettings, onOpenNotes,
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
   const {
@@ -55,6 +56,7 @@ export function MainStage({
         threadCount={history.threads.length}
         onOpenHistory={onOpenHistory}
         onOpenSettings={onOpenSettings}
+        onOpenNotes={onOpenNotes}
       />
 
       <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 items-center gap-6 px-4 sm:px-6 pb-6">

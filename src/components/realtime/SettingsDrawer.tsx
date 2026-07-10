@@ -8,6 +8,8 @@ import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSectio
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
 import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
+import { DesktopSection } from "@/components/realtime/settings/DesktopSection";
+import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
 
 export interface SettingsDrawerProps {
   open: boolean;
@@ -45,6 +47,10 @@ export interface SettingsDrawerProps {
   toggleWakeClap: (v: boolean) => void;
   toggleWakeWord: (v: boolean) => void;
   toggleWakeHotkey: (v: boolean) => void;
+  confirmBeforeOpen: boolean;
+  toggleConfirmBeforeOpen: (v: boolean) => void;
+  desktopAutoLaunch: boolean;
+  toggleDesktopAutoLaunch: (v: boolean) => void;
 }
 
 export function SettingsDrawer(props: SettingsDrawerProps) {
@@ -62,6 +68,8 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     sttLatency, ttsLatency, latency,
     wakeClap, wakeWord, wakeHotkey,
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
+    confirmBeforeOpen, toggleConfirmBeforeOpen,
+    desktopAutoLaunch, toggleDesktopAutoLaunch,
   } = props;
 
   return (
@@ -144,6 +152,13 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             toggleWord={toggleWakeWord}
             toggleHotkey={toggleWakeHotkey}
           />
+          <DesktopSection
+            confirmBeforeOpen={confirmBeforeOpen}
+            toggleConfirmBeforeOpen={toggleConfirmBeforeOpen}
+            desktopAutoLaunch={desktopAutoLaunch}
+            toggleDesktopAutoLaunch={toggleDesktopAutoLaunch}
+          />
+          <ComingSoonSection />
         </div>
       </aside>
     </div>

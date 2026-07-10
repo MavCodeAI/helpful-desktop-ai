@@ -1,103 +1,62 @@
-# JARVIS Refactor — Status
+# Alpha — باقی Features مکمل کرنے کا پلان
 
-**Status:** Steps 1-7 landed in one pass. See `.lovable/perf-baseline.md`
-for before/after numbers. This file records what's done and what's
-intentionally deferred.
+مقصد: Jarvis-style مکمل تجربہ۔ Smart Home ابھی نہیں — صرف "Coming Soon" placeholder۔
 
-## Done
+## 1. Intent System اپگریڈ (Web)
+- **Confirmation mode**: settings toggle — auto-open یا "Confirm before opening"
+- **Popup-blocked feedback**: toast + retry button جب `window.open` null دے
+- **SMS/Native scheme fallback**: desktop پر `sms:` کام نہیں کرتا → WhatsApp Web پر fallback + user کو بتانا
+- **مزید intents**: timer/alarm (in-app), note (in-app quick note), weather (open weather.com query), translate (Google Translate deep link), calculator (open calc query)
 
-1. **Baseline captured** — line counts + bundle sizes recorded.
-2. **`jarvis.tsx` slimmed 2879 → 2462** by extracting:
-   - `src/hooks/useReducedMotion.ts`
-   - `src/lib/haptic.ts`
-   - `src/lib/friendly-error.ts` (`friendlyError`, `sttErrorDetail`, `SttAttempt`)
-   - `src/features/jarvis-ui/{OrbWaveBars,OrbSideButton,TypingDots,LiveWaveform,VolumeMeter,RecTimer}.tsx`
-3. **Phase machine extracted as pure reducer**
-   `src/features/voice/phase-machine.ts` + `phase-machine.test.ts`
-   (8 vitest cases, all green). `PHASE_HUE`, `PHASE_CAPTION`,
-   `THINKING_STAGES` live with it.
-4. **Perf win: `useMicLevel` React updates throttled to ~20 fps**
-   (RAF math still runs full-rate, only `setState` is coalesced).
-5. **Shared server lib scaffolded**
-   `src/lib/server/{errors,gateway-client,validation}.ts` — single source
-   of truth for `LOVABLE_API_KEY`, `Retry-After` parsing, 402/429/5xx
-   mapping, and shared zod primitives.
-6. **Test safety-net grown** — `phase-machine.test.ts` joins the existing
-   `stt-stream.test.ts`.
-7. **Docs** — `src/features/voice/README.md` with pipeline diagram +
-   contracts; this file + `perf-baseline.md` track deltas.
+## 2. In-App Utilities (Desktop features کا web-safe subset)
+- **Quick Notes**: "note likho ..." → localStorage میں save، History drawer کے ساتھ Notes drawer
+- **Timers/Alarms**: "5 minute ka timer" → in-app timer with beep + browser notification
+- **Clipboard read/write**: "copy karo X" / "clipboard padho" via `navigator.clipboard`
+- **Screenshot** (browser): `getDisplayMedia` سے one-frame capture → download
 
-7. **`RealtimeClient` lazy-loaded** — split into its own `realtime-client-*.js`
-   chunk (~3.6 KB), fetched on first realtime click via `await import()`.
-8. **`/api/{chat,stt,tts}` migrated to `gatewayFetch()`** — upstream URL,
-   auth header, and `LOVABLE_API_KEY` read live in one place. Wire format
-   unchanged.
-9. **Playwright smoke** — `scripts/smoke-jarvis.py` seeds a valid license
-   in localStorage, loads `/jarvis`, asserts the `TAP TO START` caption
-   (from `PHASE_CAPTION.idle`) is visible, buttons render, no pageerror.
-   Run: `python3 ./scripts/smoke-jarvis.py`.
-10. **`voiceReducer` wired into `JarvisPage`** — `useState<Phase>` replaced
-    with `useReducer(voiceReducer, INITIAL_VOICE_STATE)`. Existing 22
-    `setPhase(x)` sites keep working (adapter dispatches `SET_PHASE`), so
-    behavior is 1:1. Reducer now has 10 vitest cases (added SET_PHASE
-    escape-hatch + referential-stability tests). New transition sites
-    should prefer semantic events (`dispatch({ type: "START_LISTENING" })`)
-    so invalid jumps become tested no-ops.
+## 3. Coming Soon Section
+- Settings drawer میں نیا section: **"Coming Soon"**
+- Smart Home / IoT / Home Automation — disabled toggles with lock icon اور "Coming soon" chip
 
-11. **Full voice-cycle smoke** — `scripts/smoke-jarvis-cycle.py` mocks
-    `/api/{stt,chat,tts}` via `context.route()`, drives one orb-click →
-    listening → orb-click → thinking → speaking → idle cycle with a fake
-    audio device, and asserts each phase caption via `PHASE_CAPTION`.
-    Guardrail for future setPhase → semantic-event migration.
+## 4. Electron Desktop Shell
+- `electron/main.cjs` — BrowserWindow، `base: './'` in vite.config
+- **Global hotkey** (OS-level): `Ctrl/Cmd+Shift+A` — `globalShortcut` سے مائیک start
+- **System tray**: Alpha icon، menu: Show/Hide, Start Listening, Quit
+- **Native notifications**: `new Notification()` جب intent execute ہو
+- **Auto-launch on login**: `app.setLoginItemSettings` — settings سے toggle
+- **Native shell**: `shell.openExternal` سے deep-links (popup-blocker bypass)
+- **IPC bridge**: `window.alpha` (contextBridge) — web code detect کرے کہ Electron ہے یا browser، اور native paths use کرے
 
-12. **All meaningful `setPhase` sites migrated to semantic events.**
-    Reducer gained `START_THINKING` + `START_SPEAKING` (multi-entry:
-    idle from text/chip/restart, thinking from voice pipeline). Every
-    recorder/chat/TTS/realtime transition now dispatches a named event;
-    errors dispatch `ERROR` with the toast message so `state.error` is
-    the single source of truth. 13 reducer tests + cycle smoke green.
-    Only 2 `setPhase` calls remain — both intentional cross-phase jumps
-    inside the realtime state machine (thinking → listening on connect,
-    on/off sync effect) which has its own contract.
+## 5. Packaging
+- `@electron/packager` سے Linux/Windows/macOS builds
+- Output: `.tar.gz` / `.zip` in `/mnt/documents/`
+- Settings drawer میں **"Download Desktop App"** section with links + install instructions
 
-13. **`state.error` surfaced in UI** — `role="alert" aria-live="assertive"`
-    banner at bottom-center reads `voiceState.error`. Reducer already
-    clears the field on every successful transition (any `START_*`,
-    `CANCEL`, `SET_PHASE`), so the banner auto-dismisses on recovery.
-    Complements toasts (fire-and-forget) with a persistent a11y surface.
+## 6. Technical Section
+```text
+Files to create:
+- electron/main.cjs             (BrowserWindow, tray, globalShortcut, IPC)
+- electron/preload.cjs          (contextBridge → window.alpha)
+- src/lib/electron-bridge.ts    (safe wrapper: isElectron(), openExternal, notify, hotkey)
+- src/lib/utilities/timers.ts   (in-app timers hook)
+- src/lib/utilities/notes.ts    (localStorage notes)
+- src/components/realtime/NotesDrawer.tsx
+- src/components/realtime/settings/ComingSoonSection.tsx
+- src/components/realtime/settings/DesktopSection.tsx
 
-14. **Realtime bridged into `voiceReducer`.** New `REALTIME_LIVE` event
-    (any → listening) models "we're live on the wire" — distinct from
-    `START_LISTENING` (idle-only, user-initiated). Last 2 `setPhase`
-    holdouts (L1202 connect, L1281 sync effect) now dispatch semantic
-    events. **Every phase transition in the codebase is a named,
-    tested event.** setPhase adapter kept as a public seam but unused
-    in-repo.
+Files to edit:
+- src/lib/intents.ts             (+timer/note/weather/translate/clipboard/screenshot)
+- src/hooks/use-intent-actions.ts (confirmation flow + popup-blocked toast + electron.openExternal)
+- src/hooks/use-voice-settings.ts (confirmBeforeOpen, autoLaunch)
+- src/components/realtime/SettingsDrawer.tsx (mount Desktop + ComingSoon sections)
+- vite.config.ts                 (base: './')
+- package.json                   (electron, @electron/packager devDeps + scripts)
+```
 
-## Deferred (each safe on its own)
-15. **Markdown lazy-loaded** — `react-markdown` + `remark-gfm` moved
-    behind `React.lazy` in `MarkdownMessage`. Initial `jarvis` chunk
-    **339 KB → 189 KB (−44%)**; markdown deps become on-demand chunks
-    fetched on the first assistant bubble. Fallback renders raw text so
-    streaming shows immediately. See `.lovable/perf-baseline.md`.
-16. **Markdown chunk idle-prefetched.** `/jarvis` mount schedules a
-    `requestIdleCallback` (fallback `setTimeout 250 ms`) to warm the
-    `react-markdown` + `remark-gfm` chunks before the first LLM reply
-    arrives. Bundle stays split, but users almost never see the
-    `<Suspense>` fallback in practice.
-17. **`/jarvis` route preloaded from `/`.** License gate mounts →
-    `router.preloadRoute({ to: "/jarvis" })` warms the ~189 KB jarvis
-    chunk + shared Radix deps in the background while the user types
-    their key. Post-activate navigation is instant instead of blocking
-    on JS download. Uses the TanStack manifest so no build-time hashes
-    leak into source.
+Smart Home / IoT — **صرف Coming Soon**، کوئی implementation نہیں۔
 
-## Deferred (each safe on its own)
-
-- **`realtime-token` unification.** That route hits `api.openai.com`
-  directly (not the Lovable gateway), so it correctly stays outside
-  `gatewayFetch`. Migrate if we ever proxy realtime through Lovable.
-
-Elon-style rule: don't touch what isn't demonstrably slow. Each deferred
-item has a measurable payoff (bundle size, LOC, test coverage) — tackle
-whichever the next symptom points at.
+## ترتیب
+1. Intent upgrades + utilities (web works standalone)
+2. Notes/Timers UI + Coming Soon section
+3. Electron shell + IPC bridge (web code adapts if `window.alpha` موجود)
+4. Package + download link

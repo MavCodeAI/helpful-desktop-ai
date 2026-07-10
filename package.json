@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "electron:dev": "ALPHA_DEV_URL=http://localhost:8080 electron electron/main.cjs",
+    "electron:package": "vite build && electron-packager . Alpha --platform=linux --arch=x64 --out=electron-release --overwrite --ignore='node_modules' --ignore='^/src' --ignore='^/electron-release'"
   },
   "dependencies": {
     "@fontsource-variable/inter-tight": "^5.2.7",

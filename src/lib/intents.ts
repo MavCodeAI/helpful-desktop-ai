@@ -1,14 +1,19 @@
 // Phase-1 Jarvis intents — pure client-side pattern matcher.
-// Zero network cost, zero latency. Returns a deep-link URL the app opens
-// in a new tab. If a message is included the target app (WhatsApp, mail,
-// SMS) opens pre-filled; the user hits Send. That's a browser-security
-// constraint, not a design choice.
+// Zero network cost, zero latency. Returns either a deep-link URL the app
+// opens in a new tab, or an in-app action (timer/note/clipboard/screenshot).
 
 export type Intent = {
-  kind: string;         // e.g. "open" | "whatsapp" | "search"
+  kind: string;         // "open" | "whatsapp" | "search" | "timer" | "note" | ...
   label: string;        // "Open WhatsApp" — for toast/log
-  url: string;          // where we navigate
+  url: string;          // where we navigate (empty for in-app kinds)
   prefilled?: string;   // when the target app is pre-filled with a message
+  action?:              // in-app action executed by use-intent-actions
+    | { type: "timer"; seconds: number; label: string }
+    | { type: "note"; text: string }
+    | { type: "clipboard-copy"; text: string }
+    | { type: "clipboard-read" }
+    | { type: "screenshot" }
+    | { type: "coming-soon"; feature: string };
 };
 
 // ── App aliases → home URLs ───────────────────────────────────────────
@@ -74,10 +79,125 @@ function findApp(fragment: string): { key: string; app: { url: string; name: str
   return null;
 }
 
+const DUR_UNITS: Record<string, number> = {
+  s: 1, sec: 1, secs: 1, second: 1, seconds: 1,
+  m: 60, min: 60, mins: 60, minute: 60, minutes: 60,
+  h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600,
+};
+function parseDurationLocal(text: string): number | null {
+  const re = /(\d+(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h)\b/gi;
+  let total = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) total += parseFloat(m[1]) * (DUR_UNITS[m[2].toLowerCase()] ?? 0);
+  return total > 0 ? Math.round(total) : null;
+}
+
 /** Detect a Jarvis intent from a final user transcript. */
 export function detectIntent(raw: string): Intent | null {
   const text = norm(raw);
   if (!text) return null;
+
+  // ── 0a. Smart Home / IoT — Coming Soon ──────────────────────────────
+  if (/\b(smart home|home automation|iot|light|lights|fan|ac|air ?conditioner|tv|thermostat)\b.*\b(on|off|dim|kholo|band|chala|bujha)\b/.test(text)
+      || /\b(turn|switch)\s+(on|off)\b.*\b(light|lights|fan|tv|ac)\b/.test(text)) {
+    return {
+      kind: "coming-soon",
+      label: "Smart Home — Coming Soon",
+      url: "",
+      action: { type: "coming-soon", feature: "Smart Home / IoT control" },
+    };
+  }
+
+  // ── 0b. Timer / Alarm ───────────────────────────────────────────────
+  // "5 minute ka timer", "set a timer for 2 minutes 30 seconds", "10 second timer"
+  if (/\b(timer|alarm|remind\s+me|yaad\s+dilana)\b/.test(text)) {
+    const secs = parseDurationLocal(text);
+    if (secs && secs > 0) {
+      const mm = Math.floor(secs / 60), ss = secs % 60;
+      const human = mm > 0 ? `${mm}m${ss ? ` ${ss}s` : ""}` : `${ss}s`;
+      return {
+        kind: "timer",
+        label: `Timer · ${human}`,
+        url: "",
+        action: { type: "timer", seconds: secs, label: `Timer ${human}` },
+      };
+    }
+  }
+
+  // ── 0c. Note ────────────────────────────────────────────────────────
+  // "note likho: milk lena hai", "take a note: call mom", "note kar do ..."
+  const noteMatch = /^(?:note|take a note|remember|yaad rakho|note likho|note kar do)\s*[:،-]?\s*(.+)$/i.exec(text)
+                 || /^(.+?)\s+(?:ko\s+)?note\s+(?:likho|kar do|karo|karna)$/i.exec(text);
+  if (noteMatch) {
+    const body = noteMatch[1].trim();
+    if (body && body.length > 1) {
+      return {
+        kind: "note",
+        label: `Note · "${body.slice(0, 40)}${body.length > 40 ? "…" : ""}"`,
+        url: "",
+        action: { type: "note", text: body },
+      };
+    }
+  }
+
+  // ── 0d. Clipboard ───────────────────────────────────────────────────
+  const copyMatch = /^(?:copy|clipboard\s+(?:me|par)\s+(?:daalo|rakho))\s+(.+)$/i.exec(text)
+                 || /^(.+?)\s+(?:copy karo|clipboard me daalo)$/i.exec(text);
+  if (copyMatch) {
+    return {
+      kind: "clipboard",
+      label: "Copied to clipboard",
+      url: "",
+      action: { type: "clipboard-copy", text: copyMatch[1].trim() },
+    };
+  }
+  if (/^(?:read clipboard|clipboard padho|paste karo)$/i.test(text)) {
+    return { kind: "clipboard", label: "Read clipboard", url: "", action: { type: "clipboard-read" } };
+  }
+
+  // ── 0e. Screenshot ──────────────────────────────────────────────────
+  if (/\b(screenshot|screen shot|screen capture|screen ki tasveer)\b/.test(text)) {
+    return { kind: "screenshot", label: "Screenshot", url: "", action: { type: "screenshot" } };
+  }
+
+  // ── 0f. Weather ─────────────────────────────────────────────────────
+  const weather = /(?:weather|mausam|temperature)(?:\s+(?:in|of|ka)\s+(.+))?/i.exec(text);
+  if (weather) {
+    const place = (weather[1] || "").trim();
+    const q = place ? `weather ${place}` : "weather";
+    return {
+      kind: "weather",
+      label: place ? `Weather → ${place}` : "Weather",
+      url: `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+    };
+  }
+
+  // ── 0g. Translate ───────────────────────────────────────────────────
+  const trans = /(?:translate|tarjuma)\s+(.+?)(?:\s+(?:to|into|me|mein)\s+([a-z]+))?$/i.exec(text);
+  if (trans) {
+    const phrase = trans[1].trim();
+    const tl = (trans[2] || "en").toLowerCase().slice(0, 5);
+    if (phrase) {
+      return {
+        kind: "translate",
+        label: `Translate → "${phrase}"`,
+        url: `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(tl)}&text=${encodeURIComponent(phrase)}&op=translate`,
+      };
+    }
+  }
+
+  // ── 0h. Calculator ──────────────────────────────────────────────────
+  const calc = /^(?:calculate|calc|calculator|hisaab|jama|zarb)\s+(.+)$/i.exec(text)
+            || /^([\d\s+\-*/().^%]{3,})$/.exec(text);
+  if (calc) {
+    const expr = calc[1].trim();
+    return {
+      kind: "calculator",
+      label: `Calc → ${expr}`,
+      url: `https://www.google.com/search?q=${encodeURIComponent(expr)}`,
+    };
+  }
+
 
   // ── 1. WhatsApp with a message ──────────────────────────────────────
   // "whatsapp +923001234567 tell him salaam"
