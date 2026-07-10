@@ -173,6 +173,18 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             desktopAutoLaunch={desktopAutoLaunch}
             toggleDesktopAutoLaunch={toggleDesktopAutoLaunch}
           />
+          <PersonaSection
+            persona={persona}
+            customPrompt={customPrompt}
+            lang={lang}
+            memories={memories}
+            changePersona={changePersona}
+            changeCustomPrompt={changeCustomPrompt}
+            changeLang={changeLang}
+            addMemory={addMemory}
+            removeMemory={removeMemory}
+            clearMemories={clearMemories}
+          />
           <ComingSoonSection />
         </div>
       </aside>
