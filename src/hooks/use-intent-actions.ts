@@ -232,6 +232,13 @@ export function useIntentActions(opts: Options = {}) {
 
   const execute = useCallback(async (intent: Intent) => {
     if (intent.action) return runInApp(intent);
+    // Route web-search intents to in-app AI summary instead of opening Google.
+    if (intent.kind === "search" && onSearchRef.current) {
+      const q = intent.label.replace(/^Google\s*→\s*"?|"$/g, "").trim();
+      onSearchRef.current(q);
+      pushAction(intent, true);
+      return;
+    }
     if (!autoOpenRef.current) { pushAction(intent, false); return; }
     if (confirmRef.current && !isElectron()) {
       pushAction(intent, false);
