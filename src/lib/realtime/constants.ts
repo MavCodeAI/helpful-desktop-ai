@@ -11,6 +11,9 @@ export const STORAGE_KEYS = {
   sensitivity: "voice_sensitivity",
   autoRate: "voice_auto_rate",
   perfLite: "perfLite",
+  wakeClap: "wake_clap",
+  wakeWord: "wake_word",
+  wakeHotkey: "wake_hotkey",
 } as const;
 
 export const RATE_OPTIONS = [0.8, 1.0, 1.2, 1.5] as const;
@@ -23,6 +26,12 @@ export const DEFAULTS = {
   sensitivity: 1,
   autoRate: false,
   liteMode: "auto" as const,
+  wakeClap: false,
+  wakeWord: false,
+  wakeHotkey: true,
 };
 
 export type LiteMode = "auto" | "on" | "off";
+
+/** Human-readable hotkey combo — Ctrl+Shift+A (A for Alpha). */
+export const HOTKEY_LABEL = "Ctrl+Shift+A";
