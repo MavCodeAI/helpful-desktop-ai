@@ -19,6 +19,7 @@ export interface SettingsDrawerProps {
   provider: ProviderId;
   changeProvider: (p: ProviderId) => void;
   geminiKeyReady: boolean;
+  geminiKeyError: string | null;
   currentVoice: string;
   voiceList: readonly string[];
   changeVoice: (v: string) => void;
@@ -71,7 +72,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
   if (!props.open) return null;
 
   const {
-    onClose, provider, changeProvider, geminiKeyReady,
+    onClose, provider, changeProvider, geminiKeyReady, geminiKeyError,
     currentVoice, voiceList, changeVoice, pace, changePace, rate, changeRate,
     active, micPermission, sensitivity, changeSensitivity,
     micTest, startMicTestMode, stopMicTest, level,
@@ -127,6 +128,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             provider={provider}
             changeProvider={changeProvider}
             geminiKeyReady={geminiKeyReady}
+            geminiKeyError={geminiKeyError}
           />
           <VoicePaceSection
             currentVoice={currentVoice}
