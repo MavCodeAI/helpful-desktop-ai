@@ -5,7 +5,7 @@ import {
   HF_VOICES,
   GEMINI_VOICES,
 } from "@/lib/voice-providers";
-import { getGeminiKey } from "@/lib/gemini-key.functions";
+
 import { DEFAULTS, type LiteMode } from "@/lib/realtime/constants";
 import { loadSettings, persist } from "@/lib/realtime/storage";
 import {
@@ -28,8 +28,8 @@ type Options = {
  */
 export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
   const [provider, setProvider] = useState<ProviderId>("hf");
-  const [geminiKey, setGeminiKey] = useState("");
-  const [geminiKeyError, setGeminiKeyError] = useState<string | null>(null);
+  const geminiKey = "";
+  const geminiKeyError: string | null = null;
   const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
   const [geminiVoice, setGeminiVoice] = useState<string>(DEFAULTS.geminiVoice);
   const [pace, setPace] = useState<Pace>(DEFAULTS.pace);
@@ -65,16 +65,8 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     setCustomPromptState(loadCustomPrompt());
     setLangState(loadLang());
     setMemoriesState(loadMemories());
-    getGeminiKey()
-      .then((res) => {
-        setGeminiKey(res.key);
-        setGeminiKeyError(res.error);
-        setProvider(s.provider || (res.status === "ok" ? "gemini" : "hf"));
-      })
-      .catch((e) => {
-        setGeminiKeyError(e instanceof Error ? e.message : "Failed to load server key");
-        setProvider(s.provider || "hf");
-      });
+    setProvider("hf");
+    persist.provider("hf");
   }, []);
 
   const changeProvider = useCallback((p: ProviderId) => {
