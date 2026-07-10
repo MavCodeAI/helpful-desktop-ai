@@ -4,7 +4,7 @@ import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import type { LiteMode } from "@/lib/realtime/constants";
 import type { ProviderId, Pace } from "@/lib/voice-providers";
 import type { PersonaId, LangCode } from "@/lib/persona";
-import { EngineSection } from "@/components/realtime/settings/EngineSection";
+
 import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSection";
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
@@ -110,7 +110,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
               Voice Settings
             </h2>
             <div className="text-[10px] uppercase tracking-widest text-white/60 mt-0.5 truncate">
-              {provider === "gemini" ? "Gemini Live" : "HF Realtime"} · {currentVoice}
+              {currentVoice}
             </div>
           </div>
           <button
@@ -123,13 +123,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 sm:px-5 py-4 space-y-6">
-          <EngineSection
-            active={active}
-            provider={provider}
-            changeProvider={changeProvider}
-            geminiKeyReady={geminiKeyReady}
-            geminiKeyError={geminiKeyError}
-          />
           <VoicePaceSection
             currentVoice={currentVoice}
             voiceList={voiceList}
