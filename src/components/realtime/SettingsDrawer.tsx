@@ -110,7 +110,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
               Voice Settings
             </h2>
             <div className="text-[10px] uppercase tracking-widest text-white/60 mt-0.5 truncate">
-              {provider === "gemini" ? "Gemini Live" : "HF Realtime"} · {currentVoice}
+              {currentVoice}
             </div>
           </div>
           <button
