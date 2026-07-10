@@ -123,13 +123,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 sm:px-5 py-4 space-y-6">
-          <EngineSection
-            active={active}
-            provider={provider}
-            changeProvider={changeProvider}
-            geminiKeyReady={geminiKeyReady}
-            geminiKeyError={geminiKeyError}
-          />
           <VoicePaceSection
             currentVoice={currentVoice}
             voiceList={voiceList}
