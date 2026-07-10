@@ -56,13 +56,14 @@ export function NotesDrawer({ open, onClose }: Props) {
     e?.preventDefault();
     const t = draft.trim();
     if (!t) return;
-    if (aiMode) {
+    if (aiMode && aiEnabled) {
       setAiBusy(true);
       try {
         const res = await generateNote({ data: { prompt: t } });
         add(res.text);
         setDraft("");
-        toast.success("✨ AI note added");
+        const summary = res.text.length > 60 ? res.text.slice(0, 60) + "…" : res.text;
+        toast.success("✨ AI note added", { description: summary });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "AI note failed");
       } finally {
