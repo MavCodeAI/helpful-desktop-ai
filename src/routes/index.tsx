@@ -57,6 +57,8 @@ function Index() {
         session={session}
         liteActive={liteActive}
         active={active}
+        onSendText={sendText}
+        textBusy={textBusy}
       />
 
       {showNotes && (
