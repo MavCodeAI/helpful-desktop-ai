@@ -41,7 +41,7 @@ interface Props {
 export function MainStage({
   pageRef, settings, session, history, scroll, intents,
   active, disabled, onOpenHistory, onOpenSettings, onOpenNotes, onOpenChat,
-  onSendText, textBusy,
+  onSendText, textBusy, onCreateNote, notePending,
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
   const {
