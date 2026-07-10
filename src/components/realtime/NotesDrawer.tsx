@@ -92,6 +92,19 @@ export function NotesDrawer({ open, onClose }: Props) {
             <span className="text-[10px] text-white/50 tabular-nums">{notes.length}</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setAiEnabled(!aiEnabled); if (aiEnabled) setAiMode(false); }}
+              aria-pressed={aiEnabled}
+              title={aiEnabled ? "AI note generation is ON — click to disable" : "AI note generation is OFF — click to enable"}
+              className={`text-[10px] px-2 py-1 rounded-full border flex items-center gap-1 transition-colors ${
+                aiEnabled
+                  ? "bg-cyan-400/15 border-cyan-400/40 text-cyan-200"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              <Sparkles className="w-3 h-3" strokeWidth={1.75} />
+              <span>AI {aiEnabled ? "on" : "off"}</span>
+            </button>
             {notes.length > 0 && (
               <button
                 onClick={clear}
