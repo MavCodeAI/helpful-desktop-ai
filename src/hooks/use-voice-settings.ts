@@ -37,6 +37,9 @@ export function useVoiceSettings({
   const [sensitivity, setSensitivity] = useState<number>(DEFAULTS.sensitivity);
   const [autoRate, setAutoRate] = useState<boolean>(DEFAULTS.autoRate);
   const [liteMode, setLiteMode] = useState<LiteMode>(DEFAULTS.liteMode);
+  const [wakeClap, setWakeClap] = useState<boolean>(DEFAULTS.wakeClap);
+  const [wakeWord, setWakeWord] = useState<boolean>(DEFAULTS.wakeWord);
+  const [wakeHotkey, setWakeHotkey] = useState<boolean>(DEFAULTS.wakeHotkey);
 
   // Refs so bootstrap effect doesn't need callback deps (they're stable in
   // practice but not guaranteed by parent).
@@ -52,6 +55,9 @@ export function useVoiceSettings({
     setSensitivity(s.sensitivity);
     setAutoRate(s.autoRate);
     setLiteMode(s.liteMode);
+    setWakeClap(s.wakeClap);
+    setWakeWord(s.wakeWord);
+    setWakeHotkey(s.wakeHotkey);
     setGeminiKey(s.geminiKey);
     getGeminiKey()
       .then(({ key }) => {
@@ -116,6 +122,16 @@ export function useVoiceSettings({
     persist.liteMode(v);
   }, []);
 
+  const toggleWakeClap = useCallback((v: boolean) => {
+    setWakeClap(v); persist.wakeClap(v);
+  }, []);
+  const toggleWakeWord = useCallback((v: boolean) => {
+    setWakeWord(v); persist.wakeWord(v);
+  }, []);
+  const toggleWakeHotkey = useCallback((v: boolean) => {
+    setWakeHotkey(v); persist.wakeHotkey(v);
+  }, []);
+
   const saveKey = useCallback(() => {
     persist.geminiKey(geminiKey.trim());
   }, [geminiKey]);
@@ -127,11 +143,13 @@ export function useVoiceSettings({
     // state
     provider, geminiKey, setGeminiKey,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
+    wakeClap, wakeWord, wakeHotkey,
     currentVoice, voiceList,
     // rate setter exposed for auto-rate adapt from session hook
     setRate,
     // handlers
     changeProvider, changeVoice, changePace, changeRate,
     changeSensitivity, toggleAutoRate, changeLiteMode, saveKey,
+    toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
   };
 }
