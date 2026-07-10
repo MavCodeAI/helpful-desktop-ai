@@ -14,9 +14,6 @@ const SettingsDrawer = lazy(() =>
 const DeleteConfirmModal = lazy(() =>
   import("@/components/realtime/DeleteConfirmModal").then((m) => ({ default: m.DeleteConfirmModal }))
 );
-const GeminiKeyModal = lazy(() =>
-  import("@/components/realtime/GeminiKeyModal").then((m) => ({ default: m.GeminiKeyModal }))
-);
 
 type Overlays = ReturnType<typeof useOverlays>;
 type Settings = ReturnType<typeof useVoiceSettings>;
@@ -32,12 +29,10 @@ interface Props {
   active: boolean;
 }
 
-/** All lazy-loaded drawers/modals gated behind Suspense. */
 export function OverlayHost({ overlays, settings, history, session, liteActive, active }: Props) {
   const {
     showHistory, setShowHistory,
     showVoiceMenu, setShowVoiceMenu,
-    showKeyModal, setShowKeyModal,
     pendingDelete, setPendingDelete,
   } = overlays;
 
@@ -80,8 +75,7 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           onClose={() => setShowVoiceMenu(false)}
           provider={settings.provider}
           changeProvider={settings.changeProvider}
-          geminiKey={settings.geminiKey}
-          onOpenKeyModal={() => setShowKeyModal(true)}
+          geminiKeyReady={!!settings.geminiKey}
           currentVoice={settings.currentVoice}
           voiceList={settings.voiceList}
           changeVoice={settings.changeVoice}
@@ -125,14 +119,6 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           addMemory={settings.addMemory}
           removeMemory={settings.removeMemory}
           clearMemories={settings.clearMemories}
-        />
-      )}
-      {showKeyModal && (
-        <GeminiKeyModal
-          value={settings.geminiKey}
-          onChange={settings.setGeminiKey}
-          onSave={() => { settings.saveKey(); setShowKeyModal(false); }}
-          onCancel={() => setShowKeyModal(false)}
         />
       )}
     </Suspense>
