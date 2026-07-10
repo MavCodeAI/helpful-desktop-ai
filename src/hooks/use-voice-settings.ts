@@ -32,6 +32,7 @@ function isUsableGeminiKey(key: string) {
 export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
   const [provider, setProvider] = useState<ProviderId>("hf");
   const [geminiKey, setGeminiKey] = useState("");
+  const [geminiKeyError, setGeminiKeyError] = useState<string | null>(null);
   const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
   const [geminiVoice, setGeminiVoice] = useState<string>(DEFAULTS.geminiVoice);
   const [pace, setPace] = useState<Pace>(DEFAULTS.pace);
@@ -68,12 +69,15 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     setLangState(loadLang());
     setMemoriesState(loadMemories());
     getGeminiKey()
-      .then(({ key }) => {
-        const serverKey = isUsableGeminiKey(key) ? key.trim() : "";
-        setGeminiKey(serverKey);
-        setProvider(s.provider || (serverKey ? "gemini" : "hf"));
+      .then((res) => {
+        setGeminiKey(res.key);
+        setGeminiKeyError(res.error);
+        setProvider(s.provider || (res.status === "ok" ? "gemini" : "hf"));
       })
-      .catch(() => setProvider(s.provider || "hf"));
+      .catch((e) => {
+        setGeminiKeyError(e instanceof Error ? e.message : "Failed to load server key");
+        setProvider(s.provider || "hf");
+      });
   }, []);
 
   const changeProvider = useCallback((p: ProviderId) => {
