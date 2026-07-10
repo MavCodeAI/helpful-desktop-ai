@@ -72,6 +72,10 @@ export function useVoiceSettings({
     setWakeHotkey(s.wakeHotkey);
     setConfirmBeforeOpen(s.confirmBeforeOpen);
     setDesktopAutoLaunch(s.desktopAutoLaunch);
+    setPersonaState(loadPersona());
+    setCustomPromptState(loadCustomPrompt());
+    setLangState(loadLang());
+    setMemoriesState(loadMemories());
     setGeminiKey(s.geminiKey);
     getGeminiKey()
       .then(({ key }) => {
