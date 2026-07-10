@@ -111,6 +111,10 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           toggleWakeClap={settings.toggleWakeClap}
           toggleWakeWord={settings.toggleWakeWord}
           toggleWakeHotkey={settings.toggleWakeHotkey}
+          confirmBeforeOpen={settings.confirmBeforeOpen}
+          toggleConfirmBeforeOpen={settings.toggleConfirmBeforeOpen}
+          desktopAutoLaunch={settings.desktopAutoLaunch}
+          toggleDesktopAutoLaunch={settings.toggleDesktopAutoLaunch}
         />
       )}
       {showKeyModal && (
