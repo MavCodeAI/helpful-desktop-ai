@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useOverlays } from "@/hooks/use-overlays";
 import { usePageInert } from "@/hooks/use-page-inert";
 import { useLiteMode } from "@/hooks/use-lite-mode";
@@ -12,6 +12,7 @@ import { useWakeTriggers } from "@/hooks/use-wake-triggers";
 import { useTimers } from "@/lib/utilities/timers";
 import { onGlobalHotkey, onTrayAction, isElectron } from "@/lib/electron-bridge";
 import type { VoiceMessage } from "@/lib/voice-providers";
+import { LANG_STT_CODE } from "@/lib/persona";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
@@ -42,14 +43,20 @@ export function useVoiceApp() {
 
   const intents = useIntentActions({
     confirmBeforeOpen: settings.confirmBeforeOpen,
+    lang: settings.lang,
     onTimer: (seconds, label) => { timers.add(seconds, label); },
+    onAssistantReply: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "assistant", text }]),
+    onUserContext: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "you", text }]),
   });
+
+  const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
 
   const history = useThreadHistory({
     onBeforeSwitch: () => sessionRef.current.stop(),
     onSwitched: () => { sessionRef.current.clearPartial(); setShowHistory(false); },
   });
   const { messages, setMessages } = history;
+  useEffect(() => { setMessagesRef.current = setMessages; }, [setMessages]);
 
   const handleFinalMessage = useCallback((m: VoiceMessage, ctx: { atBottom: boolean }) => {
     setMessages((prev) => [...prev, m]);
