@@ -52,7 +52,7 @@ async function captureScreenBase64(): Promise<{ b64: string; mime: string } | nu
 }
 
 export function useIntentActions(opts: Options = {}) {
-  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext } = opts;
+  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext, onSearch } = opts;
   const [actions, setActions] = useState<ActionEntry[]>([]);
   const [autoOpen, setAutoOpen] = useState(true);
   const autoOpenRef = useRef(true);
@@ -61,12 +61,14 @@ export function useIntentActions(opts: Options = {}) {
   const onTimerRef = useRef(onTimer);
   const onReplyRef = useRef(onAssistantReply);
   const onCtxRef = useRef(onUserContext);
+  const onSearchRef = useRef(onSearch);
   useEffect(() => { autoOpenRef.current = autoOpen; }, [autoOpen]);
   useEffect(() => { confirmRef.current = confirmBeforeOpen; }, [confirmBeforeOpen]);
   useEffect(() => { langRef.current = lang; }, [lang]);
   useEffect(() => { onTimerRef.current = onTimer; }, [onTimer]);
   useEffect(() => { onReplyRef.current = onAssistantReply; }, [onAssistantReply]);
   useEffect(() => { onCtxRef.current = onUserContext; }, [onUserContext]);
+  useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
 
   const pushAction = useCallback((intent: Intent, opened: boolean) => {
     setActions((prev) => [{ ...intent, at: Date.now(), opened }, ...prev].slice(0, 5));
