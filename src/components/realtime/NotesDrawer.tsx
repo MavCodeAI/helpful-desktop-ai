@@ -3,6 +3,7 @@ import { X, Trash2, StickyNote, Plus, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import { useNotes } from "@/lib/utilities/notes";
+import { useAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 import { generateNote } from "@/lib/note-ai.functions";
 
 interface Props {
@@ -15,6 +16,7 @@ export function NotesDrawer({ open, onClose }: Props) {
   useSwipeClose(ref, "left", onClose, open);
   useFocusTrap(ref, open);
   const { notes, add, remove, clear } = useNotes();
+  const [aiEnabled, setAiEnabled] = useAiNotesEnabled();
 
   const [draft, setDraft] = useState("");
   const [aiMode, setAiMode] = useState(false);
