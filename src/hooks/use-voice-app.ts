@@ -17,6 +17,10 @@ import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
 import { webSearchSummarize } from "@/lib/web-search.functions";
 import { extractMemoryFacts } from "@/lib/memories.functions";
 import { chatReply } from "@/lib/chat-reply.functions";
+import { generateNote } from "@/lib/note-ai.functions";
+import { addNoteRaw } from "@/lib/utilities/notes";
+import { matchNoteIntent } from "@/lib/intents";
+import { isAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
