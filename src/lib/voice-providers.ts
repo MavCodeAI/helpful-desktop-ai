@@ -195,6 +195,7 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
   const player = makePlayer(HF_SR, (v) => { speaking = v; h.onStatus(v ? "speaking" : "listening"); }, opts?.rate ?? 1);
   const ws = new WebSocket(connectUrl);
   let connected = false;
+  let closedLocally = false;
   const connectTimeout = window.setTimeout(() => {
     if (connected) return;
     cleanup();
@@ -207,6 +208,7 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
   const activityRms = activityThreshold(opts?.sensitivity);
 
   const cleanup = () => {
+    closedLocally = true;
     try { ws.close(); } catch {}
     stream.getTracks().forEach((t) => t.stop());
     inCtx.close().catch(() => {});
@@ -307,6 +309,7 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
     h.onError("Voice WebSocket connection failed. Check your internet connection and try again.");
   };
   ws.onclose = () => {
+    if (closedLocally) return;
     if (!connected) h.onError("Voice service did not accept the connection. Try Gemini or retry in a minute.");
   };
   return { stop, setRate: (r) => player.setRate(r) };
@@ -353,6 +356,7 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
   const activityRms = activityThreshold(opts?.sensitivity);
 
   const cleanup = () => {
+    closedByUser = true;
     try { ws.close(); } catch {}
     stream.getTracks().forEach((t) => t.stop());
     inCtx.close().catch(() => {});
@@ -362,7 +366,6 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
   };
 
   const stop = () => {
-    closedByUser = true;
     cleanup();
     h.onStatus("idle");
   };
