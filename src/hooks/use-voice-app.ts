@@ -21,7 +21,7 @@ import { LANG_STT_CODE } from "@/lib/persona";
  */
 export function useVoiceApp() {
   const overlays = useOverlays();
-  const { setShowHistory, setShowKeyModal, anyOverlay } = overlays;
+  const { setShowHistory, anyOverlay } = overlays;
   const [showNotes, setShowNotes] = useState(false);
   const timers = useTimers();
 
@@ -37,7 +37,6 @@ export function useVoiceApp() {
     onStop: () => sessionRef.current.stop(),
     onSessionReset: () => sessionRef.current.reset(),
     onLiveRate: (r) => sessionRef.current.setLiveRate(r),
-    onRequestKey: () => setShowKeyModal(true),
   });
   const liteActive = useLiteMode(settings.liteMode);
 
@@ -72,7 +71,7 @@ export function useVoiceApp() {
     systemPrompt: settings.systemPrompt,
     onFinalMessage: handleFinalMessage,
     onRateAdapt: settings.setRate,
-    onRequestKey: () => setShowKeyModal(true),
+    onRequestKey: () => {},
   });
 
   const scroll = useAutoScroll({ messages, partial: session.partial, status: session.status });
