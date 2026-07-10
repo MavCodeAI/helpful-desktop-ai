@@ -156,6 +156,7 @@ function makePlayer(
 // The old 2048 added ~85ms of input jitter buffering before the network hop.
 const LOW_LAT_BUF = 512;
 const LEVEL_THROTTLE_MS = 40;
+const CONNECT_TIMEOUT_MS = 12_000;
 const INPUT_ACTIVITY_BASE_RMS = 0.012;
 function activityThreshold(sensitivity?: number) {
   const s = Math.max(0.3, Math.min(3, sensitivity ?? 1));
@@ -193,22 +194,35 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
   let speaking = false;
   const player = makePlayer(HF_SR, (v) => { speaking = v; h.onStatus(v ? "speaking" : "listening"); }, opts?.rate ?? 1);
   const ws = new WebSocket(connectUrl);
+  let connected = false;
+  const connectTimeout = window.setTimeout(() => {
+    if (connected) return;
+    cleanup();
+    h.onError("Voice connection timed out. Check your internet connection and try again.");
+  }, CONNECT_TIMEOUT_MS);
   let lastInputActivity = 0;
   let awaitingReply = false;
   let lastLevelEmit = 0;
   let sttFirstAt = 0;
   const activityRms = activityThreshold(opts?.sensitivity);
 
-  const stop = () => {
+  const cleanup = () => {
     try { ws.close(); } catch {}
     stream.getTracks().forEach((t) => t.stop());
     inCtx.close().catch(() => {});
     player.close();
     h.onLevel?.(0);
+    window.clearTimeout(connectTimeout);
+  };
+
+  const stop = () => {
+    cleanup();
     h.onStatus("idle");
   };
 
   ws.onopen = () => {
+    connected = true;
+    window.clearTimeout(connectTimeout);
     h.onStatus("listening");
     ws.send(JSON.stringify({
       type: "session.update",
@@ -288,7 +302,13 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
         break;
     }
   };
-  ws.onerror = () => h.onError("WebSocket connection failed.");
+  ws.onerror = () => {
+    cleanup();
+    h.onError("Voice WebSocket connection failed. Check your internet connection and try again.");
+  };
+  ws.onclose = () => {
+    if (!connected) h.onError("Voice service did not accept the connection. Try Gemini or retry in a minute.");
+  };
   return { stop, setRate: (r) => player.setRate(r) };
 }
 
@@ -301,7 +321,12 @@ const GEMINI_OUT_SR = 24000;
 const GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-latest";
 
 export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptions): Promise<Controller> {
-  if (!apiKey) { h.onError("Gemini API key missing."); return { stop: () => {} }; }
+  const trimmedKey = apiKey.trim();
+  if (!trimmedKey) { h.onError("Gemini API key missing."); return { stop: () => {} }; }
+  if (!trimmedKey.startsWith("AIza")) {
+    h.onError("Gemini API key looks invalid. Add a Google AI Studio key that starts with AIza.");
+    return { stop: () => {} };
+  }
   h.onStatus("connecting");
 
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -312,20 +337,33 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
   const player = makePlayer(GEMINI_OUT_SR, (v) => { speaking = v; h.onStatus(v ? "speaking" : "listening"); }, opts?.rate ?? 1);
 
   const url =
-    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(apiKey)}`;
+    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(trimmedKey)}`;
   const ws = new WebSocket(url);
+  let connected = false;
+  let closedByUser = false;
+  const connectTimeout = window.setTimeout(() => {
+    if (connected) return;
+    cleanup();
+    h.onError("Gemini connection timed out. Check internet/VPN, then try again.");
+  }, CONNECT_TIMEOUT_MS);
   let lastInputActivity = 0;
   let awaitingReply = false;
   let lastLevelEmit = 0;
   let sttFirstAt = 0;
   const activityRms = activityThreshold(opts?.sensitivity);
 
-  const stop = () => {
+  const cleanup = () => {
     try { ws.close(); } catch {}
     stream.getTracks().forEach((t) => t.stop());
     inCtx.close().catch(() => {});
     player.close();
     h.onLevel?.(0);
+    window.clearTimeout(connectTimeout);
+  };
+
+  const stop = () => {
+    closedByUser = true;
+    cleanup();
     h.onStatus("idle");
   };
 
@@ -366,6 +404,8 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
     try { msg = JSON.parse(raw); } catch { return; }
 
     if (msg.setupComplete !== undefined) {
+      connected = true;
+      window.clearTimeout(connectTimeout);
       h.onStatus("listening");
       const source = inCtx.createMediaStreamSource(stream);
       const proc = inCtx.createScriptProcessor(LOW_LAT_BUF, 1, 1);
@@ -434,9 +474,18 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
     }
   };
 
-  ws.onerror = () => h.onError("Gemini WebSocket connection failed. Check API key.");
+  ws.onerror = () => {
+    cleanup();
+    h.onError("Gemini WebSocket connection failed. Check API key and internet connection.");
+  };
   ws.onclose = (ev) => {
-    if (ev.code === 1008 || ev.code === 4001 || ev.code === 4003) h.onError(`Auth failed (${ev.code}). Check API key.`);
+    if (closedByUser) return;
+    window.clearTimeout(connectTimeout);
+    if (ev.code === 1008 || ev.code === 4001 || ev.code === 4003) {
+      h.onError(`Gemini auth failed (${ev.code}). Check API key.`);
+      return;
+    }
+    if (!connected) h.onError(`Gemini did not connect (${ev.code || "closed"}). Check API key/internet and try again.`);
   };
   return { stop, setRate: (r) => player.setRate(r) };
 }
