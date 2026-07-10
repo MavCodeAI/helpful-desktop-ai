@@ -32,10 +32,14 @@ export function EngineSection({ active, provider, changeProvider, geminiKeyReady
         ))}
       </div>
       {provider === "gemini" && (
-        <div className="text-[10px] text-white/50 px-1">
+        <div
+          className={`text-[10px] px-1 leading-relaxed ${
+            geminiKeyReady ? "text-emerald-300/80" : "text-rose-300/90"
+          }`}
+        >
           {geminiKeyReady
             ? "✓ Gemini key configured on server"
-            : "⚠ Server key missing — set GEMINI_API_KEY env"}
+            : `⚠ ${geminiKeyError ?? "Server key missing — set GEMINI_API_KEY env"}`}
         </div>
       )}
     </section>
