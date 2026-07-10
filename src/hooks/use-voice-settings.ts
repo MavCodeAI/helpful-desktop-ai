@@ -21,9 +21,6 @@ type Options = {
   onLiveRate: (r: number) => void;
 };
 
-function isUsableGeminiKey(key: string) {
-  return key.trim().startsWith("AIza");
-}
 
 /**
  * All persisted voice/provider settings + their change handlers.

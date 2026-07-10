@@ -5,9 +5,10 @@ interface Props {
   provider: ProviderId;
   changeProvider: (p: ProviderId) => void;
   geminiKeyReady: boolean;
+  geminiKeyError: string | null;
 }
 
-export function EngineSection({ active, provider, changeProvider, geminiKeyReady }: Props) {
+export function EngineSection({ active, provider, changeProvider, geminiKeyReady, geminiKeyError }: Props) {
   return (
     <section>
       <div className="flex items-baseline justify-between mb-2">
