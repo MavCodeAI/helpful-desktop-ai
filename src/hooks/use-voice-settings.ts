@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type ProviderId,
   type Pace,
@@ -8,6 +8,12 @@ import {
 import { getGeminiKey } from "@/lib/gemini-key.functions";
 import { DEFAULTS, type LiteMode } from "@/lib/realtime/constants";
 import { loadSettings, persist } from "@/lib/realtime/storage";
+import {
+  type PersonaId, type LangCode,
+  loadPersona, savePersona, loadCustomPrompt, saveCustomPrompt,
+  loadLang, saveLang, loadMemories, saveMemories, addMemory, removeMemory, clearMemories,
+  buildPersonaSystemPrompt,
+} from "@/lib/persona";
 
 type Options = {
   /** Stop the current session (called on provider/voice/pace change). */
@@ -42,6 +48,10 @@ export function useVoiceSettings({
   const [wakeHotkey, setWakeHotkey] = useState<boolean>(DEFAULTS.wakeHotkey);
   const [confirmBeforeOpen, setConfirmBeforeOpen] = useState<boolean>(DEFAULTS.confirmBeforeOpen);
   const [desktopAutoLaunch, setDesktopAutoLaunch] = useState<boolean>(DEFAULTS.desktopAutoLaunch);
+  const [persona, setPersonaState] = useState<PersonaId>("alpha");
+  const [customPrompt, setCustomPromptState] = useState<string>("");
+  const [lang, setLangState] = useState<LangCode>("auto");
+  const [memories, setMemoriesState] = useState<string[]>([]);
 
   // Refs so bootstrap effect doesn't need callback deps (they're stable in
   // practice but not guaranteed by parent).
