@@ -40,6 +40,8 @@ export function useVoiceSettings({
   const [wakeClap, setWakeClap] = useState<boolean>(DEFAULTS.wakeClap);
   const [wakeWord, setWakeWord] = useState<boolean>(DEFAULTS.wakeWord);
   const [wakeHotkey, setWakeHotkey] = useState<boolean>(DEFAULTS.wakeHotkey);
+  const [confirmBeforeOpen, setConfirmBeforeOpen] = useState<boolean>(DEFAULTS.confirmBeforeOpen);
+  const [desktopAutoLaunch, setDesktopAutoLaunch] = useState<boolean>(DEFAULTS.desktopAutoLaunch);
 
   // Refs so bootstrap effect doesn't need callback deps (they're stable in
   // practice but not guaranteed by parent).
@@ -58,6 +60,8 @@ export function useVoiceSettings({
     setWakeClap(s.wakeClap);
     setWakeWord(s.wakeWord);
     setWakeHotkey(s.wakeHotkey);
+    setConfirmBeforeOpen(s.confirmBeforeOpen);
+    setDesktopAutoLaunch(s.desktopAutoLaunch);
     setGeminiKey(s.geminiKey);
     getGeminiKey()
       .then(({ key }) => {
@@ -131,6 +135,12 @@ export function useVoiceSettings({
   const toggleWakeHotkey = useCallback((v: boolean) => {
     setWakeHotkey(v); persist.wakeHotkey(v);
   }, []);
+  const toggleConfirmBeforeOpen = useCallback((v: boolean) => {
+    setConfirmBeforeOpen(v); persist.confirmBeforeOpen(v);
+  }, []);
+  const toggleDesktopAutoLaunch = useCallback((v: boolean) => {
+    setDesktopAutoLaunch(v); persist.desktopAutoLaunch(v);
+  }, []);
 
   const saveKey = useCallback(() => {
     persist.geminiKey(geminiKey.trim());
@@ -144,6 +154,7 @@ export function useVoiceSettings({
     provider, geminiKey, setGeminiKey,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
+    confirmBeforeOpen, desktopAutoLaunch,
     currentVoice, voiceList,
     // rate setter exposed for auto-rate adapt from session hook
     setRate,
@@ -151,5 +162,6 @@ export function useVoiceSettings({
     changeProvider, changeVoice, changePace, changeRate,
     changeSensitivity, toggleAutoRate, changeLiteMode, saveKey,
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
+    toggleConfirmBeforeOpen, toggleDesktopAutoLaunch,
   };
 }
