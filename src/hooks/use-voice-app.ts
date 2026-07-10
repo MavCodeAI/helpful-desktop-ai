@@ -82,5 +82,15 @@ export function useVoiceApp() {
   const active = session.status === "listening" || session.status === "speaking" || session.status === "connecting";
   const disabled = session.cooldown > 0;
 
+  // Wake triggers — clap / "hey alpha" / Ctrl+Shift+A → start session
+  useWakeTriggers({
+    enableClap: settings.wakeClap,
+    enableWakeWord: settings.wakeWord,
+    enableHotkey: settings.wakeHotkey,
+    active,
+    disabled,
+    onTrigger: session.start,
+  });
+
   return { overlays, settings, history, session, scroll, intents, liteActive, pageRef, active, disabled };
 }
