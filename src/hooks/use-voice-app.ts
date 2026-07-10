@@ -45,12 +45,39 @@ export function useVoiceApp() {
 
   const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
 
+  // Web search + AI summary: appends assistant message with cited sources.
+  const runWebSearch = useCallback(async (query: string) => {
+    const setMessages = setMessagesRef.current;
+    if (!setMessages) return;
+    setMessages((prev) => [...prev, { role: "assistant", text: `🔎 Searching the web for "${query}"…` }]);
+    try {
+      const res = await webSearchSummarize({ data: { query } });
+      const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");
+      const text = sources ? `${res.summary}\n\nSources:\n${sources}` : res.summary;
+      setMessages((prev) => {
+        const next = [...prev];
+        for (let i = next.length - 1; i >= 0; i--) {
+          if (next[i].role === "assistant" && next[i].text.startsWith("🔎 Searching")) {
+            next[i] = { role: "assistant", text };
+            return next;
+          }
+        }
+        return [...next, { role: "assistant", text }];
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Web search failed";
+      toast.error(msg);
+      setMessages((prev) => prev.filter((m) => !m.text.startsWith("🔎 Searching")));
+    }
+  }, []);
+
   const intents = useIntentActions({
     confirmBeforeOpen: settings.confirmBeforeOpen,
     lang: settings.lang,
     onTimer: (seconds, label) => { timers.add(seconds, label); },
     onAssistantReply: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "assistant", text }]),
     onUserContext: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "you", text }]),
+    onSearch: runWebSearch,
   });
 
   const history = useThreadHistory({
@@ -60,10 +87,27 @@ export function useVoiceApp() {
   const { messages, setMessages } = history;
   useEffect(() => { setMessagesRef.current = setMessages; }, [setMessages]);
 
+  // Buffer recent turns; on assistant reply, extract long-term facts via AI.
+  const turnBufRef = useRef<string>("");
   const handleFinalMessage = useCallback((m: VoiceMessage, ctx: { atBottom: boolean }) => {
     setMessages((prev) => [...prev, m]);
     if (!ctx.atBottom && m.role === "assistant") sessionRef.current.bumpUnread();
     if (m.role === "you") intents.handleUserText(m.text);
+    turnBufRef.current += `\n${m.role === "you" ? "User" : "Assistant"}: ${m.text}`;
+    if (m.role === "assistant") {
+      const transcript = turnBufRef.current.trim();
+      turnBufRef.current = "";
+      if (transcript.length >= 40) {
+        extractMemoryFacts({ data: { transcript, existing: loadMemories() } })
+          .then((res) => {
+            const existing = new Set(loadMemories().map((s) => s.toLowerCase()));
+            for (const f of res.facts ?? []) {
+              if (!existing.has(f.toLowerCase())) addMemory(f);
+            }
+          })
+          .catch(() => { /* silent */ });
+      }
+    }
   }, [setMessages, intents, sessionRef]);
 
   const session = useRealtimeSession({
