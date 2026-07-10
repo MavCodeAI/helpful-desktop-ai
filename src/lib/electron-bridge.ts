@@ -11,6 +11,8 @@ type Bridge = {
   getAutoLaunch: () => Promise<boolean>;
   onHotkey: (cb: () => void) => () => void;
   onTrayAction: (cb: (action: "start" | "stop" | "show") => void) => () => void;
+  readFile: () => Promise<{ name: string; content: string } | null>;
+  writeFile: (name: string, content: string) => Promise<boolean>;
   quit: () => void;
 };
 
@@ -71,4 +73,63 @@ export function onTrayAction(cb: (a: "start" | "stop" | "show") => void): () => 
 
 export function electronPlatform(): NodeJS.Platform | null {
   return isElectron() ? window.alpha!.platform : null;
+}
+
+// ── File operations ─────────────────────────────────────────────────
+// Electron: uses native dialog + fs. Browser: File System Access API
+// (Chromium only). Safari falls back to <input type=file>/download link.
+
+export async function readTextFile(): Promise<{ name: string; content: string } | null> {
+  if (isElectron()) {
+    try { return await window.alpha!.readFile(); } catch { return null; }
+  }
+  // File System Access API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (typeof w.showOpenFilePicker === "function") {
+    try {
+      const [handle] = await w.showOpenFilePicker({
+        types: [{ description: "Text", accept: { "text/*": [".txt", ".md", ".json", ".csv", ".log"] } }],
+      });
+      const file = await handle.getFile();
+      return { name: file.name, content: await file.text() };
+    } catch { return null; }
+  }
+  // Legacy <input type=file>
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".txt,.md,.json,.csv,.log,text/*";
+    input.onchange = async () => {
+      const f = input.files?.[0];
+      if (!f) return resolve(null);
+      resolve({ name: f.name, content: await f.text() });
+    };
+    input.click();
+  });
+}
+
+export async function writeTextFile(suggestedName: string, content: string): Promise<boolean> {
+  if (isElectron()) {
+    try { return await window.alpha!.writeFile(suggestedName, content); } catch { return false; }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (typeof w.showSaveFilePicker === "function") {
+    try {
+      const handle = await w.showSaveFilePicker({ suggestedName });
+      const stream = await handle.createWritable();
+      await stream.write(content);
+      await stream.close();
+      return true;
+    } catch { return false; }
+  }
+  // Fallback: download link
+  const blob = new Blob([content], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = suggestedName;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  return true;
 }
