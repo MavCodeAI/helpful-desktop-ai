@@ -156,6 +156,26 @@ export function useVoiceSettings({
     setDesktopAutoLaunch(v); persist.desktopAutoLaunch(v);
   }, []);
 
+  // ── Persona / Language / Memories ──────────────────────────────────
+  const changePersona = useCallback((p: PersonaId) => {
+    setPersonaState(p); savePersona(p); onStop();
+  }, [onStop]);
+  const changeCustomPrompt = useCallback((v: string) => {
+    setCustomPromptState(v); saveCustomPrompt(v);
+  }, []);
+  const changeLang = useCallback((l: LangCode) => {
+    setLangState(l); saveLang(l); onStop();
+  }, [onStop]);
+  const addMemoryUi = useCallback((text: string) => {
+    addMemory(text); setMemoriesState(loadMemories());
+  }, []);
+  const removeMemoryUi = useCallback((idx: number) => {
+    removeMemory(idx); setMemoriesState(loadMemories());
+  }, []);
+  const clearMemoriesUi = useCallback(() => {
+    clearMemories(); setMemoriesState([]);
+  }, []);
+
   const saveKey = useCallback(() => {
     persist.geminiKey(geminiKey.trim());
   }, [geminiKey]);
@@ -163,12 +183,18 @@ export function useVoiceSettings({
   const currentVoice = provider === "gemini" ? geminiVoice : hfVoice;
   const voiceList = provider === "gemini" ? GEMINI_VOICES : HF_VOICES;
 
+  const systemPrompt = useMemo(
+    () => buildPersonaSystemPrompt({ persona, customPrompt, lang, memories }),
+    [persona, customPrompt, lang, memories],
+  );
+
   return {
     // state
     provider, geminiKey, setGeminiKey,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,
+    persona, customPrompt, lang, memories, systemPrompt,
     currentVoice, voiceList,
     // rate setter exposed for auto-rate adapt from session hook
     setRate,
@@ -177,5 +203,7 @@ export function useVoiceSettings({
     changeSensitivity, toggleAutoRate, changeLiteMode, saveKey,
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
     toggleConfirmBeforeOpen, toggleDesktopAutoLaunch,
+    changePersona, changeCustomPrompt, changeLang,
+    addMemory: addMemoryUi, removeMemory: removeMemoryUi, clearMemories: clearMemoriesUi,
   };
 }
