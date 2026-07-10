@@ -1,62 +1,56 @@
-# Alpha — باقی Features مکمل کرنے کا پلان
+# Alpha Phase 1 MVP — Full Jarvis Loop
 
-مقصد: Jarvis-style مکمل تجربہ۔ Smart Home ابھی نہیں — صرف "Coming Soon" placeholder۔
+Reality-check: **Barge-in** پہلے سے work کرتا ہے (Gemini Live native + HF streaming)۔ **Voice conversation + Orb + App launching + Screenshot** پہلے سے موجود ہیں۔ باقی 6 features کو practical desktop+web split میں build کریں گے۔
 
-## 1. Intent System اپگریڈ (Web)
-- **Confirmation mode**: settings toggle — auto-open یا "Confirm before opening"
-- **Popup-blocked feedback**: toast + retry button جب `window.open` null دے
-- **SMS/Native scheme fallback**: desktop پر `sms:` کام نہیں کرتا → WhatsApp Web پر fallback + user کو بتانا
-- **مزید intents**: timer/alarm (in-app), note (in-app quick note), weather (open weather.com query), translate (Google Translate deep link), calculator (open calc query)
+## 1. Custom Persona + Language + Long-term Memory
+- `src/lib/persona.ts`: presets (Alpha / Jarvis / Friday / Custom)، language (auto/en/ur/ar)، memories list (localStorage)
+- Settings drawer میں **Persona** section — preset picker، free-form system prompt، language dropdown، memories manager
+- `voice-providers.ts` `buildInstructions()` کو extend — persona prompt + memories block + language hint
+- `use-realtime-session.ts` سے persona/memories/language pass ہوں
+- **Auto-memory**: "remember that X" / "yaad rakho X" / "تذكر أن X" utterance intent → memories میں add + persona میں inject
+- Short-term memory: last N turns (thread messages) پہلے سے موجود ہیں
 
-## 2. In-App Utilities (Desktop features کا web-safe subset)
-- **Quick Notes**: "note likho ..." → localStorage میں save، History drawer کے ساتھ Notes drawer
-- **Timers/Alarms**: "5 minute ka timer" → in-app timer with beep + browser notification
-- **Clipboard read/write**: "copy karo X" / "clipboard padho" via `navigator.clipboard`
-- **Screenshot** (browser): `getDisplayMedia` سے one-frame capture → download
+## 2. Screen Understanding (AI Vision)
+- Enable **Lovable Cloud** (LOVABLE_API_KEY auto-provision)
+- `src/lib/ai-gateway.server.ts` + `src/lib/ai-vision.functions.ts` — `describeScreen(imageBase64)` server fn → Gemini 2.5 Flash vision
+- Intent: "screen dekho" / "what's on screen" / "شاشة" → `getDisplayMedia` → capture → server fn → response کو chat میں assistant message کے طور پر inject + optional TTS via active Gemini Live session
 
-## 3. Coming Soon Section
-- Settings drawer میں نیا section: **"Coming Soon"**
-- Smart Home / IoT / Home Automation — disabled toggles with lock icon اور "Coming soon" chip
+## 3. AI Web-Answer (real "search" not just Google open)
+- Same server fn module: `askAI(question, language)` → Gemini flash with Google-Search grounding tool
+- Intent: "AI se pucho X" / "answer this X" / "اسأل X" → server fn → assistant message
+- Fallback: existing Google-open intent for direct search UX
 
-## 4. Electron Desktop Shell
-- `electron/main.cjs` — BrowserWindow، `base: './'` in vite.config
-- **Global hotkey** (OS-level): `Ctrl/Cmd+Shift+A` — `globalShortcut` سے مائیک start
-- **System tray**: Alpha icon، menu: Show/Hide, Start Listening, Quit
-- **Native notifications**: `new Notification()` جب intent execute ہو
-- **Auto-launch on login**: `app.setLoginItemSettings` — settings سے toggle
-- **Native shell**: `shell.openExternal` سے deep-links (popup-blocker bypass)
-- **IPC bridge**: `window.alpha` (contextBridge) — web code detect کرے کہ Electron ہے یا browser، اور native paths use کرے
+## 4. File Operations
+- **Electron path** (native): IPC `alpha:readFile`, `alpha:writeFile`, `alpha:listDir` in `main.cjs` + `preload.cjs` (with `dialog.showOpenDialog`/`showSaveDialog` for safety)
+- **Browser path**: File System Access API (`showOpenFilePicker`/`showSaveFilePicker`) — Chromium only، Safari میں graceful message
+- Intents: "file kholo" / "note.txt save karo X me" / "documents dikhao"
+- Content added to Notes یا separate File Explorer? → پہلے فیز میں: open → read → text-file preview toast + inject as chat context; save → prompt for filename → write
 
-## 5. Packaging
-- `@electron/packager` سے Linux/Windows/macOS builds
-- Output: `.tar.gz` / `.zip` in `/mnt/documents/`
-- Settings drawer میں **"Download Desktop App"** section with links + install instructions
+## 5. Arabic Support
+- Wake word: "مرحبا ألفا" (Marhaba Alpha) + existing "hey alpha"
+- SpeechRecognition `lang` from language setting (`ur-PK`, `ar-SA`, `en-US`, or unset for auto)
+- Persona automatically picks reply language when set
 
 ## 6. Technical Section
 ```text
-Files to create:
-- electron/main.cjs             (BrowserWindow, tray, globalShortcut, IPC)
-- electron/preload.cjs          (contextBridge → window.alpha)
-- src/lib/electron-bridge.ts    (safe wrapper: isElectron(), openExternal, notify, hotkey)
-- src/lib/utilities/timers.ts   (in-app timers hook)
-- src/lib/utilities/notes.ts    (localStorage notes)
-- src/components/realtime/NotesDrawer.tsx
-- src/components/realtime/settings/ComingSoonSection.tsx
-- src/components/realtime/settings/DesktopSection.tsx
+New files:
+- src/lib/persona.ts                        (presets, memories store, buildPersonaSystemPrompt)
+- src/lib/ai-gateway.server.ts              (Lovable AI provider helper)
+- src/lib/ai-vision.functions.ts            (describeScreen, askAI server fns)
+- src/components/realtime/settings/PersonaSection.tsx
 
-Files to edit:
-- src/lib/intents.ts             (+timer/note/weather/translate/clipboard/screenshot)
-- src/hooks/use-intent-actions.ts (confirmation flow + popup-blocked toast + electron.openExternal)
-- src/hooks/use-voice-settings.ts (confirmBeforeOpen, autoLaunch)
-- src/components/realtime/SettingsDrawer.tsx (mount Desktop + ComingSoon sections)
-- vite.config.ts                 (base: './')
-- package.json                   (electron, @electron/packager devDeps + scripts)
+Edits:
+- src/lib/voice-providers.ts                (buildInstructions uses persona)
+- src/lib/intents.ts                        (remember, screen-vision, ai-answer, file-open, file-save intents)
+- src/hooks/use-intent-actions.ts           (new action handlers → server fns)
+- src/hooks/use-realtime-session.ts         (pass persona/memories/language)
+- src/hooks/use-voice-settings.ts           (persona state)
+- src/lib/realtime/{constants,storage}.ts   (persona keys)
+- src/hooks/use-wake-triggers.ts            (Arabic wake, language-aware)
+- src/hooks/use-voice-app.ts                (wire persona into session + intents)
+- src/components/realtime/SettingsDrawer.tsx + OverlayHost.tsx  (mount PersonaSection)
+- electron/main.cjs + preload.cjs           (file IPC handlers)
+- src/lib/electron-bridge.ts                (readFile/writeFile wrappers)
 ```
 
-Smart Home / IoT — **صرف Coming Soon**، کوئی implementation نہیں۔
-
-## ترتیب
-1. Intent upgrades + utilities (web works standalone)
-2. Notes/Timers UI + Coming Soon section
-3. Electron shell + IPC bridge (web code adapts if `window.alpha` موجود)
-4. Package + download link
+Barge-in الگ code نہیں چاہیے — Gemini Live BidiGenerateContent + HF streaming دونوں انٹرپشن پہ audio player بند کر دیتے ہیں۔ صرف status pill میں "You can interrupt any time" hint دکھائیں گے۔

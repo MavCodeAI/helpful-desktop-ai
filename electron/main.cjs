@@ -9,8 +9,9 @@
 // Build via: `npm run electron:package`
 // Run via:   `npm run electron:dev` (points at Vite dev server)
 
-const { app, BrowserWindow, Tray, Menu, globalShortcut, shell, ipcMain, Notification, nativeImage } = require("electron");
+const { app, BrowserWindow, Tray, Menu, globalShortcut, shell, ipcMain, Notification, nativeImage, dialog } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs/promises");
 
 const DEV_URL = process.env.ALPHA_DEV_URL || "http://localhost:8080";
 const PROD_URL = process.env.ALPHA_PROD_URL || "https://alpha.lovable.app";
@@ -109,6 +110,31 @@ ipcMain.handle("alpha:getAutoLaunch", () => {
 });
 
 ipcMain.on("alpha:quit", () => { app.isQuitting = true; app.quit(); });
+
+ipcMain.handle("alpha:readFile", async () => {
+  try {
+    const res = await dialog.showOpenDialog(mainWindow, {
+      properties: ["openFile"],
+      filters: [{ name: "Text", extensions: ["txt", "md", "json", "csv", "log"] }, { name: "All", extensions: ["*"] }],
+    });
+    if (res.canceled || !res.filePaths[0]) return null;
+    const filePath = res.filePaths[0];
+    const content = await fs.readFile(filePath, "utf8");
+    return { name: path.basename(filePath), content };
+  } catch { return null; }
+});
+
+ipcMain.handle("alpha:writeFile", async (_e, suggested, content) => {
+  try {
+    const res = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: String(suggested || "alpha.txt"),
+      filters: [{ name: "Text", extensions: ["txt", "md", "json", "csv", "log"] }],
+    });
+    if (res.canceled || !res.filePath) return false;
+    await fs.writeFile(res.filePath, String(content ?? ""), "utf8");
+    return true;
+  } catch { return false; }
+});
 
 app.whenReady().then(() => {
   createWindow();

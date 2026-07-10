@@ -1,22 +1,22 @@
 import { useEffect, useRef } from "react";
 
 type Options = {
-  /** Enable clap detection (2 claps within 1.5s) via mic energy spikes. */
   enableClap: boolean;
-  /** Enable "hey alpha" wake word via browser SpeechRecognition. */
   enableWakeWord: boolean;
-  /** Enable Ctrl+Shift+A global-in-tab hotkey. */
   enableHotkey: boolean;
-  /** True while a voice session is already running — suppress all triggers. */
   active: boolean;
-  /** True while in cooldown / error — suppress triggers. */
   disabled: boolean;
-  /** Called when any enabled trigger fires. Should idempotently start the session. */
+  /** STT locale for the wake-word recognizer (e.g. "en-US", "ur-PK", "ar-SA"). */
+  wakeLang?: string;
   onTrigger: () => void;
 };
 
-// ── Wake word phrases (case-insensitive) ────────────────────────────
-const WAKE_PHRASES = ["hey alpha", "hi alpha", "ok alpha", "alpha wake"];
+// Wake phrases — English / Urdu (roman + native) / Arabic
+const WAKE_PHRASES = [
+  "hey alpha", "hi alpha", "ok alpha", "alpha wake",
+  "aey alpha", "او الفا", "الو الفا",
+  "مرحبا الفا", "مرحبا ألفا", "يا ألفا", "يا الفا",
+];
 
 /**
  * Composite wake-trigger hook.
@@ -32,7 +32,7 @@ const WAKE_PHRASES = ["hey alpha", "hi alpha", "ok alpha", "alpha wake"];
  * running session owns the mic exclusively.
  */
 export function useWakeTriggers({
-  enableClap, enableWakeWord, enableHotkey, active, disabled, onTrigger,
+  enableClap, enableWakeWord, enableHotkey, active, disabled, wakeLang, onTrigger,
 }: Options) {
   const onTriggerRef = useRef(onTrigger);
   useEffect(() => { onTriggerRef.current = onTrigger; }, [onTrigger]);
@@ -147,7 +147,7 @@ export function useWakeTriggers({
     let stopped = false;
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = "en-US";
+    rec.lang = wakeLang || "en-US";
 
     rec.onresult = (ev: SpeechRecognitionResultEventLike) => {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -173,7 +173,7 @@ export function useWakeTriggers({
       rec = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableWakeWord, active, disabled]);
+  }, [enableWakeWord, active, disabled, wakeLang]);
 }
 
 // ── Minimal ambient types (SpeechRecognition isn't in lib.dom for TS) ──

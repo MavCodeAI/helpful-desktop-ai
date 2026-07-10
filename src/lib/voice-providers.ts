@@ -36,6 +36,8 @@ export interface VoiceOptions {
   rate?: number;
   /** Mic sensitivity multiplier 0.3–3.0. Higher = pick up quieter voice. */
   sensitivity?: number;
+  /** Full persona/language/memory system prompt (built by src/lib/persona.ts). */
+  systemPrompt?: string;
 }
 
 export const HF_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"] as const;
@@ -50,7 +52,8 @@ function paceInstruction(pace: Pace | undefined): string {
 }
 
 function buildInstructions(opts?: VoiceOptions): string {
-  return `You are a friendly, concise voice assistant. ${paceInstruction(opts?.pace)}`;
+  const base = opts?.systemPrompt?.trim() || "You are Alpha, a friendly, concise voice assistant.";
+  return `${base}\n\n${paceInstruction(opts?.pace)}\n\nThe user may interrupt you at any time — stop speaking immediately when they start.`;
 }
 
 export interface Controller {

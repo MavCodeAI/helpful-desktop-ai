@@ -13,6 +13,11 @@ export type Intent = {
     | { type: "clipboard-copy"; text: string }
     | { type: "clipboard-read" }
     | { type: "screenshot" }
+    | { type: "screen-vision" }
+    | { type: "ai-answer"; question: string }
+    | { type: "memory-add"; text: string }
+    | { type: "file-open" }
+    | { type: "file-save" }
     | { type: "coming-soon"; feature: string };
 };
 
@@ -159,6 +164,48 @@ export function detectIntent(raw: string): Intent | null {
   if (/\b(screenshot|screen shot|screen capture|screen ki tasveer)\b/.test(text)) {
     return { kind: "screenshot", label: "Screenshot", url: "", action: { type: "screenshot" } };
   }
+
+  // ── 0e2. Screen understanding (AI vision) ───────────────────────────
+  if (/\b(screen dekho|what'?s on (my )?screen|describe (my )?screen|screen padho|screen samjho|analyze screen|شاشة)\b/.test(text)) {
+    return { kind: "screen-vision", label: "Read my screen", url: "", action: { type: "screen-vision" } };
+  }
+
+  // ── 0e3. AI answer (real answer, not just Google open) ─────────────
+  const aiAsk = /^(?:ai(?:\s+se)?\s+(?:pooch(?:o|iye)|puchho|batao|ask)|ask\s+ai|answer\s+this|jawab\s+do|اسأل)\s*[:،-]?\s*(.+)$/i.exec(text);
+  if (aiAsk) {
+    const q = aiAsk[1].trim();
+    if (q.length > 2) {
+      return {
+        kind: "ai-answer",
+        label: `AI · "${q.slice(0, 40)}${q.length > 40 ? "…" : ""}"`,
+        url: "",
+        action: { type: "ai-answer", question: q },
+      };
+    }
+  }
+
+  // ── 0e4. Memory add ("remember that ..." / "yaad rakho ...") ────────
+  const remember = /^(?:remember\s+(?:that\s+)?|yaad\s+(?:rakho|rakhna)|تذكر\s+أن)\s*[:،-]?\s*(.+)$/i.exec(text);
+  if (remember) {
+    const t = remember[1].trim();
+    if (t.length > 2) {
+      return {
+        kind: "memory",
+        label: `Remembered · "${t.slice(0, 40)}${t.length > 40 ? "…" : ""}"`,
+        url: "",
+        action: { type: "memory-add", text: t },
+      };
+    }
+  }
+
+  // ── 0e5. File operations (Electron + File System Access API) ────────
+  if (/^(?:open (?:a )?file|file kholo|فتح ملف)$/i.test(text)) {
+    return { kind: "file", label: "Open file…", url: "", action: { type: "file-open" } };
+  }
+  if (/^(?:save (?:a )?file|file save karo|حفظ ملف)$/i.test(text)) {
+    return { kind: "file", label: "Save file…", url: "", action: { type: "file-save" } };
+  }
+
 
   // ── 0f. Weather ─────────────────────────────────────────────────────
   const weather = /(?:weather|mausam|temperature)(?:\s+(?:in|of|ka)\s+(.+))?/i.exec(text);

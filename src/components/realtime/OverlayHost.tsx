@@ -115,6 +115,16 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           toggleConfirmBeforeOpen={settings.toggleConfirmBeforeOpen}
           desktopAutoLaunch={settings.desktopAutoLaunch}
           toggleDesktopAutoLaunch={settings.toggleDesktopAutoLaunch}
+          persona={settings.persona}
+          customPrompt={settings.customPrompt}
+          lang={settings.lang}
+          memories={settings.memories}
+          changePersona={settings.changePersona}
+          changeCustomPrompt={settings.changeCustomPrompt}
+          changeLang={settings.changeLang}
+          addMemory={settings.addMemory}
+          removeMemory={settings.removeMemory}
+          clearMemories={settings.clearMemories}
         />
       )}
       {showKeyModal && (

@@ -16,6 +16,9 @@ export const STORAGE_KEYS = {
   wakeHotkey: "wake_hotkey",
   confirmBeforeOpen: "confirm_before_open",
   desktopAutoLaunch: "desktop_auto_launch",
+  persona: "alpha_persona",
+  customPrompt: "alpha_persona_custom",
+  lang: "alpha_lang",
 } as const;
 
 export const RATE_OPTIONS = [0.8, 1.0, 1.2, 1.5] as const;

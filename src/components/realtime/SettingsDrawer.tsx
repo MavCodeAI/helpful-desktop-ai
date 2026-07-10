@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import type { LiteMode } from "@/lib/realtime/constants";
 import type { ProviderId, Pace } from "@/lib/voice-providers";
+import type { PersonaId, LangCode } from "@/lib/persona";
 import { EngineSection } from "@/components/realtime/settings/EngineSection";
 import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSection";
 import { MicSection } from "@/components/realtime/settings/MicSection";
@@ -10,6 +11,7 @@ import { PerformanceSection } from "@/components/realtime/settings/PerformanceSe
 import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
 import { DesktopSection } from "@/components/realtime/settings/DesktopSection";
 import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
+import { PersonaSection } from "@/components/realtime/settings/PersonaSection";
 
 export interface SettingsDrawerProps {
   open: boolean;
@@ -51,6 +53,16 @@ export interface SettingsDrawerProps {
   toggleConfirmBeforeOpen: (v: boolean) => void;
   desktopAutoLaunch: boolean;
   toggleDesktopAutoLaunch: (v: boolean) => void;
+  persona: PersonaId;
+  customPrompt: string;
+  lang: LangCode;
+  memories: string[];
+  changePersona: (p: PersonaId) => void;
+  changeCustomPrompt: (v: string) => void;
+  changeLang: (l: LangCode) => void;
+  addMemory: (t: string) => void;
+  removeMemory: (i: number) => void;
+  clearMemories: () => void;
 }
 
 export function SettingsDrawer(props: SettingsDrawerProps) {
@@ -70,6 +82,9 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
     confirmBeforeOpen, toggleConfirmBeforeOpen,
     desktopAutoLaunch, toggleDesktopAutoLaunch,
+    persona, customPrompt, lang, memories,
+    changePersona, changeCustomPrompt, changeLang,
+    addMemory, removeMemory, clearMemories,
   } = props;
 
   return (
@@ -157,6 +172,18 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             toggleConfirmBeforeOpen={toggleConfirmBeforeOpen}
             desktopAutoLaunch={desktopAutoLaunch}
             toggleDesktopAutoLaunch={toggleDesktopAutoLaunch}
+          />
+          <PersonaSection
+            persona={persona}
+            customPrompt={customPrompt}
+            lang={lang}
+            memories={memories}
+            changePersona={changePersona}
+            changeCustomPrompt={changeCustomPrompt}
+            changeLang={changeLang}
+            addMemory={addMemory}
+            removeMemory={removeMemory}
+            clearMemories={clearMemories}
           />
           <ComingSoonSection />
         </div>
