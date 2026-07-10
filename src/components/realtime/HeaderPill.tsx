@@ -33,6 +33,15 @@ export function HeaderPill({
       </div>
       <div className="flex items-center gap-2">
         <button
+          onClick={onOpenChat}
+          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
+          aria-label="Open chat"
+          title="Chat"
+        >
+          <MessageSquare className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Chat</span>
+        </button>
+        <button
           onClick={onOpenNotes}
           className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
           aria-label="Open notes"
