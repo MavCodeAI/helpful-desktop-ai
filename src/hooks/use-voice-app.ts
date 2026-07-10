@@ -103,6 +103,7 @@ export function useVoiceApp() {
     enableHotkey: settings.wakeHotkey,
     active,
     disabled,
+    wakeLang: LANG_STT_CODE[settings.lang],
     onTrigger: session.start,
   });
 
