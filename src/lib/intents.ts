@@ -137,19 +137,14 @@ export function detectIntent(raw: string): Intent | null {
   }
 
   // ── 0c. Note ────────────────────────────────────────────────────────
-  // "note likho: milk lena hai", "take a note: call mom", "note kar do ..."
-  const noteMatch = /^(?:note|take a note|remember|yaad rakho|note likho|note kar do)\s*[:،-]?\s*(.+)$/i.exec(text)
-                 || /^(.+?)\s+(?:ko\s+)?note\s+(?:likho|kar do|karo|karna)$/i.exec(text);
-  if (noteMatch) {
-    const body = noteMatch[1].trim();
-    if (body && body.length > 1) {
-      return {
-        kind: "note",
-        label: `Note · "${body.slice(0, 40)}${body.length > 40 ? "…" : ""}"`,
-        url: "",
-        action: { type: "note", text: body },
-      };
-    }
+  const noteBody = matchNoteIntent(text);
+  if (noteBody) {
+    return {
+      kind: "note",
+      label: `Note · "${noteBody.slice(0, 40)}${noteBody.length > 40 ? "…" : ""}"`,
+      url: "",
+      action: { type: "note", text: noteBody },
+    };
   }
 
   // ── 0d. Clipboard ───────────────────────────────────────────────────
