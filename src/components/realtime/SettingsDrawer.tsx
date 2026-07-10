@@ -136,6 +136,14 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             ttsLatency={ttsLatency}
             latency={latency}
           />
+          <TriggersSection
+            wakeClap={wakeClap}
+            wakeWord={wakeWord}
+            wakeHotkey={wakeHotkey}
+            toggleClap={toggleWakeClap}
+            toggleWord={toggleWakeWord}
+            toggleHotkey={toggleWakeHotkey}
+          />
         </div>
       </aside>
     </div>

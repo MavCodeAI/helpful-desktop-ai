@@ -8,6 +8,7 @@ import { useThreadHistory } from "@/hooks/use-thread-history";
 import { useVoiceSettings } from "@/hooks/use-voice-settings";
 import { useIntentActions } from "@/hooks/use-intent-actions";
 import { useMutableRef } from "@/hooks/use-mutable-ref";
+import { useWakeTriggers } from "@/hooks/use-wake-triggers";
 import type { VoiceMessage } from "@/lib/voice-providers";
 
 /**
