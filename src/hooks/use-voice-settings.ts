@@ -169,7 +169,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   );
 
   return {
-    provider, geminiKey,
+    provider, geminiKey, geminiKeyError,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,
