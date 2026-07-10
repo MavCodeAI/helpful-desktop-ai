@@ -16,6 +16,8 @@ type Options = {
   onAssistantReply?: (text: string) => void;
   /** Push a user context message (e.g. file contents). */
   onUserContext?: (text: string) => void;
+  /** Route web-search intents to in-app AI summary instead of opening Google. */
+  onSearch?: (query: string) => void;
 };
 
 async function captureScreenBase64(): Promise<{ b64: string; mime: string } | null> {
@@ -50,7 +52,7 @@ async function captureScreenBase64(): Promise<{ b64: string; mime: string } | nu
 }
 
 export function useIntentActions(opts: Options = {}) {
-  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext } = opts;
+  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext, onSearch } = opts;
   const [actions, setActions] = useState<ActionEntry[]>([]);
   const [autoOpen, setAutoOpen] = useState(true);
   const autoOpenRef = useRef(true);
@@ -59,12 +61,14 @@ export function useIntentActions(opts: Options = {}) {
   const onTimerRef = useRef(onTimer);
   const onReplyRef = useRef(onAssistantReply);
   const onCtxRef = useRef(onUserContext);
+  const onSearchRef = useRef(onSearch);
   useEffect(() => { autoOpenRef.current = autoOpen; }, [autoOpen]);
   useEffect(() => { confirmRef.current = confirmBeforeOpen; }, [confirmBeforeOpen]);
   useEffect(() => { langRef.current = lang; }, [lang]);
   useEffect(() => { onTimerRef.current = onTimer; }, [onTimer]);
   useEffect(() => { onReplyRef.current = onAssistantReply; }, [onAssistantReply]);
   useEffect(() => { onCtxRef.current = onUserContext; }, [onUserContext]);
+  useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
 
   const pushAction = useCallback((intent: Intent, opened: boolean) => {
     setActions((prev) => [{ ...intent, at: Date.now(), opened }, ...prev].slice(0, 5));
@@ -228,6 +232,13 @@ export function useIntentActions(opts: Options = {}) {
 
   const execute = useCallback(async (intent: Intent) => {
     if (intent.action) return runInApp(intent);
+    // Route web-search intents to in-app AI summary instead of opening Google.
+    if (intent.kind === "search" && onSearchRef.current) {
+      const q = intent.label.replace(/^Google\s*→\s*"?|"$/g, "").trim();
+      onSearchRef.current(q);
+      pushAction(intent, true);
+      return;
+    }
     if (!autoOpenRef.current) { pushAction(intent, false); return; }
     if (confirmRef.current && !isElectron()) {
       pushAction(intent, false);
