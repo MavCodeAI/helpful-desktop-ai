@@ -18,6 +18,7 @@ function Index() {
     overlays, settings, history, session, scroll, intents,
     liteActive, pageRef, active, disabled,
     timers, showNotes, setShowNotes,
+    sendText, textBusy,
   } = useVoiceApp();
 
   return (
