@@ -65,16 +65,8 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     setCustomPromptState(loadCustomPrompt());
     setLangState(loadLang());
     setMemoriesState(loadMemories());
-    getGeminiKey()
-      .then((res) => {
-        setGeminiKey(res.key);
-        setGeminiKeyError(res.error);
-        setProvider(s.provider || (res.status === "ok" ? "gemini" : "hf"));
-      })
-      .catch((e) => {
-        setGeminiKeyError(e instanceof Error ? e.message : "Failed to load server key");
-        setProvider(s.provider || "hf");
-      });
+    setProvider("hf");
+    persist.provider("hf");
   }, []);
 
   const changeProvider = useCallback((p: ProviderId) => {
