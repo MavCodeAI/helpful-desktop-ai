@@ -16,6 +16,7 @@ import type { VoiceMessage } from "@/lib/voice-providers";
 import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
 import { webSearchSummarize } from "@/lib/web-search.functions";
 import { extractMemoryFacts } from "@/lib/memories.functions";
+import { chatReply } from "@/lib/chat-reply.functions";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
