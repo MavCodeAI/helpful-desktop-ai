@@ -151,7 +151,7 @@ export function NotesDrawer({ open, onClose }: Props) {
             className="shrink-0 px-3 py-2 rounded-md bg-cyan-500/20 border border-cyan-400/40 text-cyan-100 text-sm hover:bg-cyan-500/30 disabled:opacity-40 flex items-center gap-1"
           >
             {aiBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            <span>{aiMode ? "AI" : "Add"}</span>
+            <span>{aiMode && aiEnabled ? "AI" : "Add"}</span>
           </button>
         </form>
 
