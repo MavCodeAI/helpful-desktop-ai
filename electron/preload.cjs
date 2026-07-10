@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld("alpha", {
   notify: (title, body) => ipcRenderer.send("alpha:notify", title, body),
   setAutoLaunch: (enabled) => ipcRenderer.invoke("alpha:setAutoLaunch", enabled),
   getAutoLaunch: () => ipcRenderer.invoke("alpha:getAutoLaunch"),
+  readFile: () => ipcRenderer.invoke("alpha:readFile"),
+  writeFile: (name, content) => ipcRenderer.invoke("alpha:writeFile", name, content),
   quit: () => ipcRenderer.send("alpha:quit"),
 
   onHotkey: (cb) => {
