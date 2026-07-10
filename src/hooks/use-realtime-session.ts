@@ -70,6 +70,8 @@ export function useRealtimeSession(opts: Options) {
   const start = useCallback(async () => {
     if (micTest) stopMicTestMode();
     if (provider === "gemini" && !geminiKey) {
+      setError("Gemini key not configured on server. Ask admin to set GEMINI_API_KEY.");
+      setStatus("error");
       onRequestKey();
       return;
     }
