@@ -18,7 +18,7 @@ const langLine = (lang: string) => {
 };
 
 export const describeScreen = createServerFn({ method: "POST" })
-  .inputValidator((v: unknown) => DescribeInput.parse(v))
+  .validator((v: unknown) => DescribeInput.parse(v))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY missing");
@@ -50,7 +50,7 @@ const AskInput = z.object({
 });
 
 export const askAI = createServerFn({ method: "POST" })
-  .inputValidator((v: unknown) => AskInput.parse(v))
+  .validator((v: unknown) => AskInput.parse(v))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY missing");

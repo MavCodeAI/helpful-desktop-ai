@@ -60,7 +60,7 @@ Rules:
 }
 
 export const webSearchSummarize = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ query: z.string().trim().min(2).max(400) }).parse(input),
   )
   .handler(async ({ data }): Promise<WebSearchResult> => {
