@@ -89,7 +89,7 @@ export function MainStage({
           />
           {showInlineComposer && (
             <div className="mt-3 animate-fade-in">
-              <ChatComposer onSend={onSendText} busy={textBusy} placeholder="Reply with text…" />
+              <ChatComposer onSend={onSendText} busy={textBusy} onNote={onCreateNote} notePending={notePending} placeholder="Reply with text…" />
             </div>
           )}
         </aside>
