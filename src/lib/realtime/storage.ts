@@ -17,6 +17,8 @@ export interface VoiceSettings {
   wakeClap: boolean;
   wakeWord: boolean;
   wakeHotkey: boolean;
+  confirmBeforeOpen: boolean;
+  desktopAutoLaunch: boolean;
 }
 
 const isBrowser = () => typeof window !== "undefined";
@@ -58,6 +60,8 @@ export function loadSettings(): VoiceSettings {
     wakeClap: readBool(STORAGE_KEYS.wakeClap, DEFAULTS.wakeClap),
     wakeWord: readBool(STORAGE_KEYS.wakeWord, DEFAULTS.wakeWord),
     wakeHotkey: readBool(STORAGE_KEYS.wakeHotkey, DEFAULTS.wakeHotkey),
+    confirmBeforeOpen: readBool(STORAGE_KEYS.confirmBeforeOpen, DEFAULTS.confirmBeforeOpen),
+    desktopAutoLaunch: readBool(STORAGE_KEYS.desktopAutoLaunch, DEFAULTS.desktopAutoLaunch),
   };
 }
 
@@ -74,4 +78,6 @@ export const persist = {
   wakeClap: (v: boolean) => safeSet(STORAGE_KEYS.wakeClap, v ? "1" : "0"),
   wakeWord: (v: boolean) => safeSet(STORAGE_KEYS.wakeWord, v ? "1" : "0"),
   wakeHotkey: (v: boolean) => safeSet(STORAGE_KEYS.wakeHotkey, v ? "1" : "0"),
+  confirmBeforeOpen: (v: boolean) => safeSet(STORAGE_KEYS.confirmBeforeOpen, v ? "1" : "0"),
+  desktopAutoLaunch: (v: boolean) => safeSet(STORAGE_KEYS.desktopAutoLaunch, v ? "1" : "0"),
 };
