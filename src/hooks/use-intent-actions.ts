@@ -16,6 +16,8 @@ type Options = {
   onAssistantReply?: (text: string) => void;
   /** Push a user context message (e.g. file contents). */
   onUserContext?: (text: string) => void;
+  /** Route web-search intents to in-app AI summary instead of opening Google. */
+  onSearch?: (query: string) => void;
 };
 
 async function captureScreenBase64(): Promise<{ b64: string; mime: string } | null> {
