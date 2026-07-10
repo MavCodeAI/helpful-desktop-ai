@@ -47,6 +47,10 @@ export interface SettingsDrawerProps {
   toggleWakeClap: (v: boolean) => void;
   toggleWakeWord: (v: boolean) => void;
   toggleWakeHotkey: (v: boolean) => void;
+  confirmBeforeOpen: boolean;
+  toggleConfirmBeforeOpen: (v: boolean) => void;
+  desktopAutoLaunch: boolean;
+  toggleDesktopAutoLaunch: (v: boolean) => void;
 }
 
 export function SettingsDrawer(props: SettingsDrawerProps) {
@@ -64,6 +68,8 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     sttLatency, ttsLatency, latency,
     wakeClap, wakeWord, wakeHotkey,
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
+    confirmBeforeOpen, toggleConfirmBeforeOpen,
+    desktopAutoLaunch, toggleDesktopAutoLaunch,
   } = props;
 
   return (
