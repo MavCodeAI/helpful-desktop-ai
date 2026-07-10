@@ -21,6 +21,28 @@ export type Intent = {
     | { type: "coming-soon"; feature: string };
 };
 
+/** Detect a note command in text; return the note body or null.
+ * Broader than the intent switch: covers "note", "note likho", "take a note",
+ * "remember", "yaad rakho", "note kar do/karo/karna", "save as note", etc. */
+export function matchNoteIntent(text: string): string | null {
+  const t = text.trim();
+  if (!t) return null;
+  const patterns: RegExp[] = [
+    /^(?:note|notes?|take\s+a?\s*note|save\s+(?:as\s+)?note|jot(?:\s+down)?|remember|yaad\s+rakho|note\s+likho|note\s+kar\s*do|note\s+karo|note\s+karna|likh\s+lo|likho)\s*[:،\-–—]\s*(.+)$/i,
+    /^(?:note|take\s+a?\s*note|remember|yaad\s+rakho|note\s+likho|note\s+kar\s*do|note\s+karo|note\s+karna|likh\s+lo|likho)\s+(.+)$/i,
+    /^(.+?)\s+(?:ko\s+)?note\s+(?:likho|kar\s*do|karo|karna)$/i,
+    /^(.+?)\s+(?:ko\s+)?(?:yaad\s+rakho|remember)$/i,
+  ];
+  for (const re of patterns) {
+    const m = re.exec(t);
+    if (m) {
+      const body = m[1].trim().replace(/^["'`]|["'`]$/g, "");
+      if (body.length > 1) return body;
+    }
+  }
+  return null;
+}
+
 // ── App aliases → home URLs ───────────────────────────────────────────
 // Only include apps that have a real web presence; native-only apps get
 // dropped so we don't 404. Web URLs by default; the OS deep-links the
