@@ -8,6 +8,8 @@ import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSectio
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
 import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
+import { DesktopSection } from "@/components/realtime/settings/DesktopSection";
+import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
 
 export interface SettingsDrawerProps {
   open: boolean;
