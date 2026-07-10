@@ -14,6 +14,9 @@ const SettingsDrawer = lazy(() =>
 const DeleteConfirmModal = lazy(() =>
   import("@/components/realtime/DeleteConfirmModal").then((m) => ({ default: m.DeleteConfirmModal }))
 );
+const ChatDrawer = lazy(() =>
+  import("@/components/realtime/ChatDrawer").then((m) => ({ default: m.ChatDrawer }))
+);
 
 type Overlays = ReturnType<typeof useOverlays>;
 type Settings = ReturnType<typeof useVoiceSettings>;
@@ -27,12 +30,15 @@ interface Props {
   session: Session;
   liteActive: boolean;
   active: boolean;
+  onSendText: (text: string) => void | Promise<void>;
+  textBusy: boolean;
 }
 
-export function OverlayHost({ overlays, settings, history, session, liteActive, active }: Props) {
+export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy }: Props) {
   const {
     showHistory, setShowHistory,
     showVoiceMenu, setShowVoiceMenu,
+    showChat, setShowChat,
     pendingDelete, setPendingDelete,
   } = overlays;
 
@@ -120,6 +126,15 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           addMemory={settings.addMemory}
           removeMemory={settings.removeMemory}
           clearMemories={settings.clearMemories}
+        />
+      )}
+      {showChat && (
+        <ChatDrawer
+          open={showChat}
+          onClose={() => setShowChat(false)}
+          messages={history.messages}
+          onSend={onSendText}
+          busy={textBusy}
         />
       )}
     </Suspense>

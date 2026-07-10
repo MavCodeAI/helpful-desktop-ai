@@ -5,6 +5,7 @@ import { RingOrb } from "@/components/realtime/RingOrb";
 import { MessageStream } from "@/components/realtime/MessageStream";
 import { ActionsList } from "@/components/realtime/ActionsList";
 import { StatusPill } from "@/components/realtime/StatusPill";
+import { ChatComposer } from "@/components/realtime/ChatComposer";
 import type { useVoiceSettings } from "@/hooks/use-voice-settings";
 import type { useRealtimeSession } from "@/hooks/use-realtime-session";
 import type { useThreadHistory } from "@/hooks/use-thread-history";
@@ -29,12 +30,16 @@ interface Props {
   onOpenHistory: () => void;
   onOpenSettings: () => void;
   onOpenNotes: () => void;
+  onOpenChat: () => void;
+  onSendText: (text: string) => void | Promise<void>;
+  textBusy: boolean;
 }
 
 /** The visible page — aurora backdrop, header, orb, chat rail, status/actions. */
 export function MainStage({
   pageRef, settings, session, history, scroll, intents,
-  active, disabled, onOpenHistory, onOpenSettings, onOpenNotes,
+  active, disabled, onOpenHistory, onOpenSettings, onOpenNotes, onOpenChat,
+  onSendText, textBusy,
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
   const {
@@ -44,6 +49,7 @@ export function MainStage({
   const { messages } = history;
   const { scrollRef, atBottom, unread, onScroll, jumpToLatest } = scroll;
   const { actions, autoOpen, setAutoOpen } = intents;
+  const showInlineComposer = messages.length > 0 || !!partial;
 
   return (
     <div ref={pageRef} className="contents">
@@ -57,6 +63,7 @@ export function MainStage({
         onOpenHistory={onOpenHistory}
         onOpenSettings={onOpenSettings}
         onOpenNotes={onOpenNotes}
+        onOpenChat={onOpenChat}
       />
 
       <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 items-center gap-6 px-4 sm:px-6 pb-6">
@@ -78,8 +85,14 @@ export function MainStage({
             onScroll={onScroll}
             onJumpToLatest={jumpToLatest}
           />
+          {showInlineComposer && (
+            <div className="mt-3 animate-fade-in">
+              <ChatComposer onSend={onSendText} busy={textBusy} placeholder="Reply with text…" />
+            </div>
+          )}
         </aside>
       </div>
+
 
       <section className="relative z-10 px-4 sm:px-6 pb-6 text-center">
         <ActionsList actions={actions} autoOpen={autoOpen} onToggleAutoOpen={setAutoOpen} />

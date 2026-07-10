@@ -16,6 +16,7 @@ import type { VoiceMessage } from "@/lib/voice-providers";
 import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
 import { webSearchSummarize } from "@/lib/web-search.functions";
 import { extractMemoryFacts } from "@/lib/memories.functions";
+import { chatReply } from "@/lib/chat-reply.functions";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
@@ -166,9 +167,27 @@ export function useVoiceApp() {
     return () => { offHk(); offTray(); };
   }, [active, disabled, session.start, session.stop]);
 
+  // Text chat: send user text → AI reply via gateway, reusing full pipeline.
+  const [textBusy, setTextBusy] = useState(false);
+  const sendText = useCallback(async (text: string) => {
+    const userMsg: VoiceMessage = { role: "you", text };
+    handleFinalMessage(userMsg, { atBottom: scroll.atBottom });
+    setTextBusy(true);
+    try {
+      const convo = [...messages, userMsg];
+      const res = await chatReply({ data: { messages: convo, systemPrompt: settings.systemPrompt } });
+      handleFinalMessage({ role: "assistant", text: res.text }, { atBottom: scroll.atBottom });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Chat failed");
+    } finally {
+      setTextBusy(false);
+    }
+  }, [handleFinalMessage, messages, settings.systemPrompt, scroll.atBottom]);
+
   return {
     overlays, settings, history, session, scroll, intents,
     liteActive, pageRef, active, disabled,
     timers, showNotes, setShowNotes,
+    sendText, textBusy,
   };
 }

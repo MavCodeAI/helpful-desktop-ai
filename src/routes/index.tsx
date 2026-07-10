@@ -18,6 +18,7 @@ function Index() {
     overlays, settings, history, session, scroll, intents,
     liteActive, pageRef, active, disabled,
     timers, showNotes, setShowNotes,
+    sendText, textBusy,
   } = useVoiceApp();
 
   return (
@@ -42,6 +43,9 @@ function Index() {
         onOpenHistory={() => overlays.setShowHistory(true)}
         onOpenSettings={() => overlays.setShowVoiceMenu(true)}
         onOpenNotes={() => setShowNotes(true)}
+        onOpenChat={() => overlays.setShowChat(true)}
+        onSendText={sendText}
+        textBusy={textBusy}
       />
 
       <TimersBar timers={timers.timers} onRemove={timers.remove} />
@@ -53,6 +57,8 @@ function Index() {
         session={session}
         liteActive={liteActive}
         active={active}
+        onSendText={sendText}
+        textBusy={textBusy}
       />
 
       {showNotes && (
