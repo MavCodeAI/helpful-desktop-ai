@@ -14,6 +14,9 @@ export interface VoiceSettings {
   sensitivity: number;
   autoRate: boolean;
   liteMode: LiteMode;
+  wakeClap: boolean;
+  wakeWord: boolean;
+  wakeHotkey: boolean;
 }
 
 const isBrowser = () => typeof window !== "undefined";
@@ -26,6 +29,13 @@ function safeGet(key: string): string | null {
 function safeSet(key: string, value: string): void {
   if (!isBrowser()) return;
   try { window.localStorage.setItem(key, value); } catch { /* quota / private mode */ }
+}
+
+function readBool(key: string, fallback: boolean): boolean {
+  const v = safeGet(key);
+  if (v === "1") return true;
+  if (v === "0") return false;
+  return fallback;
 }
 
 export function loadSettings(): VoiceSettings {
@@ -45,6 +55,9 @@ export function loadSettings(): VoiceSettings {
       lite === "on" || lite === "off" || lite === "auto"
         ? (lite as LiteMode)
         : DEFAULTS.liteMode,
+    wakeClap: readBool(STORAGE_KEYS.wakeClap, DEFAULTS.wakeClap),
+    wakeWord: readBool(STORAGE_KEYS.wakeWord, DEFAULTS.wakeWord),
+    wakeHotkey: readBool(STORAGE_KEYS.wakeHotkey, DEFAULTS.wakeHotkey),
   };
 }
 
@@ -58,4 +71,7 @@ export const persist = {
   sensitivity: (v: number) => safeSet(STORAGE_KEYS.sensitivity, String(v)),
   autoRate: (v: boolean) => safeSet(STORAGE_KEYS.autoRate, v ? "1" : "0"),
   liteMode: (v: LiteMode) => safeSet(STORAGE_KEYS.perfLite, v),
+  wakeClap: (v: boolean) => safeSet(STORAGE_KEYS.wakeClap, v ? "1" : "0"),
+  wakeWord: (v: boolean) => safeSet(STORAGE_KEYS.wakeWord, v ? "1" : "0"),
+  wakeHotkey: (v: boolean) => safeSet(STORAGE_KEYS.wakeHotkey, v ? "1" : "0"),
 };

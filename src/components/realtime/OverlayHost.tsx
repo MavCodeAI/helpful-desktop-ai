@@ -105,6 +105,12 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           sttLatency={session.sttLatency}
           ttsLatency={session.ttsLatency}
           latency={session.latency}
+          wakeClap={settings.wakeClap}
+          wakeWord={settings.wakeWord}
+          wakeHotkey={settings.wakeHotkey}
+          toggleWakeClap={settings.toggleWakeClap}
+          toggleWakeWord={settings.toggleWakeWord}
+          toggleWakeHotkey={settings.toggleWakeHotkey}
         />
       )}
       {showKeyModal && (

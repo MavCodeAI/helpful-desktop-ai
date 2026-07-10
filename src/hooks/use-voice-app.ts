@@ -8,6 +8,7 @@ import { useThreadHistory } from "@/hooks/use-thread-history";
 import { useVoiceSettings } from "@/hooks/use-voice-settings";
 import { useIntentActions } from "@/hooks/use-intent-actions";
 import { useMutableRef } from "@/hooks/use-mutable-ref";
+import { useWakeTriggers } from "@/hooks/use-wake-triggers";
 import type { VoiceMessage } from "@/lib/voice-providers";
 
 /**
@@ -80,6 +81,16 @@ export function useVoiceApp() {
   const pageRef = usePageInert(anyOverlay);
   const active = session.status === "listening" || session.status === "speaking" || session.status === "connecting";
   const disabled = session.cooldown > 0;
+
+  // Wake triggers — clap / "hey alpha" / Ctrl+Shift+A → start session
+  useWakeTriggers({
+    enableClap: settings.wakeClap,
+    enableWakeWord: settings.wakeWord,
+    enableHotkey: settings.wakeHotkey,
+    active,
+    disabled,
+    onTrigger: session.start,
+  });
 
   return { overlays, settings, history, session, scroll, intents, liteActive, pageRef, active, disabled };
 }

@@ -7,6 +7,7 @@ import { EngineSection } from "@/components/realtime/settings/EngineSection";
 import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSection";
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
+import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
 
 export interface SettingsDrawerProps {
   open: boolean;
@@ -38,6 +39,12 @@ export interface SettingsDrawerProps {
   sttLatency: number | null;
   ttsLatency: number | null;
   latency: number | null;
+  wakeClap: boolean;
+  wakeWord: boolean;
+  wakeHotkey: boolean;
+  toggleWakeClap: (v: boolean) => void;
+  toggleWakeWord: (v: boolean) => void;
+  toggleWakeHotkey: (v: boolean) => void;
 }
 
 export function SettingsDrawer(props: SettingsDrawerProps) {
@@ -53,6 +60,8 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     micTest, startMicTestMode, stopMicTest, level,
     autoRate, toggleAutoRate, liteMode, liteActive, changeLiteMode,
     sttLatency, ttsLatency, latency,
+    wakeClap, wakeWord, wakeHotkey,
+    toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
   } = props;
 
   return (
@@ -126,6 +135,14 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             sttLatency={sttLatency}
             ttsLatency={ttsLatency}
             latency={latency}
+          />
+          <TriggersSection
+            wakeClap={wakeClap}
+            wakeWord={wakeWord}
+            wakeHotkey={wakeHotkey}
+            toggleClap={toggleWakeClap}
+            toggleWord={toggleWakeWord}
+            toggleHotkey={toggleWakeHotkey}
           />
         </div>
       </aside>
