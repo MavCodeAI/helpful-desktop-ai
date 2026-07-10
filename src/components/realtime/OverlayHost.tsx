@@ -76,6 +76,7 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           provider={settings.provider}
           changeProvider={settings.changeProvider}
           geminiKeyReady={!!settings.geminiKey}
+          geminiKeyError={settings.geminiKeyError}
           currentVoice={settings.currentVoice}
           voiceList={settings.voiceList}
           changeVoice={settings.changeVoice}
