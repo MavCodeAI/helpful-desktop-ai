@@ -23,6 +23,7 @@ type Options = {
   rate: number;
   sensitivity: number;
   autoRate: boolean;
+  systemPrompt?: string;
   onFinalMessage: (m: VoiceMessage, ctx: { atBottom: boolean }) => void;
   onRateAdapt: (r: number) => void;
   onRequestKey: () => void;
@@ -31,6 +32,7 @@ type Options = {
 export function useRealtimeSession(opts: Options) {
   const {
     provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, autoRate,
+    systemPrompt,
     onFinalMessage, onRateAdapt, onRequestKey,
   } = opts;
 
@@ -124,6 +126,7 @@ export function useRealtimeSession(opts: Options) {
         pace,
         rate,
         sensitivity,
+        systemPrompt,
       };
       const ctrl =
         provider === "gemini"
@@ -134,7 +137,7 @@ export function useRealtimeSession(opts: Options) {
       setError(e instanceof Error ? e.message : "Failed to start");
       setStatus("error");
     }
-  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, micTest, stopMicTestMode, onRequestKey]);
+  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, micTest, stopMicTestMode, onRequestKey]);
 
   // Cleanup on unmount
   useEffect(() => () => {
