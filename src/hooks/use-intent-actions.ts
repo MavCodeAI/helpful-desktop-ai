@@ -95,20 +95,42 @@ export function useIntentActions(opts: Options = {}) {
         pushAction(intent, true);
         break;
       case "clipboard-copy":
+        if (!navigator.clipboard?.writeText) {
+          toast.error("Clipboard support نہیں", { description: "براہِ کرم Chrome/Edge استعمال کریں یا HTTPS پر کھولیں۔" });
+          pushAction(intent, false); break;
+        }
         try {
           await navigator.clipboard.writeText(a.text);
           toast.success("Copied", { description: a.text.slice(0, 80) });
           pushAction(intent, true);
-        } catch { toast.error("Clipboard blocked"); pushAction(intent, false); }
+        } catch {
+          toast.error("Clipboard permission نہیں ملی", {
+            description: "Browser نے clipboard access block کر دیا۔ صفحے پر ایک بار click کریں پھر دوبارہ کہیں۔",
+          });
+          pushAction(intent, false);
+        }
         break;
       case "clipboard-read":
+        if (!navigator.clipboard?.readText) {
+          toast.error("Clipboard read support نہیں", { description: "Firefox/Safari میں clipboard read محدود ہے — Chrome/Edge آزمائیں۔" });
+          pushAction(intent, false); break;
+        }
         try {
           const t = await navigator.clipboard.readText();
-          toast(t ? `Clipboard: ${t.slice(0, 80)}` : "Clipboard is empty");
+          toast(t ? `Clipboard: ${t.slice(0, 80)}` : "Clipboard خالی ہے");
           pushAction(intent, true);
-        } catch { toast.error("Clipboard blocked"); pushAction(intent, false); }
+        } catch {
+          toast.error("Clipboard permission نہیں ملی", {
+            description: "Address bar کے 🔒 icon سے 'Clipboard' allow کریں، پھر دوبارہ کوشش کریں۔",
+          });
+          pushAction(intent, false);
+        }
         break;
       case "screenshot":
+        if (!navigator.mediaDevices?.getDisplayMedia) {
+          toast.error("Screen capture support نہیں", { description: "یہ feature desktop Chrome/Edge/Firefox میں چلتا ہے۔" });
+          pushAction(intent, false); break;
+        }
         try {
           const cap = await captureScreenBase64();
           if (!cap) throw new Error("no blob");
@@ -116,10 +138,18 @@ export function useIntentActions(opts: Options = {}) {
           link.href = `data:${cap.mime};base64,${cap.b64}`;
           link.download = `alpha-${Date.now()}.png`;
           link.click();
-          toast.success("Screenshot saved");
+          toast.success("Screenshot save ہو گیا");
           pushAction(intent, true);
-        } catch { toast.error("Screenshot cancelled"); pushAction(intent, false); }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "";
+          const denied = /permission|denied|not allowed/i.test(msg);
+          toast.error(denied ? "Permission نہیں ملی" : "Screenshot cancel ہو گیا", {
+            description: denied ? "براہِ کرم screen share کی permission دیں اور کوئی screen/window منتخب کریں۔" : "دوبارہ کہیں اور share dialog میں screen/window select کریں۔",
+          });
+          pushAction(intent, false);
+        }
         break;
+
       case "screen-vision":
         try {
           toast("Analyzing screen…");
