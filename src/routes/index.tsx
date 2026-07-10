@@ -19,6 +19,7 @@ function Index() {
     liteActive, pageRef, active, disabled,
     timers, showNotes, setShowNotes,
     sendText, textBusy,
+    createAiNote, notePending,
   } = useVoiceApp();
 
   return (
@@ -46,6 +47,8 @@ function Index() {
         onOpenChat={() => overlays.setShowChat(true)}
         onSendText={sendText}
         textBusy={textBusy}
+        onCreateNote={createAiNote}
+        notePending={notePending}
       />
 
       <TimersBar timers={timers.timers} onRemove={timers.remove} />
@@ -59,6 +62,8 @@ function Index() {
         active={active}
         onSendText={sendText}
         textBusy={textBusy}
+        onCreateNote={createAiNote}
+        notePending={notePending}
       />
 
       {showNotes && (
