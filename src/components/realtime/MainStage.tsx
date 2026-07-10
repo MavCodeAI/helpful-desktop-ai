@@ -5,6 +5,7 @@ import { RingOrb } from "@/components/realtime/RingOrb";
 import { MessageStream } from "@/components/realtime/MessageStream";
 import { ActionsList } from "@/components/realtime/ActionsList";
 import { StatusPill } from "@/components/realtime/StatusPill";
+import { ChatComposer } from "@/components/realtime/ChatComposer";
 import type { useVoiceSettings } from "@/hooks/use-voice-settings";
 import type { useRealtimeSession } from "@/hooks/use-realtime-session";
 import type { useThreadHistory } from "@/hooks/use-thread-history";
@@ -29,6 +30,9 @@ interface Props {
   onOpenHistory: () => void;
   onOpenSettings: () => void;
   onOpenNotes: () => void;
+  onOpenChat: () => void;
+  onSendText: (text: string) => void | Promise<void>;
+  textBusy: boolean;
 }
 
 /** The visible page — aurora backdrop, header, orb, chat rail, status/actions. */
