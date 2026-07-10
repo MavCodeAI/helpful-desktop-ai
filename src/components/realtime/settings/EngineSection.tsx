@@ -4,11 +4,10 @@ interface Props {
   active: boolean;
   provider: ProviderId;
   changeProvider: (p: ProviderId) => void;
-  geminiKey: string;
-  onOpenKeyModal: () => void;
+  geminiKeyReady: boolean;
 }
 
-export function EngineSection({ active, provider, changeProvider, geminiKey, onOpenKeyModal }: Props) {
+export function EngineSection({ active, provider, changeProvider, geminiKeyReady }: Props) {
   return (
     <section>
       <div className="flex items-baseline justify-between mb-2">
@@ -26,21 +25,17 @@ export function EngineSection({ active, provider, changeProvider, geminiKey, onO
           >
             <div className="font-semibold">{p === "hf" ? "HF Realtime" : "Gemini Live"}</div>
             <div className="text-[10px] text-white/60 mt-0.5">
-              {p === "hf" ? "Free · anon quota" : "AI Studio key"}
+              {p === "hf" ? "Free · anon quota" : "Server key"}
             </div>
           </button>
         ))}
       </div>
       {provider === "gemini" && (
-        <button
-          onClick={onOpenKeyModal}
-          className="glass-item w-full text-xs px-3 py-2 rounded-md flex items-center justify-between"
-        >
-          <span>🔑 Gemini API Key</span>
-          <span className="text-[10px] text-white/60">
-            {geminiKey ? `••••${geminiKey.slice(-4)}` : "Not set"}
-          </span>
-        </button>
+        <div className="text-[10px] text-white/50 px-1">
+          {geminiKeyReady
+            ? "✓ Gemini key configured on server"
+            : "⚠ Server key missing — set GEMINI_API_KEY env"}
+        </div>
       )}
     </section>
   );

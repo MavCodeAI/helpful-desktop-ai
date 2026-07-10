@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   type ProviderId,
   type Pace,
@@ -16,14 +16,9 @@ import {
 } from "@/lib/persona";
 
 type Options = {
-  /** Stop the current session (called on provider/voice/pace change). */
   onStop: () => void;
-  /** Clear transient session error/cooldown after provider change. */
   onSessionReset: () => void;
-  /** Apply rate live to running session if possible. */
   onLiveRate: (r: number) => void;
-  /** Prompt for API key when provider resolves to gemini without one. */
-  onRequestKey: () => void;
 };
 
 function isUsableGeminiKey(key: string) {
@@ -32,12 +27,9 @@ function isUsableGeminiKey(key: string) {
 
 /**
  * All persisted voice/provider settings + their change handlers.
- * Bootstraps once from local storage, then resolves the server-side
- * Gemini key if none is locally stored.
+ * Gemini key is fetched from the server (GEMINI_API_KEY env) — no UI input.
  */
-export function useVoiceSettings({
-  onStop, onSessionReset, onLiveRate, onRequestKey,
-}: Options) {
+export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
   const [provider, setProvider] = useState<ProviderId>("hf");
   const [geminiKey, setGeminiKey] = useState("");
   const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
@@ -57,11 +49,6 @@ export function useVoiceSettings({
   const [lang, setLangState] = useState<LangCode>("auto");
   const [memories, setMemoriesState] = useState<string[]>([]);
 
-  // Refs so bootstrap effect doesn't need callback deps (they're stable in
-  // practice but not guaranteed by parent).
-  const onRequestKeyRef = useRef(onRequestKey);
-  useEffect(() => { onRequestKeyRef.current = onRequestKey; }, [onRequestKey]);
-
   useEffect(() => {
     const s = loadSettings();
     setHfVoice(s.hfVoice);
@@ -80,21 +67,11 @@ export function useVoiceSettings({
     setCustomPromptState(loadCustomPrompt());
     setLangState(loadLang());
     setMemoriesState(loadMemories());
-    const storedGeminiKey = isUsableGeminiKey(s.geminiKey) ? s.geminiKey.trim() : "";
-    setGeminiKey(storedGeminiKey);
     getGeminiKey()
       .then(({ key }) => {
         const serverKey = isUsableGeminiKey(key) ? key.trim() : "";
-        let effectiveKey = storedGeminiKey;
-        if (serverKey && !storedGeminiKey) {
-          setGeminiKey(serverKey);
-          persist.geminiKey(serverKey);
-          effectiveKey = serverKey;
-        }
-        const p = s.provider || (effectiveKey ? "gemini" : "hf");
-        setProvider(p);
-        // Bug fix #2: if resolved to gemini without a key, prompt immediately
-        if (p === "gemini" && !effectiveKey) onRequestKeyRef.current();
+        setGeminiKey(serverKey);
+        setProvider(s.provider || (serverKey ? "gemini" : "hf"));
       })
       .catch(() => setProvider(s.provider || "hf"));
   }, []);
@@ -104,8 +81,7 @@ export function useVoiceSettings({
     setProvider(p);
     persist.provider(p);
     onSessionReset();
-    if (p === "gemini" && !geminiKey) onRequestKeyRef.current();
-  }, [onStop, onSessionReset, geminiKey]);
+  }, [onStop, onSessionReset]);
 
   const changeVoice = useCallback((v: string) => {
     if (provider === "gemini") {
@@ -124,7 +100,6 @@ export function useVoiceSettings({
     onStop();
   }, [onStop]);
 
-  /** Rate applies live to the current session if possible, else stored for next. */
   const changeRate = useCallback((r: number) => {
     setRate(r);
     persist.rate(r);
@@ -162,7 +137,6 @@ export function useVoiceSettings({
     setDesktopAutoLaunch(v); persist.desktopAutoLaunch(v);
   }, []);
 
-  // ── Persona / Language / Memories ──────────────────────────────────
   const changePersona = useCallback((p: PersonaId) => {
     setPersonaState(p); savePersona(p); onStop();
   }, [onStop]);
@@ -182,10 +156,6 @@ export function useVoiceSettings({
     clearMemories(); setMemoriesState([]);
   }, []);
 
-  const saveKey = useCallback(() => {
-    persist.geminiKey(geminiKey.trim());
-  }, [geminiKey]);
-
   const currentVoice = provider === "gemini" ? geminiVoice : hfVoice;
   const voiceList = provider === "gemini" ? GEMINI_VOICES : HF_VOICES;
 
@@ -195,18 +165,15 @@ export function useVoiceSettings({
   );
 
   return {
-    // state
-    provider, geminiKey, setGeminiKey,
+    provider, geminiKey,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,
     persona, customPrompt, lang, memories, systemPrompt,
     currentVoice, voiceList,
-    // rate setter exposed for auto-rate adapt from session hook
     setRate,
-    // handlers
     changeProvider, changeVoice, changePace, changeRate,
-    changeSensitivity, toggleAutoRate, changeLiteMode, saveKey,
+    changeSensitivity, toggleAutoRate, changeLiteMode,
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
     toggleConfirmBeforeOpen, toggleDesktopAutoLaunch,
     changePersona, changeCustomPrompt, changeLang,
