@@ -147,7 +147,7 @@ export function useWakeTriggers({
     let stopped = false;
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = "en-US";
+    rec.lang = wakeLang || "en-US";
 
     rec.onresult = (ev: SpeechRecognitionResultEventLike) => {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -173,7 +173,7 @@ export function useWakeTriggers({
       rec = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableWakeWord, active, disabled]);
+  }, [enableWakeWord, active, disabled, wakeLang]);
 }
 
 // ── Minimal ambient types (SpeechRecognition isn't in lib.dom for TS) ──
