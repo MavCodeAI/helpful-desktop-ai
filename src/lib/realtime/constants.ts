@@ -106,7 +106,10 @@ export function loadHotkey(): HotkeyCombo {
 
 export function saveHotkey(h: HotkeyCombo): void {
   if (typeof window === "undefined") return;
-  try { window.localStorage.setItem(STORAGE_KEYS.hotkeyCombo, JSON.stringify(h)); } catch { /* ignore */ }
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.hotkeyCombo, JSON.stringify(h));
+    window.dispatchEvent(new CustomEvent("alpha:wake-settings"));
+  } catch { /* ignore */ }
 }
 
 export function loadWakePhrases(): string[] {
