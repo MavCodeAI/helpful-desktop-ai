@@ -1,5 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { Send, Loader2, StickyNote } from "lucide-react";
+import { Send, Loader2, StickyNote, Mic, MicOff } from "lucide-react";
+import { useDeepgramLive } from "@/hooks/use-deepgram-live";
+import { loadLang } from "@/lib/persona";
 
 type Props = {
   onSend: (text: string) => void | Promise<void>;
@@ -12,12 +14,24 @@ type Props = {
 
 export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
   const [value, setValue] = useState("");
+  const [interim, setInterim] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
+
+  const live = useDeepgramLive({
+    lang: loadLang(),
+    onFinal: (text) => {
+      setValue((prev) => (prev ? `${prev.trimEnd()} ${text}` : text) + " ");
+      requestAnimationFrame(() => taRef.current?.focus());
+    },
+    onInterim: setInterim,
+  });
 
   const submit = async () => {
     const t = value.trim();
     if (!t || busy) return;
+    if (live.status === "listening") live.stop();
     setValue("");
+    setInterim("");
     await onSend(t);
     requestAnimationFrame(() => taRef.current?.focus());
   };
@@ -37,22 +51,54 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
     }
   };
 
+  const listening = live.status === "listening";
+  const connecting = live.status === "connecting";
+
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); void submit(); }}
       className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur px-3 py-2 focus-within:border-cyan-400/40 transition-colors"
     >
-      <textarea
-        ref={taRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={onKey}
-        rows={1}
-        autoFocus={autoFocus}
-        placeholder={placeholder}
-        className="flex-1 resize-none bg-transparent outline-none text-sm text-foreground placeholder:text-white/30 max-h-40 py-1.5"
-        style={{ minHeight: "1.75rem" }}
-      />
+      <div className="flex-1 relative">
+        <textarea
+          ref={taRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={onKey}
+          rows={1}
+          autoFocus={autoFocus}
+          placeholder={listening ? "Listening… speak now" : placeholder}
+          className="w-full resize-none bg-transparent outline-none text-sm text-foreground placeholder:text-white/30 max-h-40 py-1.5"
+          style={{ minHeight: "1.75rem" }}
+        />
+        {interim && (
+          <div className="pointer-events-none absolute inset-x-0 -bottom-1 translate-y-full text-[11px] text-cyan-300/70 italic truncate">
+            {interim}
+          </div>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => live.toggle()}
+        disabled={busy || connecting}
+        aria-label={listening ? "Stop live transcription" : "Start live transcription"}
+        title={listening ? "Stop mic" : "Live voice → text (Deepgram)"}
+        className={`shrink-0 w-9 h-9 grid place-items-center rounded-full border transition-colors ${
+          listening
+            ? "bg-red-500/20 border-red-400/40 text-red-200 animate-pulse"
+            : "bg-white/5 border-white/10 text-white/70 hover:text-cyan-200 hover:border-cyan-400/40"
+        } disabled:opacity-40 disabled:cursor-not-allowed`}
+      >
+        {connecting ? (
+          <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
+        ) : listening ? (
+          <MicOff className="w-4 h-4" strokeWidth={1.75} />
+        ) : (
+          <Mic className="w-4 h-4" strokeWidth={1.75} />
+        )}
+      </button>
+
       {onNote && (
         <button
           type="button"
