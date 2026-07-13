@@ -122,7 +122,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 sm:px-5 py-4 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-6 divide-y divide-white/5 [&>section]:py-7 [&>section:first-child]:pt-1 [&>section:last-child]:pb-2">
           <VoicePaceSection
             currentVoice={currentVoice}
             voiceList={voiceList}
