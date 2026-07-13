@@ -20,17 +20,17 @@ export function HeaderPill({
   const { notes } = useNotes();
   const noteCount = notes.length;
   return (
-    <header className="relative z-10 flex items-center justify-between mx-3 sm:mx-6 mt-3 sm:mt-4 px-4 sm:px-6 py-2.5 glass-pill rounded-full">
-      <div className="flex items-center gap-2">
+    <header className="relative z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-6 py-2.5 glass-pill rounded-full">
+      <div className="flex min-w-0 items-center gap-2">
         <img
           src="/alpha-icon.png"
           alt="Alpha logo"
           width={24}
           height={24}
-          className="w-6 h-6 rounded-md ring-1 ring-cyan-400/30"
+          className="w-6 h-6 shrink-0 rounded-md ring-1 ring-cyan-400/30"
           loading="lazy"
         />
-        <div className="text-xs tracking-widest uppercase text-muted-foreground">
+        <div className="hidden sm:block truncate text-xs tracking-widest uppercase text-muted-foreground">
           Alpha · Realtime
         </div>
       </div>
@@ -52,7 +52,7 @@ export function HeaderPill({
         >
           <StickyNote className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
           <span className="hidden sm:inline">Notes</span>
-          {noteCount > 0 && <span className="text-white/60 tabular-nums">{noteCount}</span>}
+          {noteCount > 0 && <span className="text-muted-foreground tabular-nums">{noteCount}</span>}
         </button>
         <button
           onClick={onOpenHistory}
@@ -62,12 +62,12 @@ export function HeaderPill({
         >
           <History className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
           <span className="hidden sm:inline">History</span>
-          <span className="text-white/60 tabular-nums">{threadCount}</span>
+          <span className="text-muted-foreground tabular-nums">{threadCount}</span>
         </button>
-        <div className="hidden sm:flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-white/60">
-          <span className="truncate max-w-[80px] normal-case tracking-normal text-white/60">{currentVoice}</span>
+        <div className="hidden lg:flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+          <span className="truncate max-w-[80px] normal-case tracking-normal">{currentVoice}</span>
           <span>·</span>
-          <span className="normal-case tracking-normal text-white/60">{pace} · {rate}×</span>
+          <span className="normal-case tracking-normal">{pace} · {rate}×</span>
         </div>
         <button
           onClick={onOpenSettings}
@@ -76,7 +76,7 @@ export function HeaderPill({
           title="Voice settings"
         >
           <Settings2 className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
-          <span>Settings</span>
+          <span className="hidden sm:inline">Settings</span>
         </button>
       </div>
     </header>

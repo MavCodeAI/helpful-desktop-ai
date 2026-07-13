@@ -1,5 +1,4 @@
 import { forwardRef } from "react";
-import { Mic } from "lucide-react";
 import { MessageBubble, PartialBubble, TypingBubble } from "./MessageBubble";
 import type { VoiceMessage, VoiceStatus } from "@/lib/voice-providers";
 
@@ -22,19 +21,7 @@ export const MessageStream = forwardRef<HTMLDivElement, Props>(function MessageS
     (!partial || partial.role !== "assistant");
   const showRail = messages.length > 0 || !!partial || showTyping;
 
-  if (!showRail) {
-    return (
-      <div className="hidden lg:flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.015] p-8 text-center animate-fade-in">
-        <div className="w-10 h-10 rounded-full border border-white/10 grid place-items-center text-white/60">
-          <Mic className="w-4 h-4" strokeWidth={1.5} />
-        </div>
-        <div className="text-xs text-white/65 tracking-wide">Conversation will appear here</div>
-        <div className="text-[10px] uppercase tracking-[0.25em] text-white/25">
-          Tap the mic to begin
-        </div>
-      </div>
-    );
-  }
+  if (!showRail) return null;
 
   return (
     <>

@@ -1,4 +1,4 @@
-import { Mic, Square, Loader2 } from "lucide-react";
+import { Mic, Loader2 } from "lucide-react";
 import type { VoiceStatus } from "@/lib/voice-providers";
 
 type Props = {
@@ -10,47 +10,41 @@ type Props = {
 };
 
 export function RingOrb({ status, active, disabled, onStart, onStop }: Props) {
-  return (
-    <section className="lg:col-span-8 flex items-center justify-center gap-4 sm:gap-16">
-      <button
-        onClick={onStart}
-        disabled={active || disabled}
-        aria-label="Start voice session"
-        aria-busy={status === "connecting"}
-        className={`side-btn ${!active && !disabled ? "mic-ring" : ""} ${active || disabled ? "opacity-40 cursor-not-allowed" : "hover:border-cyan-400/40"}`}
-      >
-        {status === "connecting" ? (
-          <Loader2 className="w-5 h-5 text-cyan-200 animate-spin" strokeWidth={1.75} />
-        ) : (
-          <Mic className="w-5 h-5 text-cyan-200" strokeWidth={1.75} />
-        )}
-      </button>
+  const idle = !active && !disabled;
+  const label = active
+    ? "Stop"
+    : status === "connecting"
+    ? "Connecting…"
+    : "Tap to talk";
 
+  return (
+    <section className="lg:col-span-8 flex flex-col items-center justify-center gap-5">
       <button
         type="button"
         onClick={active ? onStop : onStart}
         disabled={disabled && !active}
         aria-label={active ? "Stop voice session" : "Start voice session"}
-        className={`ring-orb ${status} ${disabled && !active ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        aria-busy={status === "connecting"}
+        className={`ring-orb ${status} ${idle ? "mic-ring" : ""} ${disabled && !active ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
         <div className="ring ring-outer" />
         <div className="ring ring-mid" />
         <div className="ring ring-inner" />
-        <div className="bars" aria-hidden>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <span key={i} style={{ animationDelay: `${i * 0.12}s` }} />
-          ))}
-        </div>
+        {active ? (
+          <div className="bars" aria-hidden>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <span key={i} style={{ animationDelay: `${i * 0.12}s` }} />
+            ))}
+          </div>
+        ) : status === "connecting" ? (
+          <Loader2 className="w-10 h-10 text-cyan-200 animate-spin" strokeWidth={1.5} aria-hidden />
+        ) : (
+          <Mic className="w-12 h-12 text-cyan-200/90" strokeWidth={1.25} aria-hidden />
+        )}
       </button>
-
-      <button
-        onClick={onStop}
-        disabled={!active}
-        aria-label="Stop voice session"
-        className={`side-btn ${!active ? "opacity-40 cursor-not-allowed" : "hover:border-red-400/40"}`}
-      >
-        <Square className="w-4 h-4 text-foreground fill-foreground" />
-      </button>
+      <div className="text-[11px] uppercase tracking-[0.25em] text-cyan-200/70 select-none">
+        {label}
+      </div>
     </section>
   );
 }
