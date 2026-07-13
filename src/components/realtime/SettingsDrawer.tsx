@@ -9,7 +9,7 @@ import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSectio
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
 import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
-import { DesktopSection } from "@/components/realtime/settings/DesktopSection";
+
 import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
 import { PersonaSection } from "@/components/realtime/settings/PersonaSection";
 
@@ -159,12 +159,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             toggleClap={toggleWakeClap}
             toggleWord={toggleWakeWord}
             toggleHotkey={toggleWakeHotkey}
-          />
-          <DesktopSection
-            confirmBeforeOpen={confirmBeforeOpen}
-            toggleConfirmBeforeOpen={toggleConfirmBeforeOpen}
-            desktopAutoLaunch={desktopAutoLaunch}
-            toggleDesktopAutoLaunch={toggleDesktopAutoLaunch}
           />
           <PersonaSection
             persona={persona}
