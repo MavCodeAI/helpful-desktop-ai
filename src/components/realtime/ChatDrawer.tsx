@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { X, MessageSquare } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, MessageSquare, Trash2, Plus } from "lucide-react";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import { MessageBubble } from "@/components/realtime/MessageBubble";
 import { ChatComposer } from "@/components/realtime/ChatComposer";
@@ -13,10 +13,14 @@ interface Props {
   busy: boolean;
   onNote?: (text: string) => void | Promise<void>;
   notePending?: boolean;
+  onClear: () => void;
+  onNewChat: () => void;
 }
 
-export function ChatDrawer({ open, onClose, messages, onSend, busy, onNote, notePending }: Props) {
+export function ChatDrawer({ open, onClose, messages, onSend, busy, onNote, notePending, onClear, onNewChat }: Props) {
   const ref = useRef<HTMLElement | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+
   useSwipeClose(ref, "right", onClose, open);
   useFocusTrap(ref, open);
   if (!open) return null;
