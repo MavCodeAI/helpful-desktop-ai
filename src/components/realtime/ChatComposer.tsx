@@ -17,7 +17,20 @@ type Props = {
 export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
   const [value, setValue] = useState("");
   const [interim, setInterim] = useState("");
+  const [keyCheck, setKeyCheck] = useState<{ status: "idle" | "checking" | "ok" | "bad"; message: string }>({ status: "idle", message: "" });
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const runCheck = useServerFn(checkDeepgramKey);
+
+  const checkKey = async () => {
+    setKeyCheck({ status: "checking", message: "" });
+    try {
+      const r = await runCheck();
+      setKeyCheck({ status: r.ok ? "ok" : "bad", message: r.message });
+    } catch (e) {
+      setKeyCheck({ status: "bad", message: e instanceof Error ? e.message : "Check failed" });
+    }
+    setTimeout(() => setKeyCheck((s) => ({ ...s, status: "idle" })), 6000);
+  };
 
   const live = useDeepgramLive({
     lang: loadLang(),
