@@ -34,6 +34,8 @@ export function useWakeTriggers({
   // Live-reload custom hotkey + phrases when Settings saves them
   const [hotkey, setHotkey] = useState<HotkeyCombo>(() => loadHotkey());
   const [phrases, setPhrases] = useState<string[]>(() => loadWakePhrases());
+  const phrasesRef = useRef<string[]>(phrases);
+  useEffect(() => { phrasesRef.current = phrases; }, [phrases]);
   useEffect(() => {
     const sync = () => { setHotkey(loadHotkey()); setPhrases(loadWakePhrases()); };
     window.addEventListener("alpha:wake-settings", sync);
