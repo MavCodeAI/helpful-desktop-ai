@@ -87,9 +87,9 @@ export function useScreenCapture(opts: Options) {
       onStartRef.current?.();
       const imageDataUrl = await grabFrame();
       toast.loading("👁️ Analyzing screen…", { id: tId });
-      const { description } = await describeScreen({ data: { imageDataUrl, prompt } });
+      const { text } = await describeScreen({ data: { imageDataUrl, prompt } });
       toast.success("Screen analyzed", { id: tId });
-      onResultRef.current(description);
+      onResultRef.current(text);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Screen capture failed";
       if (/permission|denied|abort/i.test(msg)) {

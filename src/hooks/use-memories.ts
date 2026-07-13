@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { extractMemoryFacts, type Memory } from "@/lib/memories.functions";
+import { extractMemoryFacts } from "@/lib/memories.functions";
+
+export type Memory = {
+  id: string;
+  content: string;
+  source: "manual" | "auto";
+  created_at: string;
+  updated_at: string;
+};
 import { toast } from "sonner";
 
 const STORAGE_KEY = "jarvis.memories.v1";
