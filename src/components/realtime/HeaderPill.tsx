@@ -52,7 +52,7 @@ export function HeaderPill({
         >
           <StickyNote className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
           <span className="hidden sm:inline">Notes</span>
-          {noteCount > 0 && <span className="text-white/60 tabular-nums">{noteCount}</span>}
+          {noteCount > 0 && <span className="text-muted-foreground tabular-nums">{noteCount}</span>}
         </button>
         <button
           onClick={onOpenHistory}
