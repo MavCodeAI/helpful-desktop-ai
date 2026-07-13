@@ -1,6 +1,8 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { Send, Loader2, StickyNote, Mic, MicOff } from "lucide-react";
+import { Send, Loader2, StickyNote, Mic, MicOff, ShieldCheck } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { useDeepgramLive } from "@/hooks/use-deepgram-live";
+import { checkDeepgramKey } from "@/lib/deepgram-token.functions";
 import { loadLang } from "@/lib/persona";
 
 type Props = {
