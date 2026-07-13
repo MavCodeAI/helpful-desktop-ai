@@ -24,6 +24,20 @@ export function PerformanceSection({
       <h3 className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/80 font-semibold mb-2">
         Performance
       </h3>
+      <label className={`glass-item ${citations ? "glass-item-active" : ""} flex items-start gap-2.5 text-xs cursor-pointer p-3 rounded-md mb-3`}>
+        <input
+          type="checkbox"
+          checked={citations}
+          onChange={(e) => toggleCitations(e.target.checked)}
+          className="accent-cyan-400 mt-0.5"
+        />
+        <span className="flex-1">
+          <div className="font-semibold">Web search citations</div>
+          <div className="text-[10px] text-white/65 mt-0.5">
+            Show numbered sources ([1], [2]…) with links under every web-search reply.
+          </div>
+        </span>
+      </label>
       <label className={`glass-item ${autoRate ? "glass-item-active" : ""} flex items-start gap-2.5 text-xs cursor-pointer p-3 rounded-md mb-3`}>
         <input
           type="checkbox"
