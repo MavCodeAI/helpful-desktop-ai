@@ -129,6 +129,9 @@ export function loadWakePhrases(): string[] {
 export function saveWakePhrases(list: string[]): void {
   if (typeof window === "undefined") return;
   const clean = list.map((s) => s.trim().toLowerCase()).filter((s) => s.length >= 2).slice(0, 20);
-  try { window.localStorage.setItem(STORAGE_KEYS.wakePhrases, JSON.stringify(clean)); } catch { /* ignore */ }
+  try {
+    window.localStorage.setItem(STORAGE_KEYS.wakePhrases, JSON.stringify(clean));
+    window.dispatchEvent(new CustomEvent("alpha:wake-settings"));
+  } catch { /* ignore */ }
 }
 
