@@ -20,6 +20,8 @@ export const STORAGE_KEYS = {
   customPrompt: "alpha_persona_custom",
   lang: "alpha_lang",
   webCitations: "web_citations",
+  wakePhrases: "wake_phrases",
+  hotkeyCombo: "hotkey_combo",
 } as const;
 
 export const WEB_CITATIONS_DEFAULT = true;
