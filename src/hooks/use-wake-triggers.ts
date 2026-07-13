@@ -31,6 +31,19 @@ export function useWakeTriggers({
   const onTriggerRef = useRef(onTrigger);
   useEffect(() => { onTriggerRef.current = onTrigger; }, [onTrigger]);
 
+  // Live-reload custom hotkey + phrases when Settings saves them
+  const [hotkey, setHotkey] = useState<HotkeyCombo>(() => loadHotkey());
+  const [phrases, setPhrases] = useState<string[]>(() => loadWakePhrases());
+  useEffect(() => {
+    const sync = () => { setHotkey(loadHotkey()); setPhrases(loadWakePhrases()); };
+    window.addEventListener("alpha:wake-settings", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("alpha:wake-settings", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
   const fire = () => {
     if (active || disabled) return;
     onTriggerRef.current();
@@ -40,8 +53,13 @@ export function useWakeTriggers({
   useEffect(() => {
     if (!enableHotkey) return;
     const handler = (e: KeyboardEvent) => {
-      const combo = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a";
-      if (!combo) return;
+      const keyMatch = e.key.toLowerCase() === hotkey.key.toLowerCase();
+      const modMatch =
+        e.ctrlKey === hotkey.ctrl &&
+        e.shiftKey === hotkey.shift &&
+        e.altKey === hotkey.alt &&
+        e.metaKey === hotkey.meta;
+      if (!keyMatch || !modMatch) return;
       // Don't hijack when user is typing in an input/textarea/contenteditable
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
@@ -51,7 +69,7 @@ export function useWakeTriggers({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableHotkey, active, disabled]);
+  }, [enableHotkey, active, disabled, hotkey]);
 
   // ── Clap detection ────────────────────────────────────────────────
   useEffect(() => {
