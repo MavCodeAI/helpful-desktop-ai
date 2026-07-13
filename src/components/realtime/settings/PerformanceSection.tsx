@@ -16,6 +16,9 @@ export function PerformanceSection({
   autoRate, toggleAutoRate, liteMode, liteActive, changeLiteMode,
   sttLatency, ttsLatency, latency,
 }: Props) {
+  const [citations, setCitations] = useState<boolean>(true);
+  useEffect(() => { setCitations(loadWebCitations()); }, []);
+  const toggleCitations = (v: boolean) => { setCitations(v); saveWebCitations(v); };
   return (
     <section>
       <h3 className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/80 font-semibold mb-2">
