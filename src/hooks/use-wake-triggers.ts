@@ -164,7 +164,7 @@ export function useWakeTriggers({
     rec.onresult = (ev: SpeechRecognitionResultEventLike) => {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         const transcript = ev.results[i][0]?.transcript?.toLowerCase() ?? "";
-        if (WAKE_PHRASES.some((p) => transcript.includes(p))) {
+        if (phrases.some((p: string) => transcript.includes(p))) {
           fire();
           break;
         }
