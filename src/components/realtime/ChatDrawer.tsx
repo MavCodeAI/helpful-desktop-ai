@@ -39,9 +39,33 @@ export function ChatDrawer({ open, onClose, messages, onSend, busy, onNote, note
             <h2 className="text-sm font-semibold text-white/90">Chat</h2>
             <span className="text-[10px] text-white/50 tabular-nums">{messages.length}</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/5 text-white/60 hover:text-white" aria-label="Close">
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onNewChat}
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-cyan-200 hover:bg-cyan-400/10 border border-cyan-400/20"
+              aria-label="New chat"
+              title="New chat"
+            >
+              <Plus className="w-3.5 h-3.5" /> New
+            </button>
+            <button
+              onClick={() => (messages.length === 0 ? null : confirmClear ? (onClear(), setConfirmClear(false)) : setConfirmClear(true))}
+              onBlur={() => setConfirmClear(false)}
+              disabled={messages.length === 0}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border disabled:opacity-40 disabled:cursor-not-allowed ${
+                confirmClear
+                  ? "text-red-200 bg-red-500/15 border-red-400/40"
+                  : "text-white/60 hover:text-white hover:bg-white/5 border-white/10"
+              }`}
+              aria-label={confirmClear ? "Confirm clear chat" : "Clear chat"}
+              title="Clear chat"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> {confirmClear ? "Sure?" : "Clear"}
+            </button>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/5 text-white/60 hover:text-white ml-1" aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {messages.length === 0 ? (
