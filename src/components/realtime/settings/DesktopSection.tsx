@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Monitor, Download, Keyboard, CheckCircle2 } from "lucide-react";
 import { isElectron, electronPlatform, getAutoLaunch, setAutoLaunch } from "@/lib/electron-bridge";
-import { HOTKEY_LABEL } from "@/lib/realtime/constants";
+import { formatHotkey, loadHotkey } from "@/lib/realtime/constants";
 
 interface Props {
   confirmBeforeOpen: boolean;
