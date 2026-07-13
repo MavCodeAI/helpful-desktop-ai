@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Monitor, Download, Keyboard, CheckCircle2 } from "lucide-react";
 import { isElectron, electronPlatform, getAutoLaunch, setAutoLaunch } from "@/lib/electron-bridge";
-import { HOTKEY_LABEL } from "@/lib/realtime/constants";
+import { formatHotkey, loadHotkey } from "@/lib/realtime/constants";
 
 interface Props {
   confirmBeforeOpen: boolean;
@@ -88,7 +88,7 @@ npm run electron:package`}
 
       <div className="mt-2 flex items-center gap-1.5 text-[10px] text-white/55">
         <Keyboard className="w-3 h-3" />
-        <span>Global hotkey: <span className="text-cyan-300">{HOTKEY_LABEL}</span></span>
+        <span>Global hotkey: <span className="text-cyan-300">{formatHotkey(loadHotkey())}</span></span>
       </div>
     </section>
   );

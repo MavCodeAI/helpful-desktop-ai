@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { loadHotkey, loadWakePhrases, type HotkeyCombo } from "@/lib/realtime/constants";
 
 type Options = {
   enableClap: boolean;
@@ -10,13 +11,6 @@ type Options = {
   wakeLang?: string;
   onTrigger: () => void;
 };
-
-// Wake phrases — English / Urdu (roman + native) / Arabic
-const WAKE_PHRASES = [
-  "hey alpha", "hi alpha", "ok alpha", "alpha wake",
-  "aey alpha", "او الفا", "الو الفا",
-  "مرحبا الفا", "مرحبا ألفا", "يا ألفا", "يا الفا",
-];
 
 /**
  * Composite wake-trigger hook.
@@ -37,6 +31,21 @@ export function useWakeTriggers({
   const onTriggerRef = useRef(onTrigger);
   useEffect(() => { onTriggerRef.current = onTrigger; }, [onTrigger]);
 
+  // Live-reload custom hotkey + phrases when Settings saves them
+  const [hotkey, setHotkey] = useState<HotkeyCombo>(() => loadHotkey());
+  const [phrases, setPhrases] = useState<string[]>(() => loadWakePhrases());
+  const phrasesRef = useRef<string[]>(phrases);
+  useEffect(() => { phrasesRef.current = phrases; }, [phrases]);
+  useEffect(() => {
+    const sync = () => { setHotkey(loadHotkey()); setPhrases(loadWakePhrases()); };
+    window.addEventListener("alpha:wake-settings", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("alpha:wake-settings", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
   const fire = () => {
     if (active || disabled) return;
     onTriggerRef.current();
@@ -46,8 +55,13 @@ export function useWakeTriggers({
   useEffect(() => {
     if (!enableHotkey) return;
     const handler = (e: KeyboardEvent) => {
-      const combo = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a";
-      if (!combo) return;
+      const keyMatch = e.key.toLowerCase() === hotkey.key.toLowerCase();
+      const modMatch =
+        e.ctrlKey === hotkey.ctrl &&
+        e.shiftKey === hotkey.shift &&
+        e.altKey === hotkey.alt &&
+        e.metaKey === hotkey.meta;
+      if (!keyMatch || !modMatch) return;
       // Don't hijack when user is typing in an input/textarea/contenteditable
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
@@ -57,7 +71,7 @@ export function useWakeTriggers({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableHotkey, active, disabled]);
+  }, [enableHotkey, active, disabled, hotkey]);
 
   // ── Clap detection ────────────────────────────────────────────────
   useEffect(() => {
@@ -152,7 +166,7 @@ export function useWakeTriggers({
     rec.onresult = (ev: SpeechRecognitionResultEventLike) => {
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         const transcript = ev.results[i][0]?.transcript?.toLowerCase() ?? "";
-        if (WAKE_PHRASES.some((p) => transcript.includes(p))) {
+        if (phrasesRef.current.some((p: string) => transcript.includes(p))) {
           fire();
           break;
         }
