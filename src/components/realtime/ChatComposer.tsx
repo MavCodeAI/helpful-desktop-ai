@@ -91,7 +91,31 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
             {interim}
           </div>
         )}
+        {keyCheck.status !== "idle" && (
+          <div
+            className={`pointer-events-none absolute inset-x-0 -top-1 -translate-y-full text-[11px] truncate ${
+              keyCheck.status === "ok" ? "text-emerald-300/90" : keyCheck.status === "bad" ? "text-red-300/90" : "text-white/50"
+            }`}
+          >
+            {keyCheck.status === "checking" ? "Checking Deepgram key…" : keyCheck.message}
+          </div>
+        )}
       </div>
+
+      <button
+        type="button"
+        onClick={checkKey}
+        disabled={keyCheck.status === "checking"}
+        aria-label="Check Deepgram key permissions"
+        title="Verify Deepgram key scope before live listening"
+        className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-emerald-200 hover:border-emerald-400/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        {keyCheck.status === "checking" ? (
+          <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
+        ) : (
+          <ShieldCheck className="w-4 h-4" strokeWidth={1.75} />
+        )}
+      </button>
 
       <button
         type="button"
