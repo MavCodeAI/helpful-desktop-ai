@@ -62,6 +62,7 @@ export function MainStage({
         pace={pace}
         rate={rate}
         threadCount={history.threads.length}
+        messageCount={messages.length}
         onOpenHistory={onOpenHistory}
         onOpenSettings={onOpenSettings}
         onOpenNotes={onOpenNotes}
