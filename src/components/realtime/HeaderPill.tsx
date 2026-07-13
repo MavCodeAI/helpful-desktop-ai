@@ -62,12 +62,12 @@ export function HeaderPill({
         >
           <History className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
           <span className="hidden sm:inline">History</span>
-          <span className="text-white/60 tabular-nums">{threadCount}</span>
+          <span className="text-muted-foreground tabular-nums">{threadCount}</span>
         </button>
-        <div className="hidden sm:flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-white/60">
-          <span className="truncate max-w-[80px] normal-case tracking-normal text-white/60">{currentVoice}</span>
+        <div className="hidden lg:flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+          <span className="truncate max-w-[80px] normal-case tracking-normal">{currentVoice}</span>
           <span>·</span>
-          <span className="normal-case tracking-normal text-white/60">{pace} · {rate}×</span>
+          <span className="normal-case tracking-normal">{pace} · {rate}×</span>
         </div>
         <button
           onClick={onOpenSettings}
@@ -76,7 +76,7 @@ export function HeaderPill({
           title="Voice settings"
         >
           <Settings2 className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
-          <span>Settings</span>
+          <span className="hidden sm:inline">Settings</span>
         </button>
       </div>
     </header>
