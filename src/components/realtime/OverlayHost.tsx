@@ -139,6 +139,8 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           busy={textBusy}
           onNote={onCreateNote}
           notePending={notePending}
+          onClear={() => history.setMessages([])}
+          onNewChat={() => { history.newConversation(); }}
         />
       )}
     </Suspense>
