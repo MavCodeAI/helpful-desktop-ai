@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { loadHotkey, loadWakePhrases, type HotkeyCombo } from "@/lib/realtime/constants";
 
 type Options = {
   enableClap: boolean;
@@ -10,13 +11,6 @@ type Options = {
   wakeLang?: string;
   onTrigger: () => void;
 };
-
-// Wake phrases — English / Urdu (roman + native) / Arabic
-const WAKE_PHRASES = [
-  "hey alpha", "hi alpha", "ok alpha", "alpha wake",
-  "aey alpha", "او الفا", "الو الفا",
-  "مرحبا الفا", "مرحبا ألفا", "يا ألفا", "يا الفا",
-];
 
 /**
  * Composite wake-trigger hook.
