@@ -1,4 +1,5 @@
-import type { LiteMode } from "@/lib/realtime/constants";
+import { useEffect, useState } from "react";
+import { loadWebCitations, saveWebCitations, type LiteMode } from "@/lib/realtime/constants";
 
 interface Props {
   autoRate: boolean;
