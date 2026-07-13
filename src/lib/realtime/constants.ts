@@ -19,7 +19,25 @@ export const STORAGE_KEYS = {
   persona: "alpha_persona",
   customPrompt: "alpha_persona_custom",
   lang: "alpha_lang",
+  webCitations: "web_citations",
 } as const;
+
+export const WEB_CITATIONS_DEFAULT = true;
+
+export function loadWebCitations(): boolean {
+  if (typeof window === "undefined") return WEB_CITATIONS_DEFAULT;
+  try {
+    const v = window.localStorage.getItem(STORAGE_KEYS.webCitations);
+    if (v === "1") return true;
+    if (v === "0") return false;
+  } catch { /* ignore */ }
+  return WEB_CITATIONS_DEFAULT;
+}
+
+export function saveWebCitations(v: boolean): void {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(STORAGE_KEYS.webCitations, v ? "1" : "0"); } catch { /* ignore */ }
+}
 
 export const RATE_OPTIONS = [0.8, 1.0, 1.2, 1.5] as const;
 
