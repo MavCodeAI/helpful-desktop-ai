@@ -160,12 +160,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             toggleWord={toggleWakeWord}
             toggleHotkey={toggleWakeHotkey}
           />
-          <DesktopSection
-            confirmBeforeOpen={confirmBeforeOpen}
-            toggleConfirmBeforeOpen={toggleConfirmBeforeOpen}
-            desktopAutoLaunch={desktopAutoLaunch}
-            toggleDesktopAutoLaunch={toggleDesktopAutoLaunch}
-          />
           <PersonaSection
             persona={persona}
             customPrompt={customPrompt}
