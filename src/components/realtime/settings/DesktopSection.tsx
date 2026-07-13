@@ -88,7 +88,7 @@ npm run electron:package`}
 
       <div className="mt-2 flex items-center gap-1.5 text-[10px] text-white/55">
         <Keyboard className="w-3 h-3" />
-        <span>Global hotkey: <span className="text-cyan-300">{HOTKEY_LABEL}</span></span>
+        <span>Global hotkey: <span className="text-cyan-300">{formatHotkey(loadHotkey())}</span></span>
       </div>
     </section>
   );
