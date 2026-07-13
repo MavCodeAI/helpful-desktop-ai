@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Brain } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { PERSONAS, type PersonaId, type LangCode } from "@/lib/persona";
 
 interface Props {
