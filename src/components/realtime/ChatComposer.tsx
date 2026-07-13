@@ -152,7 +152,7 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
           ) : (
             <StickyNote className="w-3.5 h-3.5" strokeWidth={1.75} />
           )}
-          <span className="text-[11px] hidden sm:inline">Note</span>
+          
         </button>
       )}
       <button
