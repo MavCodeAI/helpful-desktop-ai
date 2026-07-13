@@ -76,43 +76,45 @@ export function MainStage({
           onStart={start}
           onStop={stop}
         />
-        <aside className="lg:col-span-4 w-full max-w-2xl mx-auto lg:mx-0 lg:max-w-none lg:self-stretch lg:flex lg:flex-col lg:justify-center relative min-h-[120px]">
-          {messages.length > 0 && (
-            <div className="flex items-center justify-end gap-1 mb-2 animate-fade-in">
-              <button
-                onClick={() => history.newConversation()}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-cyan-200 hover:bg-cyan-400/10 border border-cyan-400/20"
-                aria-label="New chat"
-                title="New chat"
-              >
-                + New
-              </button>
-              <button
-                onClick={() => history.setMessages([])}
-                className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-white/60 hover:text-white hover:bg-white/5 border border-white/10"
-                aria-label="Clear chat"
-                title="Clear chat"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-          <MessageStream
-            ref={scrollRef}
-            messages={messages}
-            partial={partial}
-            status={status}
-            atBottom={atBottom}
-            unread={unread}
-            onScroll={onScroll}
-            onJumpToLatest={jumpToLatest}
-          />
-          {showInlineComposer && (
-            <div className="mt-3 animate-fade-in">
-              <ChatComposer onSend={onSendText} busy={textBusy} onNote={onCreateNote} notePending={notePending} placeholder="Reply with text…" />
-            </div>
-          )}
-        </aside>
+        {showInlineComposer || messages.length > 0 ? (
+          <aside className="lg:col-span-4 w-full max-w-2xl mx-auto lg:mx-0 lg:max-w-none lg:self-stretch lg:flex lg:flex-col lg:justify-center relative min-h-[120px] animate-fade-in">
+            {messages.length > 0 && (
+              <div className="flex items-center justify-end gap-1 mb-2">
+                <button
+                  onClick={() => history.newConversation()}
+                  className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-cyan-200 hover:bg-cyan-400/10 border border-cyan-400/20"
+                  aria-label="New chat"
+                  title="New chat"
+                >
+                  + New
+                </button>
+                <button
+                  onClick={() => history.setMessages([])}
+                  className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground hover:bg-white/5 border border-white/10"
+                  aria-label="Clear chat"
+                  title="Clear chat"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+            <MessageStream
+              ref={scrollRef}
+              messages={messages}
+              partial={partial}
+              status={status}
+              atBottom={atBottom}
+              unread={unread}
+              onScroll={onScroll}
+              onJumpToLatest={jumpToLatest}
+            />
+            {showInlineComposer && (
+              <div className="mt-3">
+                <ChatComposer onSend={onSendText} busy={textBusy} onNote={onCreateNote} notePending={notePending} placeholder="Reply with text…" />
+              </div>
+            )}
+          </aside>
+        ) : null}
 
       </div>
 
