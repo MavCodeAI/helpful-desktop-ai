@@ -50,15 +50,23 @@ export function useVoiceApp() {
 
   const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
 
-  // Web search + AI summary: appends assistant message with cited sources.
+  // Web search + AI summary: appends assistant message with optional citations.
   const runWebSearch = useCallback(async (query: string) => {
     const setMessages = setMessagesRef.current;
     if (!setMessages) return;
     setMessages((prev) => [...prev, { role: "assistant", text: `🔎 Searching the web for "${query}"…` }]);
     try {
+      const { loadWebCitations } = await import("@/lib/realtime/constants");
+      const showCitations = loadWebCitations();
       const res = await webSearchSummarize({ data: { query } });
-      const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");
-      const text = sources ? `${res.summary}\n\nSources:\n${sources}` : res.summary;
+      let text: string;
+      if (showCitations) {
+        const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");
+        text = sources ? `${res.summary}\n\n**Sources:**\n${sources}` : res.summary;
+      } else {
+        // Strip inline [1], [2] refs when citations are off
+        text = res.summary.replace(/\s*\[\d+\]/g, "").replace(/\s{2,}/g, " ").trim();
+      }
       setMessages((prev) => {
         const next = [...prev];
         for (let i = next.length - 1; i >= 0; i--) {
