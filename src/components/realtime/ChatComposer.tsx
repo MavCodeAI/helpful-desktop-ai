@@ -138,23 +138,6 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
         )}
       </button>
 
-      {onNote && (
-        <button
-          type="button"
-          onClick={handleNote}
-          disabled={notePending || busy}
-          aria-label="Save as note (AI can polish it)"
-          title={value.trim() ? "Save as note (AI polishes if enabled)" : "Open Notes"}
-          className="shrink-0 h-9 px-2.5 grid place-items-center rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-cyan-200 hover:border-cyan-400/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
-        >
-          {notePending ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.75} />
-          ) : (
-            <StickyNote className="w-3.5 h-3.5" strokeWidth={1.75} />
-          )}
-          
-        </button>
-      )}
       <button
         type="submit"
         disabled={busy || !value.trim()}
