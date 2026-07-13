@@ -22,3 +22,30 @@ export const getDeepgramToken = createServerFn({ method: "POST" }).handler(
     return { token, expiresIn };
   },
 );
+
+// Quick scope/permissions check — returns a friendly status without leaking the key.
+export const checkDeepgramKey = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ ok: boolean; canGrantToken: boolean; message: string }> => {
+    const apiKey = process.env.DEEPGRAM_API_KEY;
+    if (!apiKey) return { ok: false, canGrantToken: false, message: "DEEPGRAM_API_KEY not set." };
+
+    const res = await fetch("https://api.deepgram.com/v1/auth/grant", {
+      method: "POST",
+      headers: { Authorization: `Token ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ttl_seconds: 30 }),
+    });
+
+    if (res.ok) {
+      return { ok: true, canGrantToken: true, message: "Key OK — token grant allowed. Live STT ready." };
+    }
+    const text = await res.text().catch(() => "");
+    if (res.status === 401 || res.status === 403) {
+      return {
+        ok: false,
+        canGrantToken: false,
+        message: `Key lacks 'keys:write' scope (Deepgram ${res.status}). Deepgram console → key → Member scope.`,
+      };
+    }
+    return { ok: false, canGrantToken: false, message: `Deepgram ${res.status}: ${text.slice(0, 200)}` };
+  },
+);
