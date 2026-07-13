@@ -44,6 +44,18 @@ export function PersonaSection(p: Props) {
     <section className="space-y-3">
       <h3 className="text-[10px] uppercase tracking-widest text-white/50">Persona & Memory</h3>
 
+      <Link
+        to="/memories"
+        className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg bg-violet-500/10 border border-violet-400/30 text-violet-100 text-xs hover:bg-violet-500/20 transition"
+      >
+        <span className="flex items-center gap-2">
+          <Brain className="w-4 h-4" />
+          Open Memory Manager
+        </span>
+        <span className="text-[10px] text-violet-200/70">{p.memories.length} saved →</span>
+      </Link>
+
+
       {/* Persona picker */}
       <div>
         <div className="text-xs text-white/70 mb-1.5">Personality</div>
