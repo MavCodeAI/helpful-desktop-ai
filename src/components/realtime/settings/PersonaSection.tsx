@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Brain } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { PERSONAS, type PersonaId, type LangCode } from "@/lib/persona";
 
 interface Props {
@@ -42,6 +43,18 @@ export function PersonaSection(p: Props) {
   return (
     <section className="space-y-3">
       <h3 className="text-[10px] uppercase tracking-widest text-white/50">Persona & Memory</h3>
+
+      <Link
+        to="/memories"
+        className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg bg-violet-500/10 border border-violet-400/30 text-violet-100 text-xs hover:bg-violet-500/20 transition"
+      >
+        <span className="flex items-center gap-2">
+          <Brain className="w-4 h-4" />
+          Open Memory Manager
+        </span>
+        <span className="text-[10px] text-violet-200/70">{p.memories.length} saved →</span>
+      </Link>
+
 
       {/* Persona picker */}
       <div>
