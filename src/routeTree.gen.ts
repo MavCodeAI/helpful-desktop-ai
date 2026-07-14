@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MemoriesRouteImport } from './routes/memories'
+import { Route as ApiSettingsRouteImport } from './routes/api-settings'
 import { Route as IndexRouteImport } from './routes/index'
 
 const MemoriesRoute = MemoriesRouteImport.update({
   id: '/memories',
   path: '/memories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSettingsRoute = ApiSettingsRouteImport.update({
+  id: '/api-settings',
+  path: '/api-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api-settings': typeof ApiSettingsRoute
   '/memories': typeof MemoriesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api-settings': typeof ApiSettingsRoute
   '/memories': typeof MemoriesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api-settings': typeof ApiSettingsRoute
   '/memories': typeof MemoriesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/memories'
+  fullPaths: '/' | '/api-settings' | '/memories'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/memories'
-  id: '__root__' | '/' | '/memories'
+  to: '/' | '/api-settings' | '/memories'
+  id: '__root__' | '/' | '/api-settings' | '/memories'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiSettingsRoute: typeof ApiSettingsRoute
   MemoriesRoute: typeof MemoriesRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/memories'
       fullPath: '/memories'
       preLoaderRoute: typeof MemoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api-settings': {
+      id: '/api-settings'
+      path: '/api-settings'
+      fullPath: '/api-settings'
+      preLoaderRoute: typeof ApiSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiSettingsRoute: ApiSettingsRoute,
   MemoriesRoute: MemoriesRoute,
 }
 export const routeTree = rootRouteImport
