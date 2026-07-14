@@ -14,7 +14,7 @@ import { useTimers } from "@/lib/utilities/timers";
 import { onGlobalHotkey, onTrayAction, isElectron } from "@/lib/electron-bridge";
 import type { VoiceMessage } from "@/lib/voice-providers";
 import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
-import { webSearchSummarize } from "@/lib/web-search.functions";
+import { cachedWebSearch } from "@/lib/web-search-cache";
 import { extractMemoryFacts } from "@/lib/memories.functions";
 import { chatReply } from "@/lib/chat-reply.functions";
 import { generateNote } from "@/lib/note-ai.functions";
@@ -58,7 +58,7 @@ export function useVoiceApp() {
     try {
       const { loadWebCitations } = await import("@/lib/realtime/constants");
       const showCitations = loadWebCitations();
-      const res = await webSearchSummarize({ data: { query } });
+      const res = await cachedWebSearch(query);
       let text: string;
       if (showCitations) {
         const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");

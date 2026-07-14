@@ -1,3 +1,5 @@
+import { MicLevelMeter } from "@/components/realtime/MicLevelMeter";
+
 interface Props {
   active: boolean;
   micPermission: "unknown" | "granted" | "denied" | "prompt";
@@ -60,19 +62,8 @@ export function MicSection({
         {micTest ? "■ Stop mic test" : "🎤 Test mic (no send)"}
       </button>
       {micTest && (
-        <div className="mt-2 flex items-center gap-0.5 h-4" aria-label="Mic level">
-          {Array.from({ length: 20 }).map((_, i) => {
-            const norm = Math.min(1, (level * sensitivity) / 0.35);
-            const on = norm * 20 > i;
-            const hue = i < 14 ? "bg-cyan-300" : i < 17 ? "bg-amber-300" : "bg-red-400";
-            return (
-              <span
-                key={i}
-                className={`flex-1 rounded-sm transition-opacity duration-75 ${on ? hue : "bg-white/10"}`}
-                style={{ height: `${6 + i * 0.4}px`, opacity: on ? 1 : 0.35 }}
-              />
-            );
-          })}
+        <div className="mt-2">
+          <MicLevelMeter level={level} sensitivity={sensitivity} />
         </div>
       )}
     </section>
