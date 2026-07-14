@@ -1,56 +1,90 @@
-# Alpha Phase 1 MVP — Full Jarvis Loop
+# perfect1 کے Features port کرنے کا Plan
 
-Reality-check: **Barge-in** پہلے سے work کرتا ہے (Gemini Live native + HF streaming)۔ **Voice conversation + Orb + App launching + Screenshot** پہلے سے موجود ہیں۔ باقی 6 features کو practical desktop+web split میں build کریں گے۔
+سب features ایک ساتھ add کرنا practical نہیں — build خراب ہو سکتا ہے اور test مشکل۔ اس لیے **3 phases** میں تقسیم، ہر phase الگ سے verify ہو گا۔
 
-## 1. Custom Persona + Language + Long-term Memory
-- `src/lib/persona.ts`: presets (Alpha / Jarvis / Friday / Custom)، language (auto/en/ur/ar)، memories list (localStorage)
-- Settings drawer میں **Persona** section — preset picker، free-form system prompt، language dropdown، memories manager
-- `voice-providers.ts` `buildInstructions()` کو extend — persona prompt + memories block + language hint
-- `use-realtime-session.ts` سے persona/memories/language pass ہوں
-- **Auto-memory**: "remember that X" / "yaad rakho X" / "تذكر أن X" utterance intent → memories میں add + persona میں inject
-- Short-term memory: last N turns (thread messages) پہلے سے موجود ہیں
+---
 
-## 2. Screen Understanding (AI Vision)
-- Enable **Lovable Cloud** (LOVABLE_API_KEY auto-provision)
-- `src/lib/ai-gateway.server.ts` + `src/lib/ai-vision.functions.ts` — `describeScreen(imageBase64)` server fn → Gemini 2.5 Flash vision
-- Intent: "screen dekho" / "what's on screen" / "شاشة" → `getDisplayMedia` → capture → server fn → response کو chat میں assistant message کے طور پر inject + optional TTS via active Gemini Live session
+## Phase 1 — Quick Wins (فوری value، کم risk)
 
-## 3. AI Web-Answer (real "search" not just Google open)
-- Same server fn module: `askAI(question, language)` → Gemini flash with Google-Search grounding tool
-- Intent: "AI se pucho X" / "answer this X" / "اسأل X" → server fn → assistant message
-- Fallback: existing Google-open intent for direct search UX
+**1. MicLevelMeter** — live mic input bar
+- `src/components/realtime/MicLevelMeter.tsx` port
+- `MainStage` / `SettingsDrawer` میں show
 
-## 4. File Operations
-- **Electron path** (native): IPC `alpha:readFile`, `alpha:writeFile`, `alpha:listDir` in `main.cjs` + `preload.cjs` (with `dialog.showOpenDialog`/`showSaveDialog` for safety)
-- **Browser path**: File System Access API (`showOpenFilePicker`/`showSaveFilePicker`) — Chromium only، Safari میں graceful message
-- Intents: "file kholo" / "note.txt save karo X me" / "documents dikhao"
-- Content added to Notes یا separate File Explorer? → پہلے فیز میں: open → read → text-file preview toast + inject as chat context; save → prompt for filename → write
+**2. OfflineBanner** — network detection
+- `src/components/realtime/OfflineBanner.tsx` port
+- `__root.tsx` میں mount
 
-## 5. Arabic Support
-- Wake word: "مرحبا ألفا" (Marhaba Alpha) + existing "hey alpha"
-- SpeechRecognition `lang` from language setting (`ur-PK`, `ar-SA`, `en-US`, or unset for auto)
-- Persona automatically picks reply language when set
+**3. Web Search Cache** — repeated queries fast
+- `src/lib/web-search-cache.ts` port
+- `web-search.functions.ts` کو cache use کرنے کیلئے wire
 
-## 6. Technical Section
+**4. intents.test.ts** — unit tests baseline
+
+---
+
+## Phase 2 — Settings Reorganization
+
+perfect1 کا modular settings structure adopt:
+- `LanguageSection` (persona سے alag)
+- `MemorySection` (persona سے alag)
+- `ThemeSection` — theme switcher (light/dark/system)
+- `LayoutSection` — layout switch (classic vs cockpit)
+- `ApiKeysSection` + `/api-settings` route + `api-test.functions.ts`
+- `DangerSection` — clear all data / reset
+- `SectionHeader` shared component
+- `AdvancedSection` — power-user toggles
+
+موجودہ `PersonaSection` کو صرف persona-specific fields تک محدود کریں۔
+
+---
+
+## Phase 3 — Cockpit Layout (بڑا feature)
+
+Desktop-style multi-pane UI as **optional** layout (Layout setting سے switch):
+- `src/components/realtime/cockpit/AppSidebar.tsx` — left nav
+- `TopBar.tsx` — status + quick actions
+- `CenterStage.tsx` — main conversation area
+- `ContextRail.tsx` — right pane (memories/notes/context)
+- Shadcn `SidebarProvider` wrapper
+- User Layout setting سے **Classic MainStage** یا **Cockpit** choose کر سکے
+
+**News feature** (`NewsSection` + `news-prefs.ts`) — optional، اگر آپ چاہیں تو Phase 3 میں شامل، ورنہ skip۔
+
+---
+
+## Technical Notes
+
 ```text
-New files:
-- src/lib/persona.ts                        (presets, memories store, buildPersonaSystemPrompt)
-- src/lib/ai-gateway.server.ts              (Lovable AI provider helper)
-- src/lib/ai-vision.functions.ts            (describeScreen, askAI server fns)
-- src/components/realtime/settings/PersonaSection.tsx
+Files to port from perfect1 → current project:
+Phase 1:
+  src/components/realtime/MicLevelMeter.tsx
+  src/components/realtime/OfflineBanner.tsx
+  src/lib/web-search-cache.ts
+  src/lib/intents.test.ts
+  (edit) src/lib/web-search.functions.ts    — wire cache
+  (edit) src/routes/__root.tsx              — mount OfflineBanner
+  (edit) src/components/realtime/MainStage.tsx — mount MicLevelMeter
 
-Edits:
-- src/lib/voice-providers.ts                (buildInstructions uses persona)
-- src/lib/intents.ts                        (remember, screen-vision, ai-answer, file-open, file-save intents)
-- src/hooks/use-intent-actions.ts           (new action handlers → server fns)
-- src/hooks/use-realtime-session.ts         (pass persona/memories/language)
-- src/hooks/use-voice-settings.ts           (persona state)
-- src/lib/realtime/{constants,storage}.ts   (persona keys)
-- src/hooks/use-wake-triggers.ts            (Arabic wake, language-aware)
-- src/hooks/use-voice-app.ts                (wire persona into session + intents)
-- src/components/realtime/SettingsDrawer.tsx + OverlayHost.tsx  (mount PersonaSection)
-- electron/main.cjs + preload.cjs           (file IPC handlers)
-- src/lib/electron-bridge.ts                (readFile/writeFile wrappers)
+Phase 2:
+  src/components/realtime/settings/{SectionHeader,LanguageSection,MemorySection,ThemeSection,LayoutSection,ApiKeysSection,DangerSection,AdvancedSection}.tsx
+  src/lib/api-test.functions.ts
+  src/routes/api-settings.tsx
+  (edit) src/components/realtime/SettingsDrawer.tsx
+  (edit) src/components/realtime/settings/PersonaSection.tsx
+
+Phase 3:
+  src/components/realtime/cockpit/{AppSidebar,TopBar,CenterStage,ContextRail}.tsx
+  src/lib/realtime/layout-pref.ts           — classic|cockpit setting
+  (edit) src/routes/index.tsx               — conditional render
+  Optional: NewsSection + news-prefs.ts
 ```
 
-Barge-in الگ code نہیں چاہیے — Gemini Live BidiGenerateContent + HF streaming دونوں انٹرپشن پہ audio player بند کر دیتے ہیں۔ صرف status pill میں "You can interrupt any time" hint دکھائیں گے۔
+Each phase alag turn میں ship ہو گا، build green رکھتے ہوئے۔
+
+---
+
+## سوال
+
+- کیا **Phase 1** سے شروع کروں (4 quick wins)؟
+- یا کوئی خاص feature پہلے چاہیے (مثلاً Cockpit layout، ApiKeys page)؟
+- News feature include کروں یا skip؟
