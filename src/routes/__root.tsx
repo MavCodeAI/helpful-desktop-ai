@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { OfflineBanner } from "@/components/realtime/OfflineBanner";
+
 
 function NotFoundComponent() {
   return (
@@ -141,7 +141,6 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <OfflineBanner />
       <Outlet />
       <Toaster theme="dark" position="bottom-right" richColors closeButton />
     </QueryClientProvider>
