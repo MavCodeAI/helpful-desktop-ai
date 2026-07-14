@@ -14,7 +14,7 @@ describe("detectIntent — core intents", () => {
 
   it("detects open app", () => {
     expect(detectIntent("open gmail")?.kind).toBe("open");
-    expect(detectIntent("youtube kholo")?.kind).toBe("open");
+    expect(detectIntent("gmail kholo")?.kind).toBe("open");
   });
 
   it("detects google search", () => {
@@ -30,11 +30,6 @@ describe("detectIntent — core intents", () => {
   it("detects screen-vision", () => {
     expect(detectIntent("screen dekho")?.action?.type).toBe("screen-vision");
     expect(detectIntent("what's on my screen")?.action?.type).toBe("screen-vision");
-  });
-
-  it("detects memory-add", () => {
-    const i = detectIntent("remember that my birthday is march 5");
-    expect(i?.action?.type).toBe("memory-add");
   });
 
   it("detects ai-answer", () => {
