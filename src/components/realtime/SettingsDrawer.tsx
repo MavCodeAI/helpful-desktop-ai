@@ -9,9 +9,13 @@ import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSectio
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
 import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
-
 import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
 import { PersonaSection } from "@/components/realtime/settings/PersonaSection";
+import { LanguageSection } from "@/components/realtime/settings/LanguageSection";
+import { MemorySection } from "@/components/realtime/settings/MemorySection";
+import { ThemeSection } from "@/components/realtime/settings/ThemeSection";
+import { ApiKeysSection } from "@/components/realtime/settings/ApiKeysSection";
+import { DangerSection } from "@/components/realtime/settings/DangerSection";
 
 export interface SettingsDrawerProps {
   open: boolean;
@@ -163,15 +167,20 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
           <PersonaSection
             persona={persona}
             customPrompt={customPrompt}
-            lang={lang}
-            memories={memories}
             changePersona={changePersona}
             changeCustomPrompt={changeCustomPrompt}
-            changeLang={changeLang}
+          />
+          <LanguageSection lang={lang} changeLang={changeLang} />
+          <MemorySection
+            memories={memories}
             addMemory={addMemory}
             removeMemory={removeMemory}
             clearMemories={clearMemories}
+            onCloseDrawer={onClose}
           />
+          <ThemeSection />
+          <ApiKeysSection />
+          <DangerSection clearMemories={clearMemories} />
           <ComingSoonSection />
         </div>
       </aside>
