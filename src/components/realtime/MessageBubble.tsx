@@ -1,6 +1,8 @@
 import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+import type { Options as SanitizeOptions } from "rehype-sanitize";
 
 type Role = "you" | "assistant";
 
@@ -21,6 +23,29 @@ function bubbleClass(role: Role) {
   }`;
 }
 
+const sanitizeOptions: SanitizeOptions = {
+  tagNames: [
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    "p", "ul", "ol", "li",
+    "strong", "em", "a", "code", "pre", "blockquote", "br", "hr",
+    "bold", "italic", "strike", "del", "sup", "sub",
+    "table", "thead", "tbody", "tr", "td", "th", "img",
+  ],
+  attributes: {
+    a: ["href"],
+    img: ["src", "alt"],
+  },
+  protocols: {
+    href: ["http", "https", "mailto"],
+    src: ["http", "https", "data"],
+  },
+  disallowedTags: [
+    "script", "iframe", "object", "embed", "form", "input", "textarea", "button", "style",
+  ],
+};
+
+const rehypePlugins = [[rehypeSanitize, sanitizeOptions]];
+
 export const MessageBubble = memo(function MessageBubble({
   role,
   text,
@@ -37,7 +62,9 @@ export const MessageBubble = memo(function MessageBubble({
         {role === "you" ? "You" : "Assistant"}
       </div>
       <div className={MARKDOWN_CLASS}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={rehypePlugins}>
+          {text}
+        </ReactMarkdown>
       </div>
     </div>
   );
@@ -54,7 +81,9 @@ export function PartialBubble({ role, text }: { role: Role; text: string }) {
         {role === "you" ? "You" : "Assistant"} · live
       </div>
       <div className={MARKDOWN_CLASS}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={rehypePlugins}>
+          {text}
+        </ReactMarkdown>
         <span className="inline-block w-[3px] h-4 ml-1 bg-cyan-300 align-middle animate-pulse rounded-sm" />
       </div>
     </div>

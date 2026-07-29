@@ -26,22 +26,23 @@ export function ConfirmModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
+      aria-describedby={description ? "confirm-modal-description" : undefined}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <div ref={dialogRef} className="glass p-6 max-w-sm w-full">
         <h2 id="confirm-modal-title" className="text-base font-semibold text-white/95">{title}</h2>
-        {description && <p className="mt-2 text-sm text-white/60 leading-relaxed">{description}</p>}
+        {description && <p id="confirm-modal-description" className="mt-2 text-sm text-white/60 leading-relaxed">{description}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
             className="glass-item px-4 py-2 text-sm rounded-md min-h-11"
-            autoFocus
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             className={`glass-item ${danger ? "glass-item-danger" : "glass-item-active"} px-4 py-2 text-sm rounded-md min-h-11`}
+            autoFocus
           >
             {confirmLabel}
           </button>

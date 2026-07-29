@@ -36,6 +36,7 @@ export const MicLevelMeter = memo(function MicLevelMeter({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(norm * 100)}
+      aria-valuetext={`Microphone level: ${Math.round(norm * 100)} percent`}
     >
       {Array.from({ length: bars }).map((_, i) => {
         const on = i < filled;
