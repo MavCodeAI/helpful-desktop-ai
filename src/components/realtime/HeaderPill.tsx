@@ -41,6 +41,8 @@ export function HeaderPill({
 }: Props) {
   const { notes } = useNotes();
   const noteCount = notes.length;
+  const { watches } = useWatchlist();
+  const watchNew = watches.filter((w) => w.changed).length;
   return (
     <header className="relative z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-6 py-2.5 glass-pill rounded-full">
       <div className="flex min-w-0 items-center gap-2">
