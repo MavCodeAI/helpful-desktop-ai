@@ -79,6 +79,16 @@ export function HeaderPill({
           <span className="hidden sm:inline">Notes</span>
           <Badge n={noteCount} tone="amber" />
         </button>
+        <Link
+          to="/watch"
+          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
+          aria-label={watchNew > 0 ? `Open watchlist, ${watchNew} updated` : "Open watchlist"}
+          title="Watchlist"
+        >
+          <Radar className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
+          <span className="hidden sm:inline">Watch</span>
+          <Badge n={watchNew} tone="amber" />
+        </Link>
         <button
           onClick={onOpenHistory}
           className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
