@@ -1,5 +1,7 @@
-import { Settings2, History, StickyNote, MessageSquare } from "lucide-react";
+import { Settings2, History, StickyNote, MessageSquare, Radar } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useNotes } from "@/lib/utilities/notes";
+import { useWatchlist } from "@/lib/utilities/watchlist";
 import type { Pace, ProviderId } from "@/lib/voice-providers";
 
 type Props = {
