@@ -3,6 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { Options as SanitizeOptions } from "rehype-sanitize";
+import type { PluggableList } from "unified";
+
 
 type Role = "you" | "assistant";
 
@@ -39,12 +41,10 @@ const sanitizeOptions: SanitizeOptions = {
     href: ["http", "https", "mailto"],
     src: ["http", "https", "data"],
   },
-  disallowedTags: [
-    "script", "iframe", "object", "embed", "form", "input", "textarea", "button", "style",
-  ],
 };
 
-const rehypePlugins = [[rehypeSanitize, sanitizeOptions]];
+const rehypePlugins: PluggableList = [[rehypeSanitize, sanitizeOptions]];
+
 
 export const MessageBubble = memo(function MessageBubble({
   role,
