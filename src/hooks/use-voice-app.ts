@@ -88,7 +88,7 @@ export function useVoiceApp() {
     try {
       const { loadWebCitations } = await import("@/lib/realtime/constants");
       const showCitations = loadWebCitations();
-      const res = await cachedWebSearch(query, undefined, { country: settings.country, lang: settings.lang, geminiKey: settings.geminiKey });
+      const res = await cachedWebSearch(query, undefined, { country: settings.country, lang: settings.lang, geminiKey: settings.geminiKey, tavilyKey: settings.tavilyKey });
       let text: string;
       if (showCitations) {
         const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");
@@ -112,7 +112,7 @@ export function useVoiceApp() {
       toast.error(msg);
       setMessages((prev) => prev.filter((m) => !m.text.startsWith("🔎 Searching")));
     }
-  }, [settings.country, settings.lang, settings.geminiKey]);
+  }, [settings.country, settings.lang, settings.geminiKey, settings.tavilyKey]);
 
   const runNews = useCallback(async (query: string) => {
     const setMessages = setMessagesRef.current;

@@ -8,6 +8,7 @@ export interface VoiceSettings {
   provider: ProviderId | null;
   geminiKey: string;
   geminiKeyValidated: boolean;
+  tavilyKey: string;
   hfVoice: string;
   geminiVoice: string;
   pace: Pace;
@@ -49,6 +50,7 @@ export function loadSettings(): VoiceSettings {
     provider: (safeGet(STORAGE_KEYS.provider) as ProviderId | null) || null,
     geminiKey: readBool(STORAGE_KEYS.geminiKeyValidated, false) ? safeGet(STORAGE_KEYS.geminiKey) || "" : "",
     geminiKeyValidated: readBool(STORAGE_KEYS.geminiKeyValidated, false),
+    tavilyKey: safeGet(STORAGE_KEYS.tavilyKey) || "",
     hfVoice: safeGet(STORAGE_KEYS.hfVoice) || DEFAULTS.hfVoice,
     geminiVoice: safeGet(STORAGE_KEYS.geminiVoice) || DEFAULTS.geminiVoice,
     pace: (safeGet(STORAGE_KEYS.pace) as Pace | null) || DEFAULTS.pace,
@@ -71,6 +73,7 @@ export const persist = {
   provider: (v: ProviderId) => safeSet(STORAGE_KEYS.provider, v),
   geminiKey: (v: string) => safeSet(STORAGE_KEYS.geminiKey, v),
   geminiKeyValidated: (v: boolean) => safeSet(STORAGE_KEYS.geminiKeyValidated, v ? "1" : "0"),
+  tavilyKey: (v: string) => safeSet(STORAGE_KEYS.tavilyKey, v),
   hfVoice: (v: string) => safeSet(STORAGE_KEYS.hfVoice, v),
   geminiVoice: (v: string) => safeSet(STORAGE_KEYS.geminiVoice, v),
   pace: (v: Pace) => safeSet(STORAGE_KEYS.pace, v),

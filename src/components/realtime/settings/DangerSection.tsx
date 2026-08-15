@@ -13,7 +13,7 @@ export function DangerSection({ clearMemories }: Props) {
   const clearAll = () => {
     if (!window.confirm(isUrdu ? "تمام مقامی ڈیٹا صاف کریں؟" : "Clear all local data?")) return;
     try {
-      // Wipe alpha_* + jarvis.* + gemini_api_key + api_settings_* keys.
+      // Wipe alpha_* + jarvis.* + Gemini/Tavily keys + api_settings_* keys.
       const keys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
@@ -22,7 +22,8 @@ export function DangerSection({ clearMemories }: Props) {
           k.startsWith("alpha_") ||
           k.startsWith("jarvis.") ||
           k.startsWith("api_settings_") ||
-          k === "gemini_api_key"
+          k === "gemini_api_key" ||
+          k === "tavily_api_key"
         ) keys.push(k);
       }
       keys.forEach((k) => localStorage.removeItem(k));

@@ -34,6 +34,7 @@ type Options = {
 export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
   const [provider, setProvider] = useState<ProviderId>("gemini");
   const [geminiKey, setGeminiKey] = useState("");
+  const [tavilyKey, setTavilyKey] = useState("");
   const [geminiKeyReady, setGeminiKeyReady] = useState(false);
   const [geminiKeyError, setGeminiKeyError] = useState<string | null>(null);
   const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
@@ -58,6 +59,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   useEffect(() => {
     const s = loadSettings();
     setGeminiKey(s.geminiKeyValidated ? s.geminiKey : "");
+    setTavilyKey(s.tavilyKey);
     setHfVoice(s.hfVoice);
     setGeminiVoice(s.geminiVoice);
     setPace(s.pace);
@@ -92,6 +94,11 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
         setGeminiKeyReady(false);
         setGeminiKeyError("Could not read server voice configuration.");
       });
+  }, []);
+
+  const applyTavilyKey = useCallback((value: string) => {
+    setTavilyKey(value.trim());
+    persist.tavilyKey(value.trim());
   }, []);
 
   const applyGeminiKey = useCallback((value: string) => {
@@ -195,7 +202,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   );
 
   return {
-    provider, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey,
+    provider, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey, tavilyKey, applyTavilyKey,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,

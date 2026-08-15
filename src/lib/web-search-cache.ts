@@ -9,18 +9,18 @@ const DEFAULT_TTL_MS = 5 * 60_000;
 const MAX_ENTRIES = 40;
 
 type Entry = { at: number; result: WebSearchResult };
-export type WebSearchContext = { country?: CountryCode; lang?: LangCode; geminiKey?: string };
+export type WebSearchContext = { country?: CountryCode; lang?: LangCode; geminiKey?: string; tavilyKey?: string };
 
 const cache = new Map<string, Entry>();
 const inflight = new Map<string, Promise<WebSearchResult>>();
 
 function normalizedContext(context: WebSearchContext = {}): Required<WebSearchContext> {
-  return { country: context.country ?? "SA", lang: context.lang ?? "auto", geminiKey: context.geminiKey ?? "" };
+  return { country: context.country ?? "SA", lang: context.lang ?? "auto", geminiKey: context.geminiKey ?? "", tavilyKey: context.tavilyKey ?? "" };
 }
 
 function normKey(q: string, context: WebSearchContext = {}): string {
   const ctx = normalizedContext(context);
-  return `${ctx.country}:${ctx.lang}:${q.toLowerCase().replace(/\s+/g, " ").trim()}`;
+  return `${ctx.country}:${ctx.lang}:${ctx.tavilyKey ? "tavily" : "server-search"}:${q.toLowerCase().replace(/\s+/g, " ").trim()}`;
 }
 
 function evictIfNeeded() {
@@ -52,7 +52,7 @@ export async function cachedWebSearch(query: string, ttlMs = DEFAULT_TTL_MS, con
 
   const p = (async () => {
     try {
-      const result = await webSearchSummarize({ data: { query, country: ctx.country, lang: ctx.lang, userKey: ctx.geminiKey || undefined } });
+      const result = await webSearchSummarize({ data: { query, country: ctx.country, lang: ctx.lang, userKey: ctx.geminiKey || undefined, tavilyKey: ctx.tavilyKey || undefined } });
       if (result.sources.length > 0) { cache.set(key, { at: Date.now(), result }); evictIfNeeded(); }
       return result;
     } finally {

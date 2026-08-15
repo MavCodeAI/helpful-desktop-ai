@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   provider: "voice_provider",
   geminiKey: "gemini_api_key",
   geminiKeyValidated: "gemini_api_key_validated",
+  tavilyKey: "tavily_api_key",
   hfVoice: "voice_hf",
   geminiVoice: "voice_gemini",
   pace: "voice_pace",

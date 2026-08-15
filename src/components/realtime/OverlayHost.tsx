@@ -90,6 +90,8 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           geminiKeyReady={settings.geminiKeyReady}
           geminiKeyError={settings.geminiKeyError}
           applyGeminiKey={settings.applyGeminiKey}
+          tavilyKey={settings.tavilyKey}
+          applyTavilyKey={settings.applyTavilyKey}
           currentVoice={settings.currentVoice}
           voiceList={settings.voiceList}
           changeVoice={settings.changeVoice}

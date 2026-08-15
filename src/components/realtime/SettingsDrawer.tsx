@@ -31,6 +31,8 @@ export interface SettingsDrawerProps {
   geminiKeyReady: boolean;
   geminiKeyError: string | null;
   applyGeminiKey: (value: string) => void;
+  tavilyKey: string;
+  applyTavilyKey: (value: string) => void;
   currentVoice: string;
   voiceList: readonly string[];
   changeVoice: (v: string) => void;
@@ -91,7 +93,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
   if (!props.open) return null;
 
   const {
-    onClose, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey,
+    onClose, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey, tavilyKey, applyTavilyKey,
     currentVoice, voiceList, changeVoice, pace, changePace, rate, changeRate,
     active, micPermission, sensitivity, changeSensitivity,
     micTest, startMicTestMode, stopMicTest, level,
@@ -212,7 +214,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
           />
           <PrivacySection />
           <ThemeSection />
-          <ApiKeysSection geminiKey={geminiKey} onApplyGeminiKey={applyGeminiKey} />
+          <ApiKeysSection geminiKey={geminiKey} onApplyGeminiKey={applyGeminiKey} tavilyKey={tavilyKey} onApplyTavilyKey={applyTavilyKey} />
           <DangerSection clearMemories={clearMemories} />
           <ComingSoonSection />
         </div>

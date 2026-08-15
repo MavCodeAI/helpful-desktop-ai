@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { KeyRound, CheckCircle2, AlertCircle, ExternalLink, Loader2, Play, ShieldCheck, XCircle } from "lucide-react";
+import { KeyRound, CheckCircle2, AlertCircle, ExternalLink, Loader2, Play, Search, ShieldCheck, XCircle } from "lucide-react";
 import { SectionHeader } from "./SectionHeader";
 import { useUILang } from "@/hooks/use-ui-lang";
 import { getAiHealth, type AiHealth } from "@/lib/ai-health.functions";
@@ -29,9 +29,11 @@ function resultCopy(result: ApiTestResult, isUrdu: boolean): string {
 export interface ApiKeysSectionProps {
   geminiKey: string;
   onApplyGeminiKey: (value: string) => void;
+  tavilyKey: string;
+  onApplyTavilyKey: (value: string) => void;
 }
 
-export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionProps) {
+export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApplyTavilyKey }: ApiKeysSectionProps) {
   const { isUrdu } = useUILang();
   const [health, setHealth] = useState<AiHealth | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,10 +41,17 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionPr
   const [testState, setTestState] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testResult, setTestResult] = useState<ApiTestResult | null>(null);
   const [testMessage, setTestMessage] = useState<string | null>(null);
+  const [tavilyDraft, setTavilyDraft] = useState(tavilyKey);
+  const [tavilyState, setTavilyState] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [tavilyMessage, setTavilyMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setDraftKey(geminiKey);
   }, [geminiKey]);
+
+  useEffect(() => {
+    setTavilyDraft(tavilyKey);
+  }, [tavilyKey]);
 
   const refreshHealth = (key = geminiKey) => {
     setLoading(true);
@@ -94,6 +103,33 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionPr
       setTestState("error");
       setTestMessage(error instanceof Error ? error.message : (isUrdu ? "Test مکمل نہیں ہو سکا۔" : "The test could not be completed."));
     }
+  };
+
+  const testTavily = async () => {
+    const userKey = tavilyDraft.trim();
+    setTavilyState("testing");
+    setTavilyMessage(isUrdu ? "Tavily Search connection test ہو رہا ہے…" : "Testing Tavily Search…");
+    try {
+      const result = await testProviderConnection({ data: { provider: "tavily", userKey: userKey || undefined } });
+      if (!result.ok) {
+        setTavilyState("error");
+        setTavilyMessage(result.hint ?? (isUrdu ? "Tavily key درست نہیں۔" : "Tavily key was rejected."));
+        return;
+      }
+      onApplyTavilyKey(userKey);
+      setTavilyState("success");
+      setTavilyMessage(isUrdu ? `Tavily primary search تیار ہے (${result.latencyMs}ms)۔` : `Tavily primary search is ready (${result.latencyMs}ms).`);
+    } catch (error) {
+      setTavilyState("error");
+      setTavilyMessage(error instanceof Error ? error.message : (isUrdu ? "Tavily test مکمل نہیں ہو سکا۔" : "Tavily test failed."));
+    }
+  };
+
+  const clearTavilyKey = () => {
+    setTavilyDraft("");
+    onApplyTavilyKey("");
+    setTavilyState("idle");
+    setTavilyMessage(isUrdu ? "Tavily key اس device سے صاف کر دی گئی۔" : "Tavily key cleared from this device.");
   };
 
   const clearLocalKey = () => {
@@ -176,6 +212,25 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionPr
               )}
             </div>
           )}
+        </div>
+
+        <div className="rounded-lg border border-amber-300/15 bg-amber-300/[0.04] p-3 space-y-2.5">
+          <div className="flex items-start gap-2">
+            <Search className="w-4 h-4 mt-0.5 text-amber-200 shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-white/90">{isUrdu ? "Tavily — Primary Web Search" : "Tavily — Primary Web Search"}</p>
+              <p className="text-[10px] leading-relaxed text-white/55 mt-1">{isUrdu ? "Tavily تازہ ویب نتائج لائے گا، پھر Gemini خلاصہ بنائے گا۔" : "Tavily retrieves live results; Gemini writes the final summary."}</p>
+            </div>
+          </div>
+          <input type="password" value={tavilyDraft} onChange={(event) => { setTavilyDraft(event.target.value); setTavilyState("idle"); setTavilyMessage(null); }} placeholder="tvly-… Tavily API key" autoComplete="off" spellCheck={false} className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/30 focus:border-amber-300/50" aria-label="Tavily API key" />
+          <div className="flex gap-2">
+            <button type="button" onClick={testTavily} disabled={tavilyState === "testing"} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-300/15 hover:bg-amber-300/25 disabled:opacity-50 border border-amber-200/25 px-3 py-2 text-xs text-amber-100">
+              {tavilyState === "testing" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              {tavilyState === "testing" ? (isUrdu ? "Test ہو رہا ہے…" : "Testing…") : "Apply & Test"}
+            </button>
+            <button type="button" onClick={clearTavilyKey} className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs text-white/70"><XCircle className="w-3.5 h-3.5" />{isUrdu ? "Clear" : "Clear"}</button>
+          </div>
+          {tavilyMessage && <div className={`rounded-lg border p-2.5 text-[10px] leading-relaxed ${tavilyState === "success" ? "border-emerald-300/25 bg-emerald-300/10 text-emerald-100" : "border-rose-300/25 bg-rose-300/10 text-rose-100"}`} role="status" aria-live="polite">{tavilyMessage}</div>}
         </div>
 
         {health ? (
