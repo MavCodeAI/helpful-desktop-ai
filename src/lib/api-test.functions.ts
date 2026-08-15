@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { GEMINI_LIVE_MODEL } from "./gemini-live-config";
 
 // Provider-agnostic key/connectivity probe. Only Gemini is implemented today.
 
@@ -158,7 +159,7 @@ export const testProviderConnection = createServerFn({ method: "POST" })
     const targets =
       data.models && data.models.length > 0
         ? data.models
-        : ["gemini-2.5-flash", "gemini-2.5-flash-native-audio-latest"];
+        : ["gemini-2.5-flash", GEMINI_LIVE_MODEL];
     const t0 = performance.now();
     const results = await Promise.all(targets.map((id) => probeGeminiModel(`models/${id}`, key)));
     const latencyMs = Math.round(performance.now() - t0);
@@ -174,5 +175,5 @@ export const testProviderConnection = createServerFn({ method: "POST" })
     else if (anyFail && anyFail.status === 429) hint = "Rate limit — try again in a minute.";
     else if (anyFail && anyFail.status === 404) hint = "One or more models are not accessible on this key.";
     else if (allOk) hint = "All selected models are reachable.";
-    return { ok: allOk, provider, keySource, keyPrefix: key.slice(0, 6), checks, latencyMs, hint };
+    return { ok: allOk, provider, keySource, keyPrefix: "", checks, latencyMs, hint };
   });

@@ -1,3 +1,5 @@
+import { GEMINI_LIVE_MODEL_PATH } from "./gemini-live-config";
+
 // Voice provider adapters — HF Space (S2S) & Google Gemini Live.
 // Each provider exposes: start({ onStatus, onMessage, onError }) => Controller
 
@@ -329,7 +331,6 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
 // ────────────────────────────────────────────────────────────────────────
 const GEMINI_IN_SR = 16000;
 const GEMINI_OUT_SR = 24000;
-const GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-latest";
 
 export async function startGemini(accessToken: string, h: Handlers, opts?: VoiceOptions): Promise<Controller> {
   const trimmedToken = accessToken.trim();
@@ -380,18 +381,18 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
   ws.onopen = () => {
     ws.send(JSON.stringify({
       setup: {
-        model: GEMINI_MODEL,
-        generation_config: {
-          response_modalities: ["AUDIO"],
-          speech_config: {
-            voice_config: {
-              prebuilt_voice_config: { voice_name: opts?.voice || "Aoede" },
+        model: GEMINI_LIVE_MODEL_PATH,
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: opts?.voice || "Aoede" },
             },
           },
         },
-        system_instruction: { parts: [{ text: buildInstructions(opts) }] },
-        input_audio_transcription: {},
-        output_audio_transcription: {},
+        systemInstruction: { parts: [{ text: buildInstructions(opts) }] },
+        inputAudioTranscription: {},
+        outputAudioTranscription: {},
       },
     }));
   };
@@ -437,8 +438,8 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
         }
         const pcm = floatToPCM16(data);
         ws.send(JSON.stringify({
-          realtime_input: {
-            media_chunks: [{ mime_type: `audio/pcm;rate=${GEMINI_IN_SR}`, data: b64FromBuf(pcm.buffer) }],
+          realtimeInput: {
+            audio: { mimeType: `audio/pcm;rate=${GEMINI_IN_SR}`, data: b64FromBuf(pcm.buffer) },
           },
         }));
       };
@@ -485,17 +486,21 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
   };
 
   ws.onerror = () => {
-    cleanup();
-    h.onError("Gemini WebSocket connection failed. Check API key and internet connection.");
+    // The following close event carries the useful WebSocket close code/reason.
+    // Do not clean up here, otherwise the browser can suppress that diagnostic.
   };
   ws.onclose = (ev) => {
     if (closedByUser) return;
-    window.clearTimeout(connectTimeout);
+    cleanup();
+    if (ev.code === 1007) {
+      h.onError("Gemini Live setup rejected (1007: invalid frame payload). Check the Live model and setup protocol.");
+      return;
+    }
     if (ev.code === 1008 || ev.code === 4001 || ev.code === 4003) {
       h.onError(`Gemini auth failed (${ev.code}). The server-issued session token was rejected.`);
       return;
     }
-    if (!connected) h.onError(`Gemini did not connect (${ev.code || "closed"}). Check server configuration and internet, then try again.`);
+    if (!connected) h.onError(`Gemini did not connect (${ev.code || "closed"}). ${ev.reason || "Check server configuration and internet, then try again."}`);
   };
   return { stop, setRate: (r) => player.setRate(r) };
 }

@@ -6,6 +6,7 @@ export type VoiceErrorCode =
   | "hf_unavailable"
   | "gemini_config"
   | "gemini_auth"
+  | "gemini_protocol"
   | "microphone"
   | "network"
   | "unknown";
@@ -76,6 +77,18 @@ export function classifyVoiceError(
       title: "Gemini voice is not configured",
       message: "Alpha cannot issue a secure Gemini Live session because GEMINI_API_KEY is missing or invalid on Vercel.",
       action: "Add GEMINI_API_KEY in Vercel Project Settings → Environment Variables, redeploy, then retry.",
+      provider,
+      canRetry: true,
+      technical,
+    };
+  }
+
+  if (provider === "gemini" && /1007|invalid frame|invalid payload|setup.*(invalid|failed)|payload.*(invalid|data)/.test(lower)) {
+    return {
+      code: "gemini_protocol",
+      title: "Gemini Live setup was rejected",
+      message: "Google received the connection but rejected the Live API setup payload or model configuration.",
+      action: "Retry after the app update. If it continues, confirm the selected Gemini key has access to the configured Live model and run Apply & Test again.",
       provider,
       canRetry: true,
       technical,

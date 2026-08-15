@@ -4,7 +4,7 @@ import { KeyRound, CheckCircle2, AlertCircle, ExternalLink, Loader2, Play, Shiel
 import { SectionHeader } from "./SectionHeader";
 import { useUILang } from "@/hooks/use-ui-lang";
 import { getAiHealth, type AiHealth } from "@/lib/ai-health.functions";
-import { getGeminiLiveToken } from "@/lib/gemini-live-token.functions";
+import { testGeminiLiveConnection } from "@/lib/gemini-live-token.functions";
 import { testProviderConnection, type ApiTestResult } from "@/lib/api-test.functions";
 
 function StatusLine({ label, configured, env, isUrdu }: { label: string; configured: boolean; env: string; isUrdu: boolean }) {
@@ -78,17 +78,17 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionPr
         return;
       }
 
-      setTestMessage(isUrdu ? "Gemini Live session token بھی verify ہو رہا ہے…" : "Verifying a real Gemini Live session token…");
-      const live = await getGeminiLiveToken({ data: { userKey: userKey || undefined } });
-      if (!live.configured) {
+      setTestMessage(isUrdu ? "اصل Gemini Live handshake verify ہو رہا ہے…" : "Verifying the real Gemini Live handshake…");
+      const live = await testGeminiLiveConnection({ data: { userKey: userKey || undefined } });
+      if (!live.ok) {
         setTestState("error");
-        setTestMessage(live.error);
+        setTestMessage(`${isUrdu ? "Live voice handshake ناکام رہا: " : "Live voice handshake failed: "}${live.error}`);
         return;
       }
 
       onApplyGeminiKey(userKey);
       setTestState("success");
-      setTestMessage(isUrdu ? "کامیاب! key apply ہو گئی اور voice connection working ہے۔" : "Success! The key is applied and voice connection is working.");
+      setTestMessage(isUrdu ? `کامیاب! key apply ہو گئی اور Live voice working ہے (${live.latencyMs}ms)۔` : `Success! The key is applied and Live voice is working (${live.latencyMs}ms).`);
       refreshHealth();
     } catch (error) {
       setTestState("error");

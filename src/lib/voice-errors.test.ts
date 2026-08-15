@@ -16,6 +16,13 @@ describe("classifyVoiceError", () => {
     expect(result.action).toContain("Vercel");
   });
 
+  it("explains Gemini 1007 as a Live setup/protocol rejection", () => {
+    const result = classifyVoiceError("Gemini Live setup rejected (1007: invalid frame payload).", "gemini");
+    expect(result.code).toBe("gemini_protocol");
+    expect(result.message).toContain("setup payload");
+    expect(result.action).toContain("Apply & Test");
+  });
+
   it("preserves cooldown metadata for provider quota errors", () => {
     const result = classifyVoiceError("HF free anon quota exhausted.", "hf", { retryAfterSec: 42 });
     expect(result.code).toBe("hf_quota");
