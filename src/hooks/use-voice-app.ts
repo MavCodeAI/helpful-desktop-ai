@@ -169,12 +169,12 @@ export function useVoiceApp() {
       stop: session.stop,
       clearPartial: () => session.setPartial(null),
       setLiveRate: session.setLiveRate,
-      reset: () => { session.setError(null); session.setCooldown(0); },
+      reset: () => { session.clearError(); session.setCooldown(0); },
       bumpUnread: scroll.bumpUnread,
     };
   }, [
     session.stop, session.setPartial, session.setLiveRate,
-    session.setError, session.setCooldown,
+    session.clearError, session.setCooldown,
     scroll.bumpUnread, sessionRef,
   ]);
 

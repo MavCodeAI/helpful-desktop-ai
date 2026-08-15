@@ -37,7 +37,7 @@ export const getAiHealth = createServerFn({ method: "GET" }).handler(async (): P
     recommendations.push("Set DEEPGRAM_API_KEY for browser microphone transcription.");
   }
   if (!realtimeConfigured) {
-    recommendations.push("Set GEMINI_API_KEY only if Gemini Live realtime audio is enabled.");
+    recommendations.push("Set GEMINI_API_KEY to enable the recommended Gemini Live realtime voice provider.");
   }
 
   return {
@@ -60,7 +60,7 @@ export const getAiHealth = createServerFn({ method: "GET" }).handler(async (): P
         configured: realtimeConfigured,
         purpose: "Optional low-latency realtime audio provider",
         env: "GEMINI_API_KEY",
-        message: realtimeConfigured ? "Configured: Gemini Live can be enabled after server-side proxy hardening." : "Optional and currently disabled.",
+        message: realtimeConfigured ? "Configured: Gemini Live short-lived session tokens are issued server-side." : "Missing GEMINI_API_KEY; Gemini Live is unavailable until it is added to Vercel.",
       },
     },
     recommendations,

@@ -12,6 +12,8 @@ import { useMicPermission, type MicPermission } from "./use-mic-permission";
 import { useCooldownTimer } from "./use-cooldown-timer";
 import { useMicTest } from "./use-mic-test";
 import { hapticError, hapticLight } from "@/lib/capacitor-native";
+import { getGeminiLiveToken } from "@/lib/gemini-live-token.functions";
+import { classifyVoiceError, type VoiceErrorInfo } from "@/lib/voice-errors";
 
 export type { MicPermission };
 
@@ -40,13 +42,30 @@ export function useRealtimeSession(opts: Options) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [partial, setPartial] = useState<VoiceMessage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<VoiceErrorInfo | null>(null);
   const [cooldown, setCooldown] = useCooldownTimer();
   const [level, setLevel] = useState<number>(0);
   const [latency, setLatency] = useState<number | null>(null);
   const [sttLatency, setSttLatency] = useState<number | null>(null);
   const [ttsLatency, setTtsLatency] = useState<number | null>(null);
   const [micPermission, setMicPermission] = useMicPermission();
-  const { micTest, start: startMicTestMode, stop: stopMicTestMode } = useMicTest(setLevel, setError);
+  const clearError = useCallback(() => {
+    setError(null);
+    setErrorInfo(null);
+  }, []);
+  const reportError = useCallback((raw: string, meta?: { retryAfterSec?: number }) => {
+    const info = classifyVoiceError(raw, provider, meta);
+    setError(info.message);
+    setErrorInfo(info);
+    setStatus("error");
+    hapticError();
+    if (info.retryAfterSec) setCooldown(info.retryAfterSec);
+  }, [provider, setCooldown]);
+  const micError = useCallback((message: string | null) => {
+    if (message) reportError(message);
+    else clearError();
+  }, [clearError, reportError]);
+  const { micTest, start: startMicTestMode, stop: stopMicTestMode } = useMicTest(setLevel, micError);
 
   const controllerRef = useRef<Controller | null>(null);
   const latencyEmaRef = useRef<number | null>(null);
@@ -72,14 +91,7 @@ export function useRealtimeSession(opts: Options) {
   const start = useCallback(async () => {
     hapticLight();
     if (micTest) stopMicTestMode();
-    if (provider === "gemini" && !geminiKey) {
-      setError("Gemini key not configured on server. Ask admin to set GEMINI_API_KEY.");
-      setStatus("error");
-      hapticError();
-      onRequestKey();
-      return;
-    }
-    setError(null);
+    clearError();
     setStatus("connecting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -88,13 +100,11 @@ export function useRealtimeSession(opts: Options) {
     } catch (e: unknown) {
       const name = e instanceof Error ? e.name : "";
       setMicPermission(name === "NotAllowedError" ? "denied" : "prompt");
-      setError(
+      reportError(
         name === "NotAllowedError"
           ? "Microphone blocked. Enable it in your browser settings and try again."
           : "Could not access microphone."
       );
-      setStatus("error");
-      hapticError();
       return;
     }
     const handlers = {
@@ -122,10 +132,7 @@ export function useRealtimeSession(opts: Options) {
       onSttLatency: (ms: number) => setSttLatency(ms),
       onTtsLatency: (ms: number) => setTtsLatency(ms),
       onError: (msg: string, meta?: { retryAfterSec?: number }) => {
-        setError(msg);
-        setStatus("error");
-        hapticError();
-        if (meta?.retryAfterSec) setCooldown(meta.retryAfterSec);
+        reportError(msg, meta);
       },
     };
     try {
@@ -136,17 +143,25 @@ export function useRealtimeSession(opts: Options) {
         sensitivity,
         systemPrompt,
       };
+      let geminiToken = geminiKey;
+      if (provider === "gemini") {
+        const tokenResult = await getGeminiLiveToken();
+        if (!tokenResult.configured) {
+          reportError(tokenResult.error);
+          onRequestKey();
+          return;
+        }
+        geminiToken = tokenResult.token;
+      }
       const ctrl =
         provider === "gemini"
-          ? await startGemini(geminiKey, handlers, voiceOpts)
+          ? await startGemini(geminiToken, handlers, voiceOpts)
           : await startHF(handlers, voiceOpts);
       controllerRef.current = ctrl;
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to start");
-      setStatus("error");
-      hapticError();
+      reportError(e instanceof Error ? e.message : "Failed to start");
     }
-  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, micTest, stopMicTestMode, onRequestKey]);
+  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, micTest, stopMicTestMode, onRequestKey, clearError, reportError]);
 
   // Cleanup on unmount
   useEffect(() => () => {
@@ -162,7 +177,7 @@ export function useRealtimeSession(opts: Options) {
   const setAtBottom = useCallback((v: boolean) => { atBottomRef.current = v; }, []);
 
   return {
-    status, partial, setPartial, error, setError, cooldown, setCooldown,
+    status, partial, setPartial, error, errorInfo, setError, clearError, cooldown, setCooldown,
     level, latency, sttLatency, ttsLatency, micTest, micPermission,
     start, stop, startMicTestMode, stopMicTestMode,
     setLiveRate, setAtBottom,

@@ -15,6 +15,7 @@ import { LanguageSection } from "@/components/realtime/settings/LanguageSection"
 import { MemorySection } from "@/components/realtime/settings/MemorySection";
 import { ThemeSection } from "@/components/realtime/settings/ThemeSection";
 import { ApiKeysSection } from "@/components/realtime/settings/ApiKeysSection";
+import { ProviderSection } from "@/components/realtime/settings/ProviderSection";
 import { DangerSection } from "@/components/realtime/settings/DangerSection";
 
 export interface SettingsDrawerProps {
@@ -127,6 +128,12 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-6 divide-y divide-white/5 [&>section]:py-7 [&>section:first-child]:pt-1 [&>section:last-child]:pb-2">
+          <ProviderSection
+            provider={provider}
+            changeProvider={changeProvider}
+            geminiReady={geminiKeyReady}
+            geminiError={geminiKeyError}
+          />
           <VoicePaceSection
             currentVoice={currentVoice}
             voiceList={voiceList}

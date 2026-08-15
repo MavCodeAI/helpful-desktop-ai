@@ -182,7 +182,14 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
     h.onError("HF free anon quota exhausted.", { retryAfterSec: wait });
     return { stop: () => {} };
   }
-  if (!res.ok) { h.onError(`HF session failed: ${res.status}`); return { stop: () => {} }; }
+  if (!res.ok) {
+    if (res.status === 401) {
+      h.onError("HF session failed: 401 Unauthorized. This Hugging Face Space requires a Hugging Face login session.");
+    } else {
+      h.onError(`HF session failed: ${res.status}`);
+    }
+    return { stop: () => {} };
+  }
   const session = await res.json();
   if (session.state === "queued") { h.onError(`Queued — position ${session.position}.`); return { stop: () => {} }; }
   const connectUrl: string = session.connect_url;
@@ -317,17 +324,17 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
 
 // ────────────────────────────────────────────────────────────────────────
 // Gemini Live provider (BidiGenerateContent WebSocket)
-// Free tier via AI Studio API key. Key stays in the browser — dev-only.
+// Production uses a short-lived server-issued ephemeral token. The long-lived
+// GEMINI_API_KEY never enters the browser or Android WebView.
 // ────────────────────────────────────────────────────────────────────────
 const GEMINI_IN_SR = 16000;
 const GEMINI_OUT_SR = 24000;
 const GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-latest";
 
-export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptions): Promise<Controller> {
-  const trimmedKey = apiKey.trim();
-  if (!trimmedKey) { h.onError("Gemini API key missing."); return { stop: () => {} }; }
-  if (!trimmedKey.startsWith("AIza")) {
-    h.onError("Gemini API key looks invalid. Add a Google AI Studio key that starts with AIza.");
+export async function startGemini(accessToken: string, h: Handlers, opts?: VoiceOptions): Promise<Controller> {
+  const trimmedToken = accessToken.trim();
+  if (!trimmedToken) {
+    h.onError("Gemini Live session token missing. Configure GEMINI_API_KEY on the server.");
     return { stop: () => {} };
   }
   h.onStatus("connecting");
@@ -340,7 +347,7 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
   const player = makePlayer(GEMINI_OUT_SR, (v) => { speaking = v; h.onStatus(v ? "speaking" : "listening"); }, opts?.rate ?? 1);
 
   const url =
-    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(trimmedKey)}`;
+    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(trimmedToken)}`;
   const ws = new WebSocket(url);
   let connected = false;
   let closedByUser = false;
@@ -485,10 +492,10 @@ export async function startGemini(apiKey: string, h: Handlers, opts?: VoiceOptio
     if (closedByUser) return;
     window.clearTimeout(connectTimeout);
     if (ev.code === 1008 || ev.code === 4001 || ev.code === 4003) {
-      h.onError(`Gemini auth failed (${ev.code}). Check API key.`);
+      h.onError(`Gemini auth failed (${ev.code}). The server-issued session token was rejected.`);
       return;
     }
-    if (!connected) h.onError(`Gemini did not connect (${ev.code || "closed"}). Check API key/internet and try again.`);
+    if (!connected) h.onError(`Gemini did not connect (${ev.code || "closed"}). Check server configuration and internet, then try again.`);
   };
   return { stop, setRate: (r) => player.setRate(r) };
 }

@@ -8,6 +8,7 @@ import {
 
 import { DEFAULTS, type LiteMode } from "@/lib/realtime/constants";
 import { loadSettings, persist } from "@/lib/realtime/storage";
+import { getGeminiKey } from "@/lib/gemini-key.functions";
 import {
   type PersonaId, type LangCode,
   loadPersona, savePersona, loadCustomPrompt, saveCustomPrompt,
@@ -27,9 +28,10 @@ type Options = {
  * Gemini key is fetched from the server (GEMINI_API_KEY env) — no UI input.
  */
 export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
-  const [provider, setProvider] = useState<ProviderId>("hf");
+  const [provider, setProvider] = useState<ProviderId>("gemini");
   const geminiKey = "";
-  const geminiKeyError: string | null = null;
+  const [geminiKeyReady, setGeminiKeyReady] = useState(false);
+  const [geminiKeyError, setGeminiKeyError] = useState<string | null>(null);
   const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
   const [geminiVoice, setGeminiVoice] = useState<string>(DEFAULTS.geminiVoice);
   const [pace, setPace] = useState<Pace>(DEFAULTS.pace);
@@ -65,8 +67,23 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     setCustomPromptState(loadCustomPrompt());
     setLangState(loadLang());
     setMemoriesState(loadMemories());
-    setProvider("hf");
-    persist.provider("hf");
+    const migrationKey = "alpha_voice_provider_migrated_v2";
+    const needsProviderMigration = localStorage.getItem(migrationKey) !== "1";
+    const savedProvider: ProviderId = needsProviderMigration
+      ? "gemini"
+      : (s.provider === "hf" || s.provider === "gemini" ? s.provider : "gemini");
+    localStorage.setItem(migrationKey, "1");
+    setProvider(savedProvider);
+    persist.provider(savedProvider);
+    getGeminiKey()
+      .then((result) => {
+        setGeminiKeyReady(result.configured);
+        setGeminiKeyError(result.configured ? null : result.error);
+      })
+      .catch(() => {
+        setGeminiKeyReady(false);
+        setGeminiKeyError("Could not read server voice configuration.");
+      });
   }, []);
 
   const changeProvider = useCallback((p: ProviderId) => {
@@ -158,7 +175,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   );
 
   return {
-    provider, geminiKey, geminiKeyError,
+    provider, geminiKey, geminiKeyReady, geminiKeyError,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,

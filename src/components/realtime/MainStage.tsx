@@ -5,6 +5,7 @@ import { RingOrb } from "@/components/realtime/RingOrb";
 import { MessageStream } from "@/components/realtime/MessageStream";
 import { ActionsList } from "@/components/realtime/ActionsList";
 import { StatusPill } from "@/components/realtime/StatusPill";
+import { VoiceErrorCard } from "@/components/realtime/VoiceErrorCard";
 import { ChatComposer } from "@/components/realtime/ChatComposer";
 import type { useVoiceSettings } from "@/hooks/use-voice-settings";
 import type { useRealtimeSession } from "@/hooks/use-realtime-session";
@@ -45,7 +46,7 @@ export function MainStage({
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
   const {
-    status, partial, error, cooldown, level, latency, sttLatency, ttsLatency,
+    status, partial, error, errorInfo, cooldown, level, latency, sttLatency, ttsLatency,
     micTest, micPermission, start, stop,
   } = session;
   const { messages } = history;
@@ -146,12 +147,18 @@ export function MainStage({
           rate={rate}
           autoRate={settings.autoRate}
         />
-        {error && <div className="mt-2 text-xs text-red-400/90 max-w-md mx-auto">{error}</div>}
-        {micPermission === "denied" && !error && (
-          <div className="mt-2 text-xs text-amber-300/90 max-w-md mx-auto">
-            Microphone access is blocked. Enable it in your browser site settings.
+        {errorInfo ? (
+          <VoiceErrorCard
+            error={errorInfo}
+            cooldown={cooldown}
+            onRetry={start}
+            onOpenSettings={onOpenSettings}
+          />
+        ) : micPermission === "denied" ? (
+          <div className="mt-3 text-xs text-amber-300/90 max-w-md mx-auto">
+            Microphone access is blocked. Open Android/browser site settings, allow microphone access, and try again.
           </div>
-        )}
+        ) : null}
       </section>
     </div>
   );

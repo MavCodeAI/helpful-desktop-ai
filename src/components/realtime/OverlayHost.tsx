@@ -83,7 +83,7 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           onClose={() => setShowVoiceMenu(false)}
           provider={settings.provider}
           changeProvider={settings.changeProvider}
-          geminiKeyReady={!!settings.geminiKey}
+          geminiKeyReady={settings.geminiKeyReady}
           geminiKeyError={settings.geminiKeyError}
           currentVoice={settings.currentVoice}
           voiceList={settings.voiceList}
