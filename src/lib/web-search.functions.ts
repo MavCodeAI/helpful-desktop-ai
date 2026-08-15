@@ -5,7 +5,8 @@ import type { LangCode } from "@/lib/persona";
 import { generateGeminiText, geminiUserText } from "./gemini-text.server";
 
 export type WebSource = { title: string; url: string; snippet?: string };
-export type WebSearchResult = { query: string; summary: string; sources: WebSource[] };
+export type WebSearchProvider = "searxng" | "firecrawl" | "duckduckgo" | "none";
+export type WebSearchResult = { query: string; summary: string; sources: WebSource[]; provider: WebSearchProvider };
 
 type SearchItem = {
   url?: string;
@@ -20,10 +21,39 @@ type DuckTopic = {
   Topics?: DuckTopic[];
 };
 
+type SearxResult = {
+  url?: string;
+  title?: string;
+  content?: string;
+};
+
 const SUPPORTED_LANGS = ["auto", "en", "ur", "ar", "tr", "fr", "es"] as const;
 const SUPPORTED_COUNTRIES = [
   "SA", "AE", "QA", "KW", "BH", "OM", "JO", "EG", "PK", "IN", "TR", "GB", "US", "CA", "AU", "FR", "ES", "DE", "MY", "ID", "NG", "ZA",
 ] as const;
+
+async function searxngSearch(query: string, lang: LangCode, country: CountryCode): Promise<SearchItem[]> {
+  const configuredBase = process.env.SEARXNG_URL?.trim();
+  if (!configuredBase) return [];
+  const base = new URL(configuredBase);
+  const url = new URL("/search", base);
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("categories", "general");
+  if (lang !== "auto") url.searchParams.set("language", `${lang}-${country}`);
+
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`SearXNG search failed [${res.status}]`);
+  const json = await res.json() as { results?: SearxResult[] };
+  return (json.results ?? []).map((item) => ({
+    url: item.url?.trim(),
+    title: item.title?.trim(),
+    description: item.content?.trim(),
+  })).filter((item) => item.url && item.title).slice(0, 5);
+}
 
 async function firecrawlSearch(query: string, apiKey: string): Promise<SearchItem[]> {
   const res = await fetch("https://api.firecrawl.dev/v2/search", {
@@ -76,9 +106,7 @@ function languageInstruction(lang: LangCode): string {
 }
 
 function fallbackSummary(query: string, items: SearchItem[], lang: LangCode): string {
-  if (items.length === 0) {
-    return lang === "ur" ? `ویب پر “${query}” کے لیے کوئی نتیجہ نہیں ملا۔` : lang === "ar" ? `لم يتم العثور على نتائج للبحث عن “${query}”.` : `No web results were found for “${query}”.`;
-  }
+  if (items.length === 0) return lang === "ur" ? `ویب پر “${query}” کے لیے کوئی نتیجہ نہیں ملا۔` : lang === "ar" ? `لم يتم العثور على نتائج للبحث عن “${query}”.` : `No web results were found for “${query}”.`;
   const prefix = lang === "ur" ? `ویب سرچ کے نتائج “${query}”:` : lang === "ar" ? `نتائج البحث عن “${query}”: ` : `Web results for “${query}”: `;
   return `${prefix}\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.title ?? item.url}`).join("\n")}`;
 }
@@ -106,24 +134,40 @@ export const webSearchSummarize = createServerFn({ method: "POST" })
   }).parse(input))
   .handler(async ({ data }): Promise<WebSearchResult> => {
     const country = countryOption(data.country as CountryCode);
+    const lang = data.lang as LangCode;
     const contextualQuery = `${country.label} ${data.query}`.trim();
     let items: SearchItem[] = [];
-    if (process.env.FIRECRAWL_API_KEY?.trim()) {
-      try { items = await firecrawlSearch(contextualQuery, process.env.FIRECRAWL_API_KEY.trim()); } catch { /* use free fallback */ }
+    let provider: WebSearchProvider = "none";
+
+    if (process.env.SEARXNG_URL?.trim()) {
+      try {
+        items = await searxngSearch(contextualQuery, lang, country.code);
+        if (items.length) provider = "searxng";
+      } catch { /* use next fallback */ }
     }
-    if (items.length === 0) items = await duckDuckGoSearch(contextualQuery);
+    if (items.length === 0 && process.env.FIRECRAWL_API_KEY?.trim()) {
+      try {
+        items = await firecrawlSearch(contextualQuery, process.env.FIRECRAWL_API_KEY.trim());
+        if (items.length) provider = "firecrawl";
+      } catch { /* use free fallback */ }
+    }
+    if (items.length === 0) {
+      items = await duckDuckGoSearch(contextualQuery);
+      if (items.length) provider = "duckduckgo";
+    }
+
     const sources: WebSource[] = items.slice(0, 5).map((item) => ({
       title: item.title ?? item.url ?? "Untitled",
       url: item.url ?? "",
       snippet: item.description,
     })).filter((source) => source.url);
-    if (sources.length === 0) return { query: data.query, summary: fallbackSummary(data.query, items, data.lang as LangCode), sources: [] };
+    if (sources.length === 0) return { query: data.query, summary: fallbackSummary(data.query, items, lang), sources: [], provider: "none" };
 
-    let summary = fallbackSummary(data.query, items, data.lang as LangCode);
+    let summary = fallbackSummary(data.query, items, lang);
     try {
-      summary = await summarize(data.query, items, data.lang as LangCode, country.label, data.userKey);
+      summary = await summarize(data.query, items, lang, country.label, data.userKey);
     } catch {
       // Keep a source-only result when Gemini is temporarily unavailable.
     }
-    return { query: data.query, summary, sources };
+    return { query: data.query, summary, sources, provider };
   });

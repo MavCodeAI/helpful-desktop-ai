@@ -16,7 +16,7 @@ import { onGlobalHotkey, onTrayAction, isElectron } from "@/lib/electron-bridge"
 import type { VoiceMessage } from "@/lib/voice-providers";
 import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
 import { cachedWebSearch } from "@/lib/web-search-cache";
-import { getLatestNews } from "@/lib/news.functions";
+import { getLatestNews, type NewsItem } from "@/lib/news.functions";
 import { extractMemoryFacts } from "@/lib/memories.functions";
 import { chatReply } from "@/lib/chat-reply.functions";
 import { generateNote } from "@/lib/note-ai.functions";
@@ -121,7 +121,7 @@ export function useVoiceApp() {
     try {
       const res = await getLatestNews({ data: { query: query || "latest news", country: settings.country, lang: settings.lang, userKey: settings.geminiKey || undefined } });
       const showCitations = (await import("@/lib/realtime/constants")).loadWebCitations();
-      const sources = res.items.map((item, index) => `[${index + 1}] ${item.title}\n${item.url}`).join("\n");
+      const sources = res.items.map((item: NewsItem, index: number) => `[${index + 1}] ${item.title}\n${item.url}`).join("\n");
       const text = showCitations && sources ? `${res.summary}\n\n**Sources:**\n${sources}` : res.summary.replace(/\s*\[\d+\]/g, "").replace(/\s{2,}/g, " ").trim();
       setMessages((prev) => {
         const next = [...prev];

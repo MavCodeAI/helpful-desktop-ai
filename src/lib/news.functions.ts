@@ -17,7 +17,7 @@ export type NewsResult = {
   country: CountryCode;
   summary: string;
   items: NewsItem[];
-  provider: "gdelt";
+  provider: "gdelt" | "google-rss";
 };
 
 type GdeltArticle = {
@@ -26,6 +26,14 @@ type GdeltArticle = {
   domain?: string;
   seendate?: string;
   sourcecountry?: string;
+};
+
+type GoogleRssItem = {
+  title?: string;
+  link?: string;
+  description?: string;
+  pubDate?: string;
+  source?: string;
 };
 
 const SUPPORTED_LANGS = ["auto", "en", "ur", "ar", "tr", "fr", "es"] as const;
@@ -84,38 +92,115 @@ async function summarizeNews(query: string, items: NewsItem[], lang: LangCode, c
   }
 }
 
+async function fetchGdeltNews(query: string): Promise<NewsItem[]> {
+  const url = new URL("https://api.gdeltproject.org/api/v2/doc/doc");
+  url.searchParams.set("query", query);
+  url.searchParams.set("mode", "artlist");
+  url.searchParams.set("maxrecords", "8");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("sort", "datedesc");
+  url.searchParams.set("timespan", "48h");
+
+  const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  if (!response.ok) throw new Error(`GDELT returned HTTP ${response.status}.`);
+  const json = await response.json() as { articles?: GdeltArticle[] };
+  return (json.articles ?? []).map((item) => ({
+    title: item.title?.trim() || "Untitled article",
+    url: item.url?.trim() || "",
+    domain: item.domain?.trim() || undefined,
+    seenDate: item.seendate?.trim() || undefined,
+    sourceCountry: item.sourcecountry?.trim() || undefined,
+  })).filter((item) => item.url && item.title).slice(0, 8);
+}
+
+function decodeXml(value: string): string {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&#x27;|&#39;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+}
+
+function readXmlTag(block: string, tag: string): string | undefined {
+  const match = block.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag}>`, "i"));
+  return match?.[1] ? decodeXml(match[1]) : undefined;
+}
+
+function googleNewsLanguage(lang: LangCode): string {
+  switch (lang) {
+    case "ur": return "ur";
+    case "ar": return "ar";
+    case "tr": return "tr";
+    case "fr": return "fr";
+    case "es": return "es";
+    default: return "en";
+  }
+}
+
+async function fetchGoogleNewsRss(query: string, country: CountryCode, lang: LangCode, countryLabel: string): Promise<NewsItem[]> {
+  const language = googleNewsLanguage(lang);
+  const url = new URL("https://news.google.com/rss/search");
+  url.searchParams.set("q", `${countryLabel} ${query}`.trim());
+  url.searchParams.set("hl", `${language}-${country.toLowerCase()}`);
+  url.searchParams.set("gl", country);
+  url.searchParams.set("ceid", `${country}:${language}`);
+
+  const response = await fetch(url, {
+    headers: { Accept: "application/rss+xml, application/xml, text/xml" },
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!response.ok) throw new Error(`Google News RSS returned HTTP ${response.status}.`);
+  const xml = await response.text();
+  const itemBlocks = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)].map((match) => match[1]);
+  return itemBlocks.map((block) => {
+    const articleUrl = readXmlTag(block, "link") || "";
+    let domain: string | undefined;
+    try { domain = new URL(articleUrl).hostname.replace(/^www\./, ""); } catch { /* keep undefined */ }
+    return {
+      title: readXmlTag(block, "title") || "Untitled article",
+      url: articleUrl,
+      domain,
+      seenDate: readXmlTag(block, "pubDate"),
+      sourceCountry: country,
+    };
+  }).filter((item) => item.url && item.title).slice(0, 8);
+}
+
 export const getLatestNews = createServerFn({ method: "POST" })
   .validator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }): Promise<NewsResult> => {
     const selected = countryOption(data.country as CountryCode);
     const userQuery = data.query.trim() || "latest news";
-    const query = userQuery.toLowerCase() === "latest news"
+    const gdeltQuery = userQuery.toLowerCase() === "latest news"
       ? `sourcecountry:${selected.code}`
       : `sourcecountry:${selected.code} ${userQuery}`;
-    const url = new URL("https://api.gdeltproject.org/api/v2/doc/doc");
-    url.searchParams.set("query", query);
-    url.searchParams.set("mode", "artlist");
-    url.searchParams.set("maxrecords", "8");
-    url.searchParams.set("format", "json");
-    url.searchParams.set("sort", "datedesc");
-    url.searchParams.set("timespan", "48h");
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-    if (!response.ok) throw new Error(`News provider returned HTTP ${response.status}.`);
-    const json = await response.json() as { articles?: GdeltArticle[] };
-    const items: NewsItem[] = (json.articles ?? []).map((item) => ({
-      title: item.title?.trim() || "Untitled article",
-      url: item.url?.trim() || "",
-      domain: item.domain?.trim() || undefined,
-      seenDate: item.seendate?.trim() || undefined,
-      sourceCountry: item.sourcecountry?.trim() || undefined,
-    })).filter((item) => item.url && item.title).slice(0, 8);
+    let items: NewsItem[] = [];
+    let provider: NewsResult["provider"] = "gdelt";
+    try {
+      items = await fetchGdeltNews(gdeltQuery);
+    } catch {
+      // Google News RSS is the keyless secondary source.
+    }
+    if (items.length === 0) {
+      try {
+        items = await fetchGoogleNewsRss(userQuery, selected.code, data.lang as LangCode, selected.label);
+        provider = "google-rss";
+      } catch {
+        // Keep an empty, localized result instead of failing the voice action.
+      }
+    }
 
     return {
       query: userQuery,
       country: selected.code,
       summary: await summarizeNews(userQuery, items, data.lang as LangCode, selected.label, data.userKey),
       items,
-      provider: "gdelt",
+      provider,
     };
   });
