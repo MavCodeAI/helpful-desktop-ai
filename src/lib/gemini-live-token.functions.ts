@@ -103,6 +103,18 @@ function liveSetupMessage() {
   };
 }
 
+async function websocketEventText(data: unknown): Promise<string> {
+  if (typeof data === "string") return data;
+  if (data instanceof ArrayBuffer) return new TextDecoder().decode(new Uint8Array(data));
+  if (ArrayBuffer.isView(data)) {
+    return new TextDecoder().decode(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+  }
+  if (data && typeof (data as { text?: unknown }).text === "function") {
+    return await (data as Blob).text();
+  }
+  return String(data ?? "");
+}
+
 async function probeLiveWebSocket(token: string): Promise<{ ok: true; latencyMs: number } | { ok: false; latencyMs: number; error: string; closeCode?: number }> {
   const startedAt = performance.now();
   const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`;
@@ -128,9 +140,10 @@ async function probeLiveWebSocket(token: string): Promise<{ ok: true; latencyMs:
         finish({ ok: false, latencyMs: Math.round(performance.now() - startedAt), error: "Could not send the Gemini Live setup message." });
       }
     });
-    ws.addEventListener("message", (event) => {
+    ws.addEventListener("message", async (event) => {
       try {
-        const payload = JSON.parse(typeof event.data === "string" ? event.data : String(event.data)) as {
+        const raw = await websocketEventText(event.data);
+        const payload = JSON.parse(raw) as {
           setupComplete?: unknown;
           error?: { message?: string; code?: number; status?: string };
         };
