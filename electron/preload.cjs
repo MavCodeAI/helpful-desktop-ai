@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld("alpha", {
   getHotkey: () => ipcRenderer.invoke("alpha:getHotkey"),
   getActiveWindow: () => ipcRenderer.invoke("alpha:getActiveWindow"),
   captureScreenshot: () => ipcRenderer.invoke("alpha:captureScreenshot"),
+  openFolder: (key) => ipcRenderer.invoke("alpha:openFolder", key),
+  launchPinnedApp: (key) => ipcRenderer.invoke("alpha:launchPinnedApp", key),
   quit: () => ipcRenderer.send("alpha:quit"),
 
   onHotkey: (cb) => {

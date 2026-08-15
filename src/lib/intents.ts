@@ -21,6 +21,8 @@ export type Intent = {
     | { type: "memory-add"; text: string }
     | { type: "file-open" }
     | { type: "file-save" }
+    | { type: "open-folder"; folder: string; label: string }
+    | { type: "launch-app"; app: string; label: string }
     | { type: "coming-soon"; feature: string };
 };
 
@@ -110,6 +112,63 @@ function findApp(fragment: string): { key: string; app: { url: string; name: str
   const keys = Object.keys(APPS).sort((a, b) => b.length - a.length);
   for (const k of keys) {
     if (f.includes(` ${k} `)) return { key: k, app: APPS[k] };
+  }
+  return null;
+}
+
+const NATIVE_FOLDERS: Record<string, { key: string; label: string }> = {
+  home: { key: "home", label: "Home" },
+  گھر: { key: "home", label: "Home" },
+  desktop: { key: "desktop", label: "Desktop" },
+  "ڈیسک ٹاپ": { key: "desktop", label: "Desktop" },
+  documents: { key: "documents", label: "Documents" },
+  document: { key: "documents", label: "Documents" },
+  docs: { key: "documents", label: "Documents" },
+  دستاویزات: { key: "documents", label: "Documents" },
+  downloads: { key: "downloads", label: "Downloads" },
+  download: { key: "downloads", label: "Downloads" },
+  "ڈاؤن لوڈز": { key: "downloads", label: "Downloads" },
+  "ڈاؤن لوڈ": { key: "downloads", label: "Downloads" },
+  pictures: { key: "pictures", label: "Pictures" },
+  images: { key: "pictures", label: "Pictures" },
+  تصاویر: { key: "pictures", label: "Pictures" },
+  music: { key: "music", label: "Music" },
+  موسیقی: { key: "music", label: "Music" },
+  videos: { key: "videos", label: "Videos" },
+  video: { key: "videos", label: "Videos" },
+  ویڈیوز: { key: "videos", label: "Videos" },
+  temp: { key: "temp", label: "Temporary files" },
+};
+
+const NATIVE_APPS: Record<string, { key: string; label: string }> = {
+  calculator: { key: "calculator", label: "Calculator" },
+  calc: { key: "calculator", label: "Calculator" },
+  کیلکولیٹر: { key: "calculator", label: "Calculator" },
+  notepad: { key: "notepad", label: "Notepad" },
+  "note pad": { key: "notepad", label: "Notepad" },
+  "نوٹ پیڈ": { key: "notepad", label: "Notepad" },
+  paint: { key: "paint", label: "Paint" },
+  پنٹ: { key: "paint", label: "Paint" },
+  explorer: { key: "explorer", label: "File Explorer" },
+  "file explorer": { key: "explorer", label: "File Explorer" },
+  "فائل ایکسپلورر": { key: "explorer", label: "File Explorer" },
+  taskmanager: { key: "taskmanager", label: "Task Manager" },
+  "task manager": { key: "taskmanager", label: "Task Manager" },
+  "ٹاسک مینیجر": { key: "taskmanager", label: "Task Manager" },
+  settings: { key: "settings", label: "Windows Settings" },
+  "windows settings": { key: "settings", label: "Windows Settings" },
+  "ونڈوز سیٹنگز": { key: "settings", label: "Windows Settings" },
+};
+
+function findNativeAlias(fragment: string, entries: Record<string, { key: string; label: string }>) {
+  const normalized = norm(fragment)
+    .replace(/\b(?:folder|directory)\b/gi, " ")
+    .replace(/فولڈر|ڈائریکٹری/giu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const keys = Object.keys(entries).sort((a, b) => b.length - a.length);
+  for (const alias of keys) {
+    if (normalized === alias || normalized.includes(` ${alias} `)) return entries[alias];
   }
   return null;
 }
@@ -246,6 +305,32 @@ export function detectIntent(raw: string): Intent | null {
     return { kind: "file", label: "Save file…", url: "", action: { type: "file-save" } };
   }
 
+
+  // ── 0e6. Windows folders and pinned apps ────────────────────────────
+  const nativeOpen =
+    /^(?:open|launch|start|go to|visit|افتح|شغّل|شغل|اذهب\s+(?:إلى|الى))\s+(.+)$/iu.exec(text) ||
+    /^(.+?)\s+(?:folder\s+)?(?:open karo|open kar do|kholo|khol do|kholiye|افتح|افتحه|کھولو|کھول دو|کھولیں)$/iu.exec(text);
+  if (nativeOpen) {
+    const target = nativeOpen[1].trim();
+    const folder = findNativeAlias(target, NATIVE_FOLDERS);
+    if (folder) {
+      return {
+        kind: "open-folder",
+        label: `Open ${folder.label}`,
+        url: "",
+        action: { type: "open-folder", folder: folder.key, label: folder.label },
+      };
+    }
+    const app = findNativeAlias(target, NATIVE_APPS);
+    if (app) {
+      return {
+        kind: "launch-app",
+        label: `Launch ${app.label}`,
+        url: "",
+        action: { type: "launch-app", app: app.key, label: app.label },
+      };
+    }
+  }
 
   // ── 0f. News ────────────────────────────────────────────────────────
   const news = /^(?:news\s+about\s+(.+)|(?:latest\s+)?news(?:\s+(?:sunao|batao|do|suna(?:\s+do)?))?|(?:khabrein|khabar)\s+(?:sunao|batao|do)|(?:مجھے\s+)?(?:تازہ\s+)?(?:نیوز|خبریں|خبر)\s*(?:سناؤ|سنائیں|بتاؤ|بتائیں|دو)?|(?:آخر\s+)?الأخبار\s*(?:اليوم|الآن)?)$/iu.exec(text);

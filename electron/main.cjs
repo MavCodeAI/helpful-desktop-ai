@@ -197,6 +197,60 @@ ipcMain.handle("alpha:captureScreenshot", async () => {
   }
 });
 
+// Fixed folder aliases. The renderer can request an alias only; it never
+// supplies an arbitrary filesystem path.
+const FOLDER_ALIASES = {
+  home: { label: "Home", resolve: () => app.getPath("home") },
+  desktop: { label: "Desktop", resolve: () => app.getPath("desktop") },
+  documents: { label: "Documents", resolve: () => app.getPath("documents") },
+  downloads: { label: "Downloads", resolve: () => app.getPath("downloads") },
+  pictures: { label: "Pictures", resolve: () => app.getPath("pictures") },
+  music: { label: "Music", resolve: () => app.getPath("music") },
+  videos: { label: "Videos", resolve: () => app.getPath("videos") },
+  temp: { label: "Temporary files", resolve: () => app.getPath("temp") },
+};
+
+ipcMain.handle("alpha:openFolder", async (_e, requestedKey) => {
+  const key = String(requestedKey || "").trim().toLowerCase();
+  const folder = FOLDER_ALIASES[key];
+  if (!folder) return null;
+  try {
+    const error = await shell.openPath(folder.resolve());
+    return error ? null : { key, label: folder.label };
+  } catch {
+    return null;
+  }
+});
+
+// Pinned apps deliberately use fixed executable names or fixed Windows URI
+// schemes. No executable path, arguments, or shell command comes from voice.
+const PINNED_APPS = {
+  calculator: { label: "Calculator", executable: "calc.exe" },
+  notepad: { label: "Notepad", executable: "notepad.exe" },
+  paint: { label: "Paint", executable: "mspaint.exe" },
+  explorer: { label: "File Explorer", executable: "explorer.exe" },
+  taskmanager: { label: "Task Manager", executable: "taskmgr.exe" },
+  settings: { label: "Windows Settings", uri: "ms-settings:" },
+};
+
+ipcMain.handle("alpha:launchPinnedApp", async (_e, requestedKey) => {
+  const key = String(requestedKey || "").trim().toLowerCase();
+  const target = PINNED_APPS[key];
+  if (!target) return null;
+  try {
+    if (target.uri) {
+      await shell.openExternal(target.uri);
+    } else if (process.platform === "win32") {
+      execFile(target.executable, [], { windowsHide: true, timeout: 3000 });
+    } else {
+      return null;
+    }
+    return { key, label: target.label };
+  } catch {
+    return null;
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
   createTray();

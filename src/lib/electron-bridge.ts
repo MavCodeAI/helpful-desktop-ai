@@ -16,6 +16,8 @@ type Bridge = {
   getHotkey: () => Promise<string>;
   getActiveWindow: () => Promise<string | null>;
   captureScreenshot: () => Promise<{ name: string } | null>;
+  openFolder: (key: string) => Promise<{ key: string; label: string } | null>;
+  launchPinnedApp: (key: string) => Promise<{ key: string; label: string } | null>;
   quit: () => void;
 };
 
@@ -150,4 +152,14 @@ export async function getActiveWindowTitle(): Promise<string | null> {
 export async function captureNativeScreenshot(): Promise<{ name: string } | null> {
   if (!isElectron()) return null;
   try { return await window.alpha!.captureScreenshot(); } catch { return null; }
+}
+
+export async function openNativeFolder(key: string): Promise<{ key: string; label: string } | null> {
+  if (!isElectron()) return null;
+  try { return await window.alpha!.openFolder(key); } catch { return null; }
+}
+
+export async function launchPinnedNativeApp(key: string): Promise<{ key: string; label: string } | null> {
+  if (!isElectron()) return null;
+  try { return await window.alpha!.launchPinnedApp(key); } catch { return null; }
 }

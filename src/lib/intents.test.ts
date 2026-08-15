@@ -74,6 +74,24 @@ describe("detectIntent — core intents", () => {
     expect(i?.url).toBe("https://www.google.com");
   });
 
+  it("detects allowlisted Windows folders", () => {
+    expect(detectIntent("open Downloads folder")?.action).toEqual({
+      type: "open-folder",
+      folder: "downloads",
+      label: "Downloads",
+    });
+    expect(detectIntent("ڈاؤن لوڈز کھولو")?.action?.type).toBe("open-folder");
+  });
+
+  it("detects allowlisted Windows apps", () => {
+    expect(detectIntent("open calculator")?.action).toEqual({
+      type: "launch-app",
+      app: "calculator",
+      label: "Calculator",
+    });
+    expect(detectIntent("کیلکولیٹر کھولو")?.action?.type).toBe("launch-app");
+  });
+
   it("returns null for empty / chit-chat", () => {
     expect(detectIntent("")).toBeNull();
     expect(detectIntent("hey how are you")).toBeNull();

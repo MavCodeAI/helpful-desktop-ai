@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { detectIntent, type Intent } from "@/lib/intents";
-import { captureNativeScreenshot, getActiveWindowTitle, getRegisteredHotkey, isElectron, openExternal, readTextFile, writeTextFile } from "@/lib/electron-bridge";
+import { captureNativeScreenshot, getActiveWindowTitle, getRegisteredHotkey, isElectron, launchPinnedNativeApp, openExternal, openNativeFolder, readTextFile, writeTextFile } from "@/lib/electron-bridge";
 import { addNoteRaw } from "@/lib/utilities/notes";
 import { addMemory } from "@/lib/persona";
 import { describeScreen, askAI } from "@/lib/ai-vision.functions";
@@ -28,7 +28,8 @@ type Options = {
 function requiresNativeApproval(intent: Intent): boolean {
   const type = intent.action?.type;
   return type === "clipboard-copy" || type === "clipboard-read" || type === "file-open" ||
-    type === "file-save" || type === "screenshot" || type === "screen-vision" || type === "active-window";
+    type === "file-save" || type === "open-folder" || type === "launch-app" || type === "screenshot" ||
+    type === "screen-vision" || type === "active-window";
 }
 
 async function captureScreenBase64(): Promise<{ b64: string; mime: string } | null> {
@@ -277,6 +278,40 @@ export function useIntentActions(opts: Options = {}) {
           pushAction(intent, ok);
         } catch (e) {
           toast.error("Save failed", { description: e instanceof Error ? e.message : "" });
+          pushAction(intent, false);
+        }
+        break;
+      case "open-folder":
+        try {
+          const result = await openNativeFolder(a.folder);
+          if (!result) {
+            toast.error("Folder action unavailable", {
+              description: "یہ command صرف Windows Electron app میں چلتی ہے؛ browser یا Android میں folder access دستیاب نہیں۔",
+            });
+            pushAction(intent, false);
+            break;
+          }
+          toast.success(`${result.label} opened`);
+          pushAction(intent, true);
+        } catch {
+          toast.error("Folder نہیں کھل سکا", { description: "Windows folder action دوبارہ آزمائیں۔" });
+          pushAction(intent, false);
+        }
+        break;
+      case "launch-app":
+        try {
+          const result = await launchPinnedNativeApp(a.app);
+          if (!result) {
+            toast.error("App launch unavailable", {
+              description: "یہ pinned app command صرف Windows Electron app میں چلتی ہے۔",
+            });
+            pushAction(intent, false);
+            break;
+          }
+          toast.success(`${result.label} launched`);
+          pushAction(intent, true);
+        } catch {
+          toast.error("App launch نہیں ہو سکا", { description: "Pinned app دوبارہ آزمائیں۔" });
           pushAction(intent, false);
         }
         break;
