@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 export type GeminiLiveTokenResult =
   | { configured: true; token: string; expiresAt: string }
@@ -8,8 +9,10 @@ export type GeminiLiveTokenResult =
  * Issues a short-lived, single-use Gemini Live token. The long-lived API key
  * never leaves the server. See https://ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens
  */
-export const getGeminiLiveToken = createServerFn({ method: "GET" }).handler(async (): Promise<GeminiLiveTokenResult> => {
-  const apiKey = (process.env.GEMINI_API_KEY ?? "").trim();
+export const getGeminiLiveToken = createServerFn({ method: "POST" })
+  .validator((input: unknown) => z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}))
+  .handler(async ({ data }): Promise<GeminiLiveTokenResult> => {
+  const apiKey = (data.userKey || process.env.GEMINI_API_KEY || "").trim();
   if (!apiKey) {
     return {
       configured: false,
@@ -42,7 +45,7 @@ export const getGeminiLiveToken = createServerFn({ method: "GET" }).handler(asyn
         newSessionExpireTime,
       }),
       signal: AbortSignal.timeout(10_000),
-    });
+      });
 
     if (!response.ok) {
       const providerText = await response.text().catch(() => "");

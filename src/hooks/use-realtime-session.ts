@@ -145,7 +145,7 @@ export function useRealtimeSession(opts: Options) {
       };
       let geminiToken = geminiKey;
       if (provider === "gemini") {
-        const tokenResult = await getGeminiLiveToken();
+        const tokenResult = await getGeminiLiveToken({ data: { userKey: geminiKey.trim() || undefined } });
         if (!tokenResult.configured) {
           reportError(tokenResult.error);
           onRequestKey();

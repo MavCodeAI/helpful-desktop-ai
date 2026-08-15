@@ -25,11 +25,12 @@ type Options = {
 
 /**
  * All persisted voice/provider settings + their change handlers.
- * Gemini key is fetched from the server (GEMINI_API_KEY env) — no UI input.
+ * Gemini readiness comes from the server; an optional user key can be applied
+ * from Settings for a direct connection test and a session-scoped voice flow.
  */
 export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
   const [provider, setProvider] = useState<ProviderId>("gemini");
-  const geminiKey = "";
+  const [geminiKey, setGeminiKey] = useState("");
   const [geminiKeyReady, setGeminiKeyReady] = useState(false);
   const [geminiKeyError, setGeminiKeyError] = useState<string | null>(null);
   const [hfVoice, setHfVoice] = useState<string>(DEFAULTS.hfVoice);
@@ -51,6 +52,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
 
   useEffect(() => {
     const s = loadSettings();
+    setGeminiKey(s.geminiKey);
     setHfVoice(s.hfVoice);
     setGeminiVoice(s.geminiVoice);
     setPace(s.pace);
@@ -85,6 +87,16 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
         setGeminiKeyError("Could not read server voice configuration.");
       });
   }, []);
+
+  const applyGeminiKey = useCallback((value: string) => {
+    const next = value.trim();
+    onStop();
+    setGeminiKey(next);
+    persist.geminiKey(next);
+    setGeminiKeyReady(Boolean(next));
+    setGeminiKeyError(next ? null : "No Gemini key has been applied on this device.");
+    onSessionReset();
+  }, [onStop, onSessionReset]);
 
   const changeProvider = useCallback((p: ProviderId) => {
     onStop();
@@ -175,7 +187,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   );
 
   return {
-    provider, geminiKey, geminiKeyReady, geminiKeyError,
+    provider, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey,
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,
