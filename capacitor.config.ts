@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const productionUrl =
   process.env.CAPACITOR_SERVER_URL?.trim() ||
-  "https://alpha9in-bo56doh91-abdulbasitdarwesh-gmailcoms-projects.vercel.app";
+  "https://alpha9in.vercel.app";
 
 const config: CapacitorConfig = {
   appId: "com.mavcodeai.alpha",
