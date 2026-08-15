@@ -4,6 +4,7 @@ import type { useOverlays } from "@/hooks/use-overlays";
 import type { useVoiceSettings } from "@/hooks/use-voice-settings";
 import type { useThreadHistory } from "@/hooks/use-thread-history";
 import type { useRealtimeSession } from "@/hooks/use-realtime-session";
+import type { useBriefingSettings } from "@/hooks/use-briefing-settings";
 
 const HistoryDrawer = lazy(() =>
   import("@/components/realtime/HistoryDrawer").then((m) => ({ default: m.HistoryDrawer }))
@@ -22,6 +23,7 @@ type Overlays = ReturnType<typeof useOverlays>;
 type Settings = ReturnType<typeof useVoiceSettings>;
 type History = ReturnType<typeof useThreadHistory>;
 type Session = ReturnType<typeof useRealtimeSession>;
+type Briefing = ReturnType<typeof useBriefingSettings>;
 
 interface Props {
   overlays: Overlays;
@@ -34,9 +36,10 @@ interface Props {
   textBusy: boolean;
   onCreateNote: (text: string) => void | Promise<void>;
   notePending: boolean;
+  briefing: Briefing;
 }
 
-export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy, onCreateNote, notePending }: Props) {
+export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy, onCreateNote, notePending, briefing }: Props) {
   const {
     showHistory, setShowHistory,
     showVoiceMenu, setShowVoiceMenu,
@@ -134,6 +137,10 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           addMemory={settings.addMemory}
           removeMemory={settings.removeMemory}
           clearMemories={settings.clearMemories}
+          briefingEnabled={briefing.enabled}
+          briefingTime={briefing.time}
+          toggleBriefing={briefing.toggleBriefing}
+          changeBriefingTime={briefing.changeBriefingTime}
         />
       )}
       {showChat && (

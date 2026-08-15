@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { MessageBubble, PartialBubble, TypingBubble } from "./MessageBubble";
+import { CitedSources, parseCitations } from "./CitedSources";
 import type { VoiceMessage, VoiceStatus } from "@/lib/voice-providers";
 
 type Props = {
@@ -30,9 +31,15 @@ export const MessageStream = forwardRef<HTMLDivElement, Props>(function MessageS
         onScroll={onScroll}
         className="flex flex-col gap-2.5 sm:gap-3.5 max-h-[50dvh] sm:max-h-80 lg:max-h-[70dvh] overflow-y-auto pr-1 scroll-smooth"
       >
-        {messages.map((m, i) => (
-          <MessageBubble key={i} role={m.role} text={m.text} />
-        ))}
+        {messages.map((m, i) => {
+          const cited = m.role === "assistant" ? parseCitations(m.text) : { body: m.text, sources: [] };
+          return (
+            <div key={i}>
+              <MessageBubble role={m.role} text={cited.body} />
+              {m.role === "assistant" && <CitedSources sources={cited.sources} />}
+            </div>
+          );
+        })}
         {partial && <PartialBubble role={partial.role} text={partial.text} />}
         {showTyping && (
           <TypingBubble label={status === "connecting" ? "connecting" : "typing"} />

@@ -19,6 +19,7 @@ import { ThemeSection } from "@/components/realtime/settings/ThemeSection";
 import { ApiKeysSection } from "@/components/realtime/settings/ApiKeysSection";
 import { ProviderSection } from "@/components/realtime/settings/ProviderSection";
 import { DangerSection } from "@/components/realtime/settings/DangerSection";
+import { BriefingSection } from "@/components/realtime/settings/BriefingSection";
 
 export interface SettingsDrawerProps {
   open: boolean;
@@ -76,6 +77,10 @@ export interface SettingsDrawerProps {
   addMemory: (t: string) => void;
   removeMemory: (i: number) => void;
   clearMemories: () => void;
+  briefingEnabled: boolean;
+  briefingTime: string;
+  toggleBriefing: (enabled: boolean) => void;
+  changeBriefingTime: (time: string) => void;
 }
 
 export function SettingsDrawer(props: SettingsDrawerProps) {
@@ -98,6 +103,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     persona, customPrompt, lang, country, timezoneMode, memories,
     changePersona, changeCustomPrompt, changeLang, changeCountry, changeTimezoneMode,
     addMemory, removeMemory, clearMemories,
+    briefingEnabled, briefingTime, toggleBriefing, changeBriefingTime,
   } = props;
 
   return (
@@ -196,6 +202,12 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             removeMemory={removeMemory}
             clearMemories={clearMemories}
             onCloseDrawer={onClose}
+          />
+          <BriefingSection
+            enabled={briefingEnabled}
+            time={briefingTime}
+            onToggle={toggleBriefing}
+            onChangeTime={changeBriefingTime}
           />
           <ThemeSection />
           <ApiKeysSection geminiKey={geminiKey} onApplyGeminiKey={applyGeminiKey} />

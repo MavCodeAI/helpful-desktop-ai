@@ -7,6 +7,7 @@ import { useRealtimeSession } from "@/hooks/use-realtime-session";
 import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { useThreadHistory } from "@/hooks/use-thread-history";
 import { useVoiceSettings } from "@/hooks/use-voice-settings";
+import { useBriefingSettings } from "@/hooks/use-briefing-settings";
 import { useIntentActions } from "@/hooks/use-intent-actions";
 import { useMutableRef } from "@/hooks/use-mutable-ref";
 import { useWakeTriggers } from "@/hooks/use-wake-triggers";
@@ -75,6 +76,7 @@ export function useVoiceApp() {
     onLiveRate: (r) => sessionRef.current.setLiveRate(r),
   });
   const liteActive = useLiteMode(settings.liteMode);
+  const briefing = useBriefingSettings();
 
   const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
 
@@ -271,6 +273,30 @@ export function useVoiceApp() {
     }
   }, [handleFinalMessage, messages, settings.lang, settings.systemPrompt, scroll.atBottom, overlays, setShowNotes]);
 
+  // Optional local-only briefing: runs once per device day after the selected time.
+  useEffect(() => {
+    if (!briefing.enabled) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (briefing.lastRun === today) return;
+
+    const [hours, minutes] = briefing.time.split(":").map(Number);
+    const now = new Date();
+    const scheduled = new Date(now);
+    scheduled.setHours(hours, minutes, 0, 0);
+    const delay = Math.max(0, scheduled.getTime() - now.getTime());
+    const run = () => {
+      briefing.markBriefingRun(today);
+      const prompt = settings.lang === "ur"
+        ? "مجھے آج کی مختصر صبح کی بریفنگ دو: سعودی عرب اور میرے منتخب ملک کی اہم تازہ خبریں، موسم کا مختصر خلاصہ، اور آج کے کاموں کی ترجیحی فہرست۔ کیلنڈر ابھی connected نہیں ہے، اس لیے اسے واضح طور پر بتاؤ۔ جواب اردو میں دو۔"
+        : settings.lang === "ar"
+          ? "أعطني إحاطة صباحية قصيرة لليوم: أهم الأخبار الحديثة للسعودية وبلدي المختار، ملخص الطقس، وأولويات العمل. التقويم غير متصل بعد، فاذكر ذلك بوضوح. أجب بالعربية."
+          : "Give me a concise morning briefing: important recent Saudi and selected-country news, a short weather summary, and a prioritized work plan. Calendar is not connected yet, so say that clearly. Reply in my selected language.";
+      void sendText(prompt);
+    };
+    const timer = window.setTimeout(run, delay);
+    return () => window.clearTimeout(timer);
+  }, [briefing.enabled, briefing.lastRun, briefing.markBriefingRun, briefing.time, sendText, settings.lang]);
+
   // From ChatComposer's "Note" button: turn current text into an AI-crafted note.
   const [notePending, setNotePending] = useState(false);
   const createAiNote = useCallback(async (rawPrompt: string) => {
@@ -308,5 +334,6 @@ export function useVoiceApp() {
     timers, showNotes, setShowNotes,
     sendText, textBusy,
     createAiNote, notePending,
+    briefing,
   };
 }

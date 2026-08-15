@@ -19,7 +19,7 @@ function Index() {
     liteActive, pageRef, active, disabled,
     timers, showNotes, setShowNotes,
     sendText, textBusy,
-    createAiNote, notePending,
+    createAiNote, notePending, briefing,
   } = useVoiceApp();
 
   return (
@@ -64,6 +64,7 @@ function Index() {
         textBusy={textBusy}
         onCreateNote={createAiNote}
         notePending={notePending}
+        briefing={briefing}
       />
 
       {showNotes && (
