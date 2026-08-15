@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   type ProviderId,
   type Pace,
-  HF_VOICES,
   GEMINI_VOICES,
 } from "@/lib/voice-providers";
 
@@ -114,15 +113,10 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   }, [onStop, onSessionReset]);
 
   const changeVoice = useCallback((v: string) => {
-    if (provider === "gemini") {
-      setGeminiVoice(v);
-      persist.geminiVoice(v);
-    } else {
-      setHfVoice(v);
-      persist.hfVoice(v);
-    }
+    setGeminiVoice(v);
+    persist.geminiVoice(v);
     onStop();
-  }, [provider, onStop]);
+  }, [onStop]);
 
   const changePace = useCallback((p: Pace) => {
     setPace(p);
@@ -192,8 +186,8 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     clearMemories(); setMemoriesState([]);
   }, []);
 
-  const currentVoice = provider === "gemini" ? geminiVoice : hfVoice;
-  const voiceList = provider === "gemini" ? GEMINI_VOICES : HF_VOICES;
+  const currentVoice = geminiVoice;
+  const voiceList = GEMINI_VOICES;
 
   const systemPrompt = useMemo(
     () => buildPersonaSystemPrompt({ persona, customPrompt, lang, memories, country, timezoneMode }),

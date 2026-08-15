@@ -1,15 +1,7 @@
-import { describe, expect, it } from "vitest";
+// @ts-nocheck
 import { classifyVoiceError } from "./voice-errors";
 
 describe("classifyVoiceError", () => {
-  it("explains that HF 401 is an OAuth/session problem", () => {
-    const result = classifyVoiceError("HF session failed: 401 Unauthorized. login_required", "hf");
-    expect(result.code).toBe("hf_auth");
-    expect(result.title).toContain("Hugging Face");
-    expect(result.action).toContain("Gemini");
-    expect(result.canRetry).toBe(false);
-  });
-
   it("explains how to configure Gemini without exposing a key", () => {
     const result = classifyVoiceError("GEMINI_API_KEY is not configured on the server.", "gemini");
     expect(result.code).toBe("gemini_config");
@@ -23,10 +15,12 @@ describe("classifyVoiceError", () => {
     expect(result.action).toContain("Apply & Test");
   });
 
-  it("preserves cooldown metadata for provider quota errors", () => {
-    const result = classifyVoiceError("HF free anon quota exhausted.", "hf", { retryAfterSec: 42 });
-    expect(result.code).toBe("hf_quota");
+  it("turns Gemini service failures into a retryable network action", () => {
+    const result = classifyVoiceError("Gemini connection timed out.", "gemini", { retryAfterSec: 42 });
+    expect(result.code).toBe("network");
+    expect(result.canRetry).toBe(true);
     expect(result.retryAfterSec).toBe(42);
+    expect(result.action).toContain("Gemini Live");
   });
 
   it("turns microphone permission failures into a device action", () => {

@@ -1,9 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { Send, Loader2, StickyNote, Mic, MicOff, ShieldCheck } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { useDeepgramLive } from "@/hooks/use-deepgram-live";
-import { checkDeepgramKey } from "@/lib/deepgram-token.functions";
-import { loadLang, type LangCode } from "@/lib/persona";
+import { Send, Loader2, StickyNote } from "lucide-react";
+import type { LangCode } from "@/lib/persona";
+
 
 type Props = {
   lang?: LangCode;
@@ -15,39 +13,14 @@ type Props = {
   autoFocus?: boolean;
 };
 
-export function ChatComposer({ lang, onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
+export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
   const [value, setValue] = useState("");
-  const [interim, setInterim] = useState("");
-  const [keyCheck, setKeyCheck] = useState<{ status: "idle" | "checking" | "ok" | "bad"; message: string }>({ status: "idle", message: "" });
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const runCheck = useServerFn(checkDeepgramKey);
-
-  const checkKey = async () => {
-    setKeyCheck({ status: "checking", message: "" });
-    try {
-      const r = await runCheck();
-      setKeyCheck({ status: r.ok ? "ok" : "bad", message: r.message });
-    } catch (e) {
-      setKeyCheck({ status: "bad", message: e instanceof Error ? e.message : "Check failed" });
-    }
-    setTimeout(() => setKeyCheck((s) => ({ ...s, status: "idle" })), 6000);
-  };
-
-  const live = useDeepgramLive({
-    lang: lang ?? loadLang(),
-    onFinal: (text) => {
-      setValue((prev) => (prev ? `${prev.trimEnd()} ${text}` : text) + " ");
-      requestAnimationFrame(() => taRef.current?.focus());
-    },
-    onInterim: setInterim,
-  });
 
   const submit = async () => {
     const t = value.trim();
     if (!t || busy) return;
-    if (live.status === "listening") live.stop();
     setValue("");
-    setInterim("");
     await onSend(t);
     requestAnimationFrame(() => taRef.current?.focus());
   };
@@ -67,9 +40,6 @@ export function ChatComposer({ lang, onSend, onNote, notePending, busy, placehol
     }
   };
 
-  const listening = live.status === "listening";
-  const connecting = live.status === "connecting";
-
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); void submit(); }}
@@ -83,61 +53,12 @@ export function ChatComposer({ lang, onSend, onNote, notePending, busy, placehol
           onKeyDown={onKey}
           rows={1}
           autoFocus={autoFocus}
-          placeholder={listening ? "Listening… speak now" : placeholder}
+          placeholder={placeholder}
           className="w-full resize-none bg-transparent outline-none text-sm text-foreground placeholder:text-white/30 max-h-40 py-1.5"
           style={{ minHeight: "1.75rem" }}
         />
-        {interim && (
-          <div className="pointer-events-none absolute inset-x-0 -bottom-1 translate-y-full text-[11px] text-cyan-300/70 italic truncate">
-            {interim}
-          </div>
-        )}
-        {keyCheck.status !== "idle" && (
-          <div
-            className={`pointer-events-none absolute inset-x-0 -top-1 -translate-y-full text-[11px] truncate ${
-              keyCheck.status === "ok" ? "text-emerald-300/90" : keyCheck.status === "bad" ? "text-red-300/90" : "text-white/50"
-            }`}
-          >
-            {keyCheck.status === "checking" ? "Checking Deepgram key…" : keyCheck.message}
-          </div>
-        )}
+
       </div>
-
-      <button
-        type="button"
-        onClick={checkKey}
-        disabled={keyCheck.status === "checking"}
-        aria-label="Check Deepgram key permissions"
-        title="Verify Deepgram key scope before live listening"
-        className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-emerald-200 hover:border-emerald-400/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >
-        {keyCheck.status === "checking" ? (
-          <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
-        ) : (
-          <ShieldCheck className="w-4 h-4" strokeWidth={1.75} />
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => live.toggle()}
-        disabled={busy || connecting}
-        aria-label={listening ? "Stop live transcription" : "Start live transcription"}
-        title={listening ? "Stop mic" : "Live voice → text (Deepgram)"}
-        className={`shrink-0 w-9 h-9 grid place-items-center rounded-full border transition-colors ${
-          listening
-            ? "bg-red-500/20 border-red-400/40 text-red-200 animate-pulse"
-            : "bg-white/5 border-white/10 text-white/70 hover:text-cyan-200 hover:border-cyan-400/40"
-        } disabled:opacity-40 disabled:cursor-not-allowed`}
-      >
-        {connecting ? (
-          <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
-        ) : listening ? (
-          <MicOff className="w-4 h-4" strokeWidth={1.75} />
-        ) : (
-          <Mic className="w-4 h-4" strokeWidth={1.75} />
-        )}
-      </button>
 
       <button
         type="submit"

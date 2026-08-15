@@ -7,6 +7,8 @@ export type GeminiContent = {
   parts: GeminiPart[];
 };
 
+export type GeminiGroundingSource = { title: string; url: string };
+
 type GeminiGenerateOptions = {
   systemInstruction?: string;
   contents: GeminiContent[];
@@ -15,12 +17,16 @@ type GeminiGenerateOptions = {
   responseMimeType?: "text/plain" | "application/json";
   timeoutMs?: number;
   apiKey?: string;
+  googleSearch?: boolean;
 };
 
 type GeminiResponse = {
   candidates?: Array<{
     content?: { parts?: Array<{ text?: unknown }> };
     finishReason?: string;
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: { uri?: string; title?: string } }>;
+    };
   }>;
 };
 
@@ -45,47 +51,52 @@ export function getGeminiTextApiKey(userKey?: string) {
   return key;
 }
 
-export async function generateGeminiText(options: GeminiGenerateOptions): Promise<string> {
+async function requestGemini(options: GeminiGenerateOptions): Promise<{ text: string; sources: GeminiGroundingSource[] }> {
   const apiKey = getGeminiTextApiKey(options.apiKey);
   const model = options.model?.trim() || process.env.GEMINI_TEXT_MODEL?.trim() || DEFAULT_MODEL;
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const generationConfig: Record<string, unknown> = {
-    temperature: options.temperature ?? 0.3,
-  };
+  const generationConfig: Record<string, unknown> = { temperature: options.temperature ?? 0.3 };
   if (options.responseMimeType) generationConfig.responseMimeType = options.responseMimeType;
+  const payload = {
+    ...(options.systemInstruction ? { systemInstruction: { parts: [{ text: options.systemInstruction }] } } : {}),
+    contents: options.contents,
+    generationConfig,
+    ...(options.googleSearch ? { tools: [{ google_search: {} }] } : {}),
+  };
 
   let response: Response;
   try {
     response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...(options.systemInstruction
-          ? { systemInstruction: { parts: [{ text: options.systemInstruction }] } }
-          : {}),
-        contents: options.contents,
-        generationConfig,
-      }),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
     });
   } catch (error) {
-    if (error instanceof Error && error.name === "TimeoutError") {
-      throw new Error("Gemini reply timed out. Please try again.");
-    }
+    if (error instanceof Error && error.name === "TimeoutError") throw new Error("Gemini reply timed out. Please try again.");
     throw new Error("Gemini service is temporarily unreachable. Please try again.");
   }
-
   if (!response.ok) {
     if (response.status === 429) throw new Error("Gemini rate limit reached. Please try again shortly.");
-    if (response.status === 401 || response.status === 403) {
-      throw new Error("Gemini authorization failed. Check the key in Settings, run Apply & Test again, or verify the production Gemini configuration.");
-    }
+    if (response.status === 401 || response.status === 403) throw new Error("Gemini authorization failed. Check the key in Settings, run Apply & Test again, or verify the production Gemini configuration.");
     throw new Error(`Gemini request failed with status ${response.status}.`);
   }
 
-  const text = extractText(await response.json() as GeminiResponse);
+  const json = await response.json() as GeminiResponse;
+  const text = extractText(json);
   if (!text) throw new Error("Gemini returned an empty response. Please try again.");
-  return text;
+  const sources = (json.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [])
+    .map((chunk) => ({ title: chunk.web?.title?.trim() ?? "Web source", url: chunk.web?.uri?.trim() ?? "" }))
+    .filter((source) => source.url);
+  return { text, sources };
+}
+
+export async function generateGeminiText(options: GeminiGenerateOptions): Promise<string> {
+  return (await requestGemini(options)).text;
+}
+
+export async function generateGeminiGroundedText(options: GeminiGenerateOptions): Promise<{ text: string; sources: GeminiGroundingSource[] }> {
+  return requestGemini({ ...options, googleSearch: true });
 }
 
 export function geminiUserText(text: string): GeminiContent {

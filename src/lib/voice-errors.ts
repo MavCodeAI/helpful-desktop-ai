@@ -1,9 +1,6 @@
 import type { ProviderId } from "@/lib/voice-providers";
 
 export type VoiceErrorCode =
-  | "hf_auth"
-  | "hf_quota"
-  | "hf_unavailable"
   | "gemini_config"
   | "gemini_auth"
   | "gemini_protocol"
@@ -33,43 +30,6 @@ export function classifyVoiceError(
 ): VoiceErrorInfo {
   const technical = textOf(raw).trim() || "Voice session could not be started.";
   const lower = technical.toLowerCase();
-
-  if (provider === "hf" && /401|unauthorized|login required|requirelogin|auth/.test(lower)) {
-    return {
-      code: "hf_auth",
-      title: "Hugging Face voice is not connected",
-      message: "The selected Hugging Face voice service requires a Hugging Face login session. It returned 401 Unauthorized, so Alpha could not create a voice session.",
-      action: "Open Settings and switch to Gemini, or connect Hugging Face through a server-side authenticated proxy. Do not paste a token into the browser.",
-      provider,
-      canRetry: false,
-      technical,
-    };
-  }
-
-  if (provider === "hf" && /402|quota|limit|remainingsec|exhausted/.test(lower)) {
-    return {
-      code: "hf_quota",
-      title: "Hugging Face voice limit reached",
-      message: "The anonymous Hugging Face voice allowance is temporarily exhausted.",
-      action: "Wait until the retry timer ends, or switch to Gemini for a more reliable pilot setup.",
-      provider,
-      canRetry: true,
-      retryAfterSec: meta?.retryAfterSec,
-      technical,
-    };
-  }
-
-  if (provider === "hf" && /5\d\d|unavailable|did not accept|websocket/.test(lower)) {
-    return {
-      code: "hf_unavailable",
-      title: "Hugging Face voice is temporarily unavailable",
-      message: "The voice service did not accept the connection or is currently unavailable.",
-      action: "Check your internet connection, retry once, or switch to Gemini in Settings.",
-      provider,
-      canRetry: true,
-      technical,
-    };
-  }
 
   if (provider === "gemini" && /missing|not configured|invalid_format|invalid.*key|AIza/.test(lower)) {
     return {
@@ -124,7 +84,7 @@ export function classifyVoiceError(
       code: "network",
       title: "Voice connection failed",
       message: "Alpha could not reach the voice service.",
-      action: "Check your internet connection and try again. If the issue continues, switch voice provider in Settings.",
+      action: "Check your internet connection and try Gemini Live again.",
       provider,
       canRetry: true,
       technical,
@@ -135,7 +95,7 @@ export function classifyVoiceError(
     code: "unknown",
     title: "Voice session could not start",
     message: "Something prevented Alpha from starting voice mode.",
-    action: "Try again. If it continues, open Settings, check the provider status, and send the technical details to support.",
+      action: "Try Gemini Live again. If it continues, open Settings, run Apply & Test for Gemini, and review the technical details.",
     provider,
     canRetry: true,
     technical,

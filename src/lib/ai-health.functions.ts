@@ -29,14 +29,11 @@ export const getAiHealth = createServerFn({ method: "POST" })
   .validator((input: unknown) => z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}))
   .handler(async ({ data }): Promise<AiHealth> => {
   const geminiConfigured = configured(data.userKey) || configured(process.env.GEMINI_API_KEY);
-  const sttConfigured = configured(process.env.DEEPGRAM_API_KEY);
+  const sttConfigured = geminiConfigured;
   const recommendations: string[] = [];
 
   if (!geminiConfigured) {
     recommendations.push("Set GEMINI_API_KEY for Gemini chat, actions, summaries, vision and realtime voice.");
-  }
-  if (!sttConfigured) {
-    recommendations.push("Set DEEPGRAM_API_KEY for browser microphone transcription.");
   }
 
   return {
@@ -51,9 +48,9 @@ export const getAiHealth = createServerFn({ method: "POST" })
       },
       stt: {
         configured: sttConfigured,
-        purpose: "Multilingual speech-to-text with Deepgram Nova-3",
-        env: "DEEPGRAM_API_KEY",
-        message: sttConfigured ? "Configured: short-lived browser tokens can be minted." : "Missing server configuration.",
+        purpose: "Urdu/English speech-to-text through Gemini Live",
+        env: "GEMINI_API_KEY",
+        message: sttConfigured ? "Configured: Gemini Live short-lived session tokens can be issued." : "Missing GEMINI_API_KEY in the server environment.",
       },
       realtime: {
         configured: geminiConfigured,

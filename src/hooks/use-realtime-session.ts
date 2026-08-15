@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  startHF,
   startGemini,
   type Controller,
   type ProviderId,
@@ -159,7 +158,7 @@ export function useRealtimeSession(opts: Options) {
       const ctrl =
         provider === "gemini"
           ? await startGemini(geminiToken, handlers, voiceOpts)
-          : await startHF(handlers, voiceOpts);
+          : await startGemini(geminiToken, handlers, voiceOpts);
       controllerRef.current = ctrl;
     } catch (e: unknown) {
       reportError(e instanceof Error ? e.message : "Failed to start");

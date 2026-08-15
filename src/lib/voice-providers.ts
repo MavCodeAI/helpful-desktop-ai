@@ -1,9 +1,9 @@
 import { GEMINI_LIVE_MODEL_PATH } from "./gemini-live-config";
 
-// Voice provider adapters — HF Space (S2S) & Google Gemini Live.
-// Each provider exposes: start({ onStatus, onMessage, onError }) => Controller
+// Gemini Live voice adapter.
+// The app uses Gemini for realtime speech recognition, reasoning and speech output.
 
-export type ProviderId = "hf" | "gemini";
+export type ProviderId = "gemini";
 
 export type VoiceStatus =
   | "connecting"
@@ -57,7 +57,6 @@ export interface VoiceOptions {
   lang?: LangCode;
 }
 
-export const HF_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"] as const;
 export const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"] as const;
 
 function paceInstruction(pace: Pace | undefined): string {
@@ -181,171 +180,6 @@ const INPUT_ACTIVITY_BASE_RMS = 0.012;
 function activityThreshold(sensitivity?: number) {
   const s = Math.max(0.3, Math.min(3, sensitivity ?? 1));
   return INPUT_ACTIVITY_BASE_RMS / s;
-}
-
-// ────────────────────────────────────────────────────────────────────────
-// HF Space provider (OpenAI Realtime protocol via smolagents Space)
-// ────────────────────────────────────────────────────────────────────────
-const HF_SESSION_URL = "https://smolagents-hf-realtime-voice.hf.space/api/session";
-const HF_SR = 24000;
-
-export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Controller> {
-  h.onStatus("connecting");
-  const res = await fetch(HF_SESSION_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
-  if (res.status === 402) {
-    const body = await res.json().catch(() => ({} as { remainingSec?: number }));
-    const wait = Math.max(30, Math.ceil(Number(body.remainingSec) || 60));
-    h.onError("HF free anon quota exhausted.", { retryAfterSec: wait });
-    return { stop: () => {} };
-  }
-  if (!res.ok) {
-    if (res.status === 401) {
-      h.onError("HF session failed: 401 Unauthorized. This Hugging Face Space requires a Hugging Face login session.");
-    } else {
-      h.onError(`HF session failed: ${res.status}`);
-    }
-    return { stop: () => {} };
-  }
-  const session = await res.json();
-  if (session.state === "queued") { h.onError(`Queued — position ${session.position}.`); return { stop: () => {} }; }
-  const connectUrl: string = session.connect_url;
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-  });
-  const inCtx = new AudioContext({ sampleRate: HF_SR });
-  let speaking = false;
-  const player = makePlayer(HF_SR, (v) => { speaking = v; h.onStatus(v ? "speaking" : "listening"); }, opts?.rate ?? 1);
-  const ws = new WebSocket(connectUrl);
-  let connected = false;
-  let closedLocally = false;
-  const connectTimeout = window.setTimeout(() => {
-    if (connected) return;
-    cleanup();
-    h.onError("Voice connection timed out. Check your internet connection and try again.");
-  }, CONNECT_TIMEOUT_MS);
-  let lastInputActivity = 0;
-  let awaitingReply = false;
-  let lastLevelEmit = 0;
-  let sttFirstAt = 0;
-  const activityRms = activityThreshold(opts?.sensitivity);
-
-  const cleanup = () => {
-    closedLocally = true;
-    try { ws.close(); } catch {}
-    stream.getTracks().forEach((t) => t.stop());
-    inCtx.close().catch(() => {});
-    player.close();
-    h.onLevel?.(0);
-    window.clearTimeout(connectTimeout);
-  };
-
-  const stop = () => {
-    cleanup();
-    h.onStatus("idle");
-  };
-
-  ws.onopen = () => {
-    connected = true;
-    window.clearTimeout(connectTimeout);
-    h.onStatus("listening");
-    ws.send(JSON.stringify({
-      type: "session.update",
-      session: {
-        type: "realtime",
-        instructions: buildInstructions(opts),
-        voice: opts?.voice || "alloy",
-      },
-    }));
-    const source = inCtx.createMediaStreamSource(stream);
-    const proc = inCtx.createScriptProcessor(LOW_LAT_BUF, 1, 1);
-    proc.onaudioprocess = (e) => {
-      if (ws.readyState !== WebSocket.OPEN || speaking) return;
-      const data = e.inputBuffer.getChannelData(0);
-      let sum = 0;
-      for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
-      const rms = Math.sqrt(sum / data.length);
-      const now = performance.now();
-      if (now - lastLevelEmit > LEVEL_THROTTLE_MS) {
-        h.onLevel?.(rms);
-        lastLevelEmit = now;
-      }
-      if (rms > activityRms) {
-        lastInputActivity = now;
-        awaitingReply = true;
-        sttFirstAt = 0;
-      }
-      const pcm = floatToPCM16(data);
-      ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio: b64FromBuf(pcm.buffer) }));
-    };
-    source.connect(proc);
-    proc.connect(inCtx.destination);
-  };
-  const hfBuf = { you: "", assistant: "" };
-  ws.onmessage = (ev) => {
-    if (typeof ev.data !== "string") return;
-    let msg: { type?: string; delta?: string; transcript?: string };
-    try { msg = JSON.parse(ev.data); } catch { return; }
-    switch (msg.type) {
-      case "response.audio.delta":
-      case "response.output_audio.delta":
-        if (msg.delta) {
-          if (awaitingReply && lastInputActivity) {
-            const now2 = performance.now();
-            h.onLatency?.(Math.round(now2 - lastInputActivity));
-            if (sttFirstAt) h.onTtsLatency?.(Math.round(now2 - sttFirstAt));
-            awaitingReply = false;
-          }
-          player.play(b64ToBytes(msg.delta));
-        }
-        break;
-      case "response.audio_transcript.delta":
-      case "response.output_audio_transcript.delta":
-        if (msg.delta) { hfBuf.assistant += msg.delta; h.onPartial?.("assistant", hfBuf.assistant); }
-        break;
-      case "response.audio_transcript.done":
-      case "response.output_audio_transcript.done":
-        if (msg.transcript) h.onMessage({ role: "assistant", text: msg.transcript });
-        hfBuf.assistant = "";
-        break;
-      case "conversation.item.input_audio_transcription.delta":
-        if (msg.delta) {
-          if (!sttFirstAt && lastInputActivity) {
-            sttFirstAt = performance.now();
-            h.onSttLatency?.(Math.round(sttFirstAt - lastInputActivity));
-          }
-          hfBuf.you += msg.delta;
-          h.onPartial?.("you", hfBuf.you);
-        }
-        break;
-      case "conversation.item.input_audio_transcription.completed":
-        if (msg.transcript) {
-          if (containsHindiScript(msg.transcript)) {
-            h.onError(voiceTranscriptError(opts?.lang ?? "en"));
-          } else {
-            h.onMessage({ role: "you", text: msg.transcript });
-          }
-        }
-        hfBuf.you = "";
-        break;
-      case "error":
-        h.onError(JSON.stringify(msg));
-        break;
-    }
-  };
-  ws.onerror = () => {
-    cleanup();
-    h.onError("Voice WebSocket connection failed. Check your internet connection and try again.");
-  };
-  ws.onclose = () => {
-    if (closedLocally) return;
-    if (!connected) h.onError("Voice service did not accept the connection. Try Gemini or retry in a minute.");
-  };
-  return { stop, setRate: (r) => player.setRate(r) };
 }
 
 // ────────────────────────────────────────────────────────────────────────
