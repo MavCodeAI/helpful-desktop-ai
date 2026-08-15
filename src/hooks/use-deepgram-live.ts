@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getDeepgramToken } from "@/lib/deepgram-token.functions";
 import type { LangCode } from "@/lib/persona";
+import { containsHindiScript, voiceTranscriptError } from "@/lib/voice-providers";
 
 type Status = "idle" | "connecting" | "listening" | "error";
 
@@ -72,21 +73,9 @@ export function useDeepgramLive({ lang, onFinal, onInterim }: Opts) {
       return;
     }
 
-    // Use an explicit locale for Urdu so Hindi is never an accepted Urdu-mode fallback.
-    // Auto mode remains multilingual for the supported catalog, but Devanagari output is blocked below.
-    const language = lang === "ur"
-      ? "ur"
-      : lang === "en"
-        ? "en"
-        : lang === "ar"
-          ? "ar"
-          : lang === "tr"
-            ? "tr"
-            : lang === "fr"
-              ? "fr"
-              : lang === "es"
-                ? "es"
-                : "multi";
+    // Only Urdu and English are supported. Explicit locale prevents Urdu from
+    // falling back to a Hindi/Devanagari transcription model.
+    const language = lang === "ur" ? "ur" : "en";
     const params = new URLSearchParams({
       model: "nova-3",
       language,
@@ -123,11 +112,11 @@ export function useDeepgramLive({ lang, onFinal, onInterim }: Opts) {
         const msg = JSON.parse(evt.data as string);
         const transcript: string = msg?.channel?.alternatives?.[0]?.transcript ?? "";
         if (!transcript) return;
-        if (/[\u0900-\u097F]/u.test(transcript)) {
+        if (containsHindiScript(transcript)) {
           onInterim?.("");
           if (!blockedHindiRef.current) {
             blockedHindiRef.current = true;
-            toast.error("Hindi is disabled. Please speak in Urdu, English, Arabic, Turkish, French or Spanish.");
+            toast.error(voiceTranscriptError(lang));
           }
           return;
         }

@@ -16,6 +16,17 @@ export type VoiceMessage = { role: "you" | "assistant"; text: string };
 
 import type { LangCode } from "@/lib/persona";
 
+/** Hindi/Devanagari is never accepted as voice transcription output. */
+export function containsHindiScript(text: string): boolean {
+  return /[\u0900-\u097F]/u.test(text);
+}
+
+export function voiceTranscriptError(lang: LangCode): string {
+  return lang === "ur"
+    ? "ہندی متن بند ہے۔ براہِ کرم اردو میں دوبارہ بولیں۔"
+    : "Hindi text is disabled. Please speak in English and try again.";
+}
+
 export interface Handlers {
   onStatus: (s: VoiceStatus) => void;
   onMessage: (m: VoiceMessage) => void;
@@ -60,18 +71,8 @@ function paceInstruction(pace: Pace | undefined): string {
 function buildInstructions(opts?: VoiceOptions): string {
   const base = opts?.systemPrompt?.trim() || "You are Alpha, a friendly, concise voice assistant.";
   const language = opts?.lang === "ur"
-    ? "Urdu is mandatory for this session. Understand and answer in natural Urdu using Urdu script; do not use Hindi or Devanagari."
-    : opts?.lang === "ar"
-      ? "Answer in clear Arabic for this session. Do not switch to Hindi or Devanagari."
-      : opts?.lang === "en"
-        ? "Answer in clear English for this session. Do not switch to Hindi or Devanagari."
-        : opts?.lang === "tr"
-          ? "Answer in clear Turkish for this session. Do not switch to Hindi or Devanagari."
-          : opts?.lang === "fr"
-            ? "Answer in clear French for this session. Do not switch to Hindi or Devanagari."
-            : opts?.lang === "es"
-              ? "Answer in clear Spanish for this session. Do not switch to Hindi or Devanagari."
-              : "Follow the user's selected language, but Hindi and Devanagari are disabled. If the user speaks Hindi, ask them to use Urdu, English, Arabic, Turkish, French or Spanish.";
+    ? "Urdu is mandatory for this session. Understand and answer in natural Urdu using Urdu script; never use Hindi, Devanagari, or Roman Urdu."
+    : "English is mandatory for this session. Answer in clear English; never use Hindi, Devanagari, or Roman Urdu.";
   return `${base}\n\n${language}\n\n${paceInstruction(opts?.pace)}\n\nThe user may interrupt you at any time — stop speaking immediately when they start.`;
 }
 
@@ -322,7 +323,13 @@ export async function startHF(h: Handlers, opts?: VoiceOptions): Promise<Control
         }
         break;
       case "conversation.item.input_audio_transcription.completed":
-        if (msg.transcript) h.onMessage({ role: "you", text: msg.transcript });
+        if (msg.transcript) {
+          if (containsHindiScript(msg.transcript)) {
+            h.onError(voiceTranscriptError(opts?.lang ?? "en"));
+          } else {
+            h.onMessage({ role: "you", text: msg.transcript });
+          }
+        }
         hfBuf.you = "";
         break;
       case "error":
@@ -479,8 +486,8 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
         sttFirstAt = performance.now();
         h.onSttLatency?.(Math.round(sttFirstAt - lastInputActivity));
       }
-      partialBuf.you += sc.inputTranscription.text;
-      h.onPartial?.("you", partialBuf.you);
+      if (!containsHindiScript(partialBuf.you)) h.onPartial?.("you", partialBuf.you);
+      else h.onPartial?.("you", "");
     }
     if (sc?.outputTranscription?.text) {
       partialBuf.assistant += sc.outputTranscription.text;
@@ -503,7 +510,11 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
     }
 
     if (sc?.turnComplete) {
-      if (partialBuf.you.trim()) h.onMessage({ role: "you", text: partialBuf.you.trim() });
+      if (partialBuf.you.trim() && !containsHindiScript(partialBuf.you)) {
+        h.onMessage({ role: "you", text: partialBuf.you.trim() });
+      } else if (containsHindiScript(partialBuf.you)) {
+        h.onError(voiceTranscriptError(opts?.lang ?? "en"));
+      }
       if (partialBuf.assistant.trim()) h.onMessage({ role: "assistant", text: partialBuf.assistant.trim() });
       partialBuf.you = "";
       partialBuf.assistant = "";
