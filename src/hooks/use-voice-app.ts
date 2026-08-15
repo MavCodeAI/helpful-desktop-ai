@@ -88,7 +88,7 @@ export function useVoiceApp() {
     try {
       const { loadWebCitations } = await import("@/lib/realtime/constants");
       const showCitations = loadWebCitations();
-      const res = await cachedWebSearch(query, undefined, { country: settings.country, lang: settings.lang });
+      const res = await cachedWebSearch(query, undefined, { country: settings.country, lang: settings.lang, geminiKey: settings.geminiKey });
       let text: string;
       if (showCitations) {
         const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");
@@ -112,14 +112,14 @@ export function useVoiceApp() {
       toast.error(msg);
       setMessages((prev) => prev.filter((m) => !m.text.startsWith("🔎 Searching")));
     }
-  }, [settings.country, settings.lang]);
+  }, [settings.country, settings.lang, settings.geminiKey]);
 
   const runNews = useCallback(async (query: string) => {
     const setMessages = setMessagesRef.current;
     if (!setMessages) return;
     setMessages((prev) => [...prev, { role: "assistant", text: `📰 ${settings.country} news تلاش کی جا رہی ہے…` }]);
     try {
-      const res = await getLatestNews({ data: { query: query || "latest news", country: settings.country, lang: settings.lang } });
+      const res = await getLatestNews({ data: { query: query || "latest news", country: settings.country, lang: settings.lang, userKey: settings.geminiKey || undefined } });
       const showCitations = (await import("@/lib/realtime/constants")).loadWebCitations();
       const sources = res.items.map((item, index) => `[${index + 1}] ${item.title}\n${item.url}`).join("\n");
       const text = showCitations && sources ? `${res.summary}\n\n**Sources:**\n${sources}` : res.summary.replace(/\s*\[\d+\]/g, "").replace(/\s{2,}/g, " ").trim();
@@ -138,11 +138,12 @@ export function useVoiceApp() {
       toast.error(msg);
       setMessages((prev) => prev.filter((m) => !m.text.startsWith("📰")));
     }
-  }, [settings.country, settings.lang]);
+  }, [settings.country, settings.lang, settings.geminiKey]);
 
   const intents = useIntentActions({
     confirmBeforeOpen: settings.confirmBeforeOpen,
     lang: settings.lang,
+    geminiKey: settings.geminiKey,
     onTimer: (seconds, label) => { timers.add(seconds, label); },
     onAssistantReply: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "assistant", text }]),
     onUserContext: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "you", text }]),
@@ -168,7 +169,7 @@ export function useVoiceApp() {
       const transcript = turnBufRef.current.trim();
       turnBufRef.current = "";
       if (transcript.length >= 40) {
-        extractMemoryFacts({ data: { transcript, existing: loadMemories() } })
+        extractMemoryFacts({ data: { transcript, existing: loadMemories(), userKey: settings.geminiKey || undefined } })
           .then((res) => {
             const existing = new Set(loadMemories().map((s) => s.toLowerCase()));
             for (const f of res.facts ?? []) {
@@ -178,7 +179,7 @@ export function useVoiceApp() {
           .catch(() => { /* silent */ });
       }
     }
-  }, [setMessages, intents, sessionRef]);
+  }, [setMessages, intents, sessionRef, settings.geminiKey]);
 
   const session = useRealtimeSession({
     provider: settings.provider, geminiKey: settings.geminiKey,
@@ -274,7 +275,7 @@ export function useVoiceApp() {
     setTextBusy(true);
     try {
       const convo = [...messages, userMsg];
-      const res = await chatReply({ data: { messages: convo, systemPrompt: settings.systemPrompt, lang: settings.lang } });
+      const res = await chatReply({ data: { messages: convo, systemPrompt: settings.systemPrompt, lang: settings.lang, userKey: settings.geminiKey || undefined } });
       handleFinalMessage({ role: "assistant", text: res.text }, { atBottom: scroll.atBottom });
     } catch (e) {
       trackPilotEvent("chat_failed", { lang: settings.lang });
@@ -282,7 +283,7 @@ export function useVoiceApp() {
     } finally {
       setTextBusy(false);
     }
-  }, [handleFinalMessage, messages, settings.lang, settings.systemPrompt, scroll.atBottom, overlays, setShowNotes]);
+  }, [handleFinalMessage, messages, settings.geminiKey, settings.lang, settings.systemPrompt, scroll.atBottom, overlays, setShowNotes]);
 
   // Optional local-only briefing: runs once per device day after the selected time.
   useEffect(() => {
@@ -324,7 +325,7 @@ export function useVoiceApp() {
     }
     setNotePending(true);
     try {
-      const res = await generateNote({ data: { prompt: t } });
+      const res = await generateNote({ data: { prompt: t, userKey: settings.geminiKey || undefined } });
       const saved = addNoteRaw(res.text);
       if (saved) {
         const summary = saved.text.length > 60 ? saved.text.slice(0, 60) + "…" : saved.text;
@@ -337,7 +338,7 @@ export function useVoiceApp() {
     } finally {
       setNotePending(false);
     }
-  }, [overlays, setShowNotes]);
+  }, [overlays, setShowNotes, settings.geminiKey]);
 
   return {
     overlays, settings, history, session, scroll, intents,

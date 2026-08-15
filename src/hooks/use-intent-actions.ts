@@ -13,6 +13,7 @@ export type PendingApproval = { id: string; intent: Intent; at: number };
 type Options = {
   confirmBeforeOpen?: boolean;
   lang?: string;
+  geminiKey?: string;
   onTimer?: (seconds: number, label: string) => void;
   /** Push an assistant message into the chat (used by AI answer & screen vision). */
   onAssistantReply?: (text: string) => void;
@@ -56,13 +57,14 @@ async function captureScreenBase64(): Promise<{ b64: string; mime: string } | nu
 }
 
 export function useIntentActions(opts: Options = {}) {
-  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext, onSearch, onNews } = opts;
+  const { confirmBeforeOpen = false, lang = "auto", geminiKey = "", onTimer, onAssistantReply, onUserContext, onSearch, onNews } = opts;
   const [actions, setActions] = useState<ActionEntry[]>([]);
   const [pendingApproval, setPendingApproval] = useState<PendingApproval | null>(null);
   const [autoOpen, setAutoOpen] = useState(true);
   const autoOpenRef = useRef(true);
   const confirmRef = useRef(confirmBeforeOpen);
   const langRef = useRef(lang);
+  const geminiKeyRef = useRef(geminiKey);
   const onTimerRef = useRef(onTimer);
   const onReplyRef = useRef(onAssistantReply);
   const onCtxRef = useRef(onUserContext);
@@ -71,6 +73,7 @@ export function useIntentActions(opts: Options = {}) {
   useEffect(() => { autoOpenRef.current = autoOpen; }, [autoOpen]);
   useEffect(() => { confirmRef.current = confirmBeforeOpen; }, [confirmBeforeOpen]);
   useEffect(() => { langRef.current = lang; }, [lang]);
+  useEffect(() => { geminiKeyRef.current = geminiKey; }, [geminiKey]);
   useEffect(() => { onTimerRef.current = onTimer; }, [onTimer]);
   useEffect(() => { onReplyRef.current = onAssistantReply; }, [onAssistantReply]);
   useEffect(() => { onCtxRef.current = onUserContext; }, [onUserContext]);
@@ -176,7 +179,7 @@ export function useIntentActions(opts: Options = {}) {
           toast("Analyzing screen…");
           const cap = await captureScreenBase64();
           if (!cap) throw new Error("no capture");
-          const { text } = await describeScreen({ data: { imageBase64: cap.b64, mimeType: cap.mime, lang: langRef.current } });
+          const { text } = await describeScreen({ data: { imageBase64: cap.b64, mimeType: cap.mime, lang: langRef.current, userKey: geminiKeyRef.current || undefined } });
           onReplyRef.current?.(text);
           toast.success("Screen analyzed");
           pushAction(intent, true);
@@ -189,7 +192,7 @@ export function useIntentActions(opts: Options = {}) {
       case "ai-answer":
         try {
           toast("Thinking…");
-          const { text } = await askAI({ data: { question: a.question, lang: langRef.current } });
+          const { text } = await askAI({ data: { question: a.question, lang: langRef.current, userKey: geminiKeyRef.current || undefined } });
           onReplyRef.current?.(text);
           pushAction(intent, true);
         } catch (e) {

@@ -58,7 +58,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
 
   useEffect(() => {
     const s = loadSettings();
-    setGeminiKey(s.geminiKey);
+    setGeminiKey(s.geminiKeyValidated ? s.geminiKey : "");
     setHfVoice(s.hfVoice);
     setGeminiVoice(s.geminiVoice);
     setPace(s.pace);
@@ -85,8 +85,9 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     persist.provider("gemini");
     getGeminiKey()
       .then((result) => {
-        setGeminiKeyReady(result.configured);
-        setGeminiKeyError(result.configured ? null : result.error);
+        const localValidated = s.geminiKeyValidated && Boolean(s.geminiKey);
+        setGeminiKeyReady(localValidated);
+        setGeminiKeyError(localValidated ? null : (result.configured ? "Apply & Test a Gemini key to activate AI features on this device." : result.error));
       })
       .catch(() => {
         setGeminiKeyReady(false);
@@ -99,6 +100,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     onStop();
     setGeminiKey(next);
     persist.geminiKey(next);
+    persist.geminiKeyValidated(Boolean(next));
     setGeminiKeyReady(Boolean(next));
     setGeminiKeyError(next ? null : "No Gemini key has been applied on this device.");
     onSessionReset();

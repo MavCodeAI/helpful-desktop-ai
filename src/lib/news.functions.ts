@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { countryOption, type CountryCode } from "@/lib/locale";
 import type { LangCode } from "@/lib/persona";
+import { generateGeminiText, geminiUserText } from "./gemini-text.server";
 
 export type NewsItem = {
   title: string;
@@ -36,6 +37,7 @@ const InputSchema = z.object({
   query: z.string().trim().max(180).default("latest news"),
   country: z.enum(SUPPORTED_COUNTRIES).default("SA"),
   lang: z.enum(SUPPORTED_LANGS).default("auto"),
+  userKey: z.string().trim().max(200).optional(),
 });
 
 function languageInstruction(lang: LangCode): string {
@@ -66,26 +68,20 @@ function fallbackSummary(items: NewsItem[], lang: LangCode, countryLabel: string
   return `${prefix}\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.title}`).join("\n")}`;
 }
 
-async function summarizeNews(query: string, items: NewsItem[], lang: LangCode, countryLabel: string, apiKey?: string): Promise<string> {
-  if (!apiKey || items.length === 0) return fallbackSummary(items, lang, countryLabel);
+async function summarizeNews(query: string, items: NewsItem[], lang: LangCode, countryLabel: string, userKey?: string): Promise<string> {
+  if (items.length === 0) return fallbackSummary(items, lang, countryLabel);
   const context = items.slice(0, 8).map((item, index) => `[${index + 1}] ${item.title}\nURL: ${item.url}`).join("\n\n");
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-    body: JSON.stringify({
-      model: process.env.LOVABLE_MODEL?.trim() || "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: `You summarize current news from the supplied headlines only. ${languageInstruction(lang)} Give 3-6 concise sentences, mention uncertainty when headlines are incomplete, and cite sources as [1], [2].` },
-        { role: "user", content: `COUNTRY: ${countryLabel}\nQUESTION: ${query}\nHEADLINES:\n${context}` },
-      ],
+  try {
+    return await generateGeminiText({
+      systemInstruction: `You summarize current news from the supplied headlines only. ${languageInstruction(lang)} Give 3–6 concise sentences, mention uncertainty when headlines are incomplete, and cite sources as [1], [2].`,
+      contents: [geminiUserText(`COUNTRY: ${countryLabel}\nQUESTION: ${query}\nHEADLINES:\n${context}`)],
       temperature: 0.2,
-    }),
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) return fallbackSummary(items, lang, countryLabel);
-  const json = await response.json() as { choices?: Array<{ message?: { content?: unknown } }> };
-  const text = json.choices?.[0]?.message?.content;
-  return typeof text === "string" && text.trim() ? text.trim() : fallbackSummary(items, lang, countryLabel);
+      timeoutMs: 20_000,
+      apiKey: userKey,
+    });
+  } catch {
+    return fallbackSummary(items, lang, countryLabel);
+  }
 }
 
 export const getLatestNews = createServerFn({ method: "POST" })
@@ -118,7 +114,7 @@ export const getLatestNews = createServerFn({ method: "POST" })
     return {
       query: userQuery,
       country: selected.code,
-      summary: await summarizeNews(userQuery, items, data.lang as LangCode, selected.label, process.env.LOVABLE_API_KEY?.trim()),
+      summary: await summarizeNews(userQuery, items, data.lang as LangCode, selected.label, data.userKey),
       items,
       provider: "gdelt",
     };

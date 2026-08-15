@@ -11,7 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 
 function NotFoundComponent() {
@@ -40,7 +39,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    console.error("Alpha root error", error);
   }, [error]);
 
   return (
@@ -121,10 +120,7 @@ function RootShell({ children }: { children: ReactNode }) {
     // that attribute. Suppressing here silences the noisy console error
     // without hiding real hydration bugs elsewhere in the tree.
     <html lang="en" suppressHydrationWarning>
-      {/* suppressHydrationWarning on <head>: Lovable's dev source-annotation
-          transform stamps `data-tsd-source="…:LINE:COL"` and the line/col can
-          differ between the SSR render and the client render of this file.
-          The attribute is dev-only instrumentation; suppress the noise here. */}
+      {/* Suppress development-only source annotations and browser-extension attributes during hydration. */}
       <head suppressHydrationWarning>
         <HeadContent />
       </head>

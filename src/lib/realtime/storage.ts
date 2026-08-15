@@ -7,6 +7,7 @@ import { DEFAULTS, STORAGE_KEYS, type LiteMode } from "./constants";
 export interface VoiceSettings {
   provider: ProviderId | null;
   geminiKey: string;
+  geminiKeyValidated: boolean;
   hfVoice: string;
   geminiVoice: string;
   pace: Pace;
@@ -46,7 +47,8 @@ export function loadSettings(): VoiceSettings {
   const lite = safeGet(STORAGE_KEYS.perfLite);
   return {
     provider: (safeGet(STORAGE_KEYS.provider) as ProviderId | null) || null,
-    geminiKey: safeGet(STORAGE_KEYS.geminiKey) || "",
+    geminiKey: readBool(STORAGE_KEYS.geminiKeyValidated, false) ? safeGet(STORAGE_KEYS.geminiKey) || "" : "",
+    geminiKeyValidated: readBool(STORAGE_KEYS.geminiKeyValidated, false),
     hfVoice: safeGet(STORAGE_KEYS.hfVoice) || DEFAULTS.hfVoice,
     geminiVoice: safeGet(STORAGE_KEYS.geminiVoice) || DEFAULTS.geminiVoice,
     pace: (safeGet(STORAGE_KEYS.pace) as Pace | null) || DEFAULTS.pace,
@@ -68,6 +70,7 @@ export function loadSettings(): VoiceSettings {
 export const persist = {
   provider: (v: ProviderId) => safeSet(STORAGE_KEYS.provider, v),
   geminiKey: (v: string) => safeSet(STORAGE_KEYS.geminiKey, v),
+  geminiKeyValidated: (v: boolean) => safeSet(STORAGE_KEYS.geminiKeyValidated, v ? "1" : "0"),
   hfVoice: (v: string) => safeSet(STORAGE_KEYS.hfVoice, v),
   geminiVoice: (v: string) => safeSet(STORAGE_KEYS.geminiVoice, v),
   pace: (v: Pace) => safeSet(STORAGE_KEYS.pace, v),

@@ -35,11 +35,13 @@ function uid() {
   );
 }
 
-export function useMemories() {
+export function useMemories(options: { geminiKey?: string } = {}) {
   const [memories, setMemories] = useState<Memory[]>([]);
+  const geminiKeyRef = useRef(options.geminiKey ?? "");
   const [loading, setLoading] = useState(true);
   const memRef = useRef<Memory[]>([]);
 
+  useEffect(() => { geminiKeyRef.current = options.geminiKey ?? ""; }, [options.geminiKey]);
   useEffect(() => { memRef.current = memories; save(memories); }, [memories]);
 
   const refresh = useCallback(async () => {
@@ -71,7 +73,7 @@ export function useMemories() {
     if (transcript.trim().length < 20) return;
     try {
       const existing = memRef.current.map((m) => m.content);
-      const res = await extractMemoryFacts({ data: { transcript, existing } });
+      const res = await extractMemoryFacts({ data: { transcript, existing, userKey: geminiKeyRef.current || undefined } });
       const facts = res.facts ?? [];
       if (facts.length === 0) return;
       const existingLower = new Set(existing.map((c) => c.toLowerCase()));
@@ -87,4 +89,5 @@ export function useMemories() {
   }, []);
 
   return { memories, loading, refresh, add, remove, clearAll, extractFrom, memRef };
+
 }

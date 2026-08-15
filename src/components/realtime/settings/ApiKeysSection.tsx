@@ -44,17 +44,17 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionPr
     setDraftKey(geminiKey);
   }, [geminiKey]);
 
-  const refreshHealth = () => {
+  const refreshHealth = (key = geminiKey) => {
     setLoading(true);
-    getAiHealth()
+    getAiHealth({ data: { userKey: key.trim() || undefined } })
       .then((result) => setHealth(result))
       .catch(() => setHealth(null))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    refreshHealth();
-  }, []);
+    refreshHealth(geminiKey);
+  }, [geminiKey]);
 
   const applyAndTest = async () => {
     const userKey = draftKey.trim();
@@ -89,7 +89,7 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey }: ApiKeysSectionPr
       onApplyGeminiKey(userKey);
       setTestState("success");
       setTestMessage(isUrdu ? `کامیاب! key apply ہو گئی اور Live voice working ہے (${live.latencyMs}ms)۔` : `Success! The key is applied and Live voice is working (${live.latencyMs}ms).`);
-      refreshHealth();
+      refreshHealth(userKey);
     } catch (error) {
       setTestState("error");
       setTestMessage(error instanceof Error ? error.message : (isUrdu ? "Test مکمل نہیں ہو سکا۔" : "The test could not be completed."));

@@ -8,6 +8,7 @@ import { describeScreen } from "@/lib/ai-vision.functions";
 type Options = {
   onResult: (description: string) => void;
   onStart?: () => void;
+  geminiKey?: string;
 };
 
 async function grabFrame(): Promise<string> {
@@ -76,8 +77,9 @@ export function useScreenCapture(opts: Options) {
   const [busy, setBusy] = useState(false);
   const onResultRef = useRef(opts.onResult);
   const onStartRef = useRef(opts.onStart);
-  onResultRef.current = opts.onResult;
+  const geminiKeyRef = useRef(opts.geminiKey ?? "");
   onStartRef.current = opts.onStart;
+  geminiKeyRef.current = opts.geminiKey ?? "";
 
   const capture = useCallback(async (prompt?: string) => {
     if (busy) return;
@@ -87,7 +89,9 @@ export function useScreenCapture(opts: Options) {
       onStartRef.current?.();
       const imageDataUrl = await grabFrame();
       toast.loading("👁️ Analyzing screen…", { id: tId });
-      const { text } = await describeScreen({ data: { imageDataUrl, prompt } });
+      const [header, imageBase64] = imageDataUrl.split(",", 2);
+      const mimeType = header.match(/^data:([^;]+);base64$/)?.[1] ?? "image/jpeg";
+      const { text } = await describeScreen({ data: { imageBase64, mimeType, prompt, userKey: geminiKeyRef.current || undefined } });
       toast.success("Screen analyzed", { id: tId });
       onResultRef.current(text);
     } catch (e) {

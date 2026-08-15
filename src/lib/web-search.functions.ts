@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { countryOption, type CountryCode } from "@/lib/locale";
 import type { LangCode } from "@/lib/persona";
+import { generateGeminiText, geminiUserText } from "./gemini-text.server";
 
 export type WebSource = { title: string; url: string; snippet?: string };
 export type WebSearchResult = { query: string; summary: string; sources: WebSource[] };
@@ -82,29 +83,18 @@ function fallbackSummary(query: string, items: SearchItem[], lang: LangCode): st
   return `${prefix}\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.title ?? item.url}`).join("\n")}`;
 }
 
-async function summarize(query: string, items: SearchItem[], apiKey: string, lang: LangCode, countryLabel: string): Promise<string> {
+async function summarize(query: string, items: SearchItem[], lang: LangCode, countryLabel: string, userKey?: string): Promise<string> {
   const context = items.slice(0, 5).map((item, index) => {
     const body = (item.markdown ?? item.description ?? "").slice(0, 2000);
     return `[${index + 1}] ${item.title ?? item.url ?? "Untitled"}\nURL: ${item.url ?? ""}\n${body}`;
   }).join("\n\n---\n\n");
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: `Answer from the provided web sources only. ${languageInstruction(lang)} The user's selected market is ${countryLabel}. Give 3–6 short factual sentences and cite sources as [1], [2].` },
-        { role: "user", content: `QUESTION: ${query}\n\nSOURCES:\n${context}` },
-      ],
-      temperature: 0.2,
-    }),
-    signal: AbortSignal.timeout(20_000),
+  return generateGeminiText({
+    systemInstruction: `Answer from the provided web sources only. ${languageInstruction(lang)} The user's selected market is ${countryLabel}. Give 3–6 short factual sentences and cite sources as [1], [2].`,
+    contents: [geminiUserText(`QUESTION: ${query}\n\nSOURCES:\n${context}`)],
+    temperature: 0.2,
+    timeoutMs: 20_000,
+    apiKey: userKey,
   });
-  if (!response.ok) throw new Error(`AI summary failed [${response.status}]`);
-  const json = await response.json() as { choices?: Array<{ message?: { content?: unknown } }> };
-  const text = json.choices?.[0]?.message?.content;
-  if (typeof text !== "string" || !text.trim()) throw new Error("AI summary was empty");
-  return text.trim();
 }
 
 export const webSearchSummarize = createServerFn({ method: "POST" })
@@ -112,6 +102,7 @@ export const webSearchSummarize = createServerFn({ method: "POST" })
     query: z.string().trim().min(2).max(400),
     country: z.enum(SUPPORTED_COUNTRIES).default("SA"),
     lang: z.enum(SUPPORTED_LANGS).default("auto"),
+    userKey: z.string().trim().max(200).optional(),
   }).parse(input))
   .handler(async ({ data }): Promise<WebSearchResult> => {
     const country = countryOption(data.country as CountryCode);
@@ -129,8 +120,10 @@ export const webSearchSummarize = createServerFn({ method: "POST" })
     if (sources.length === 0) return { query: data.query, summary: fallbackSummary(data.query, items, data.lang as LangCode), sources: [] };
 
     let summary = fallbackSummary(data.query, items, data.lang as LangCode);
-    if (process.env.LOVABLE_API_KEY?.trim()) {
-      try { summary = await summarize(data.query, items, process.env.LOVABLE_API_KEY.trim(), data.lang as LangCode, country.label); } catch { /* keep source-only fallback */ }
+    try {
+      summary = await summarize(data.query, items, data.lang as LangCode, country.label, data.userKey);
+    } catch {
+      // Keep a source-only result when Gemini is temporarily unavailable.
     }
     return { query: data.query, summary, sources };
   });

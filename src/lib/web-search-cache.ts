@@ -9,13 +9,13 @@ const DEFAULT_TTL_MS = 5 * 60_000;
 const MAX_ENTRIES = 40;
 
 type Entry = { at: number; result: WebSearchResult };
-export type WebSearchContext = { country?: CountryCode; lang?: LangCode };
+export type WebSearchContext = { country?: CountryCode; lang?: LangCode; geminiKey?: string };
 
 const cache = new Map<string, Entry>();
 const inflight = new Map<string, Promise<WebSearchResult>>();
 
 function normalizedContext(context: WebSearchContext = {}): Required<WebSearchContext> {
-  return { country: context.country ?? "SA", lang: context.lang ?? "auto" };
+  return { country: context.country ?? "SA", lang: context.lang ?? "auto", geminiKey: context.geminiKey ?? "" };
 }
 
 function normKey(q: string, context: WebSearchContext = {}): string {
@@ -52,7 +52,7 @@ export async function cachedWebSearch(query: string, ttlMs = DEFAULT_TTL_MS, con
 
   const p = (async () => {
     try {
-      const result = await webSearchSummarize({ data: { query, country: ctx.country, lang: ctx.lang } });
+      const result = await webSearchSummarize({ data: { query, country: ctx.country, lang: ctx.lang, userKey: ctx.geminiKey || undefined } });
       if (result.sources.length > 0) { cache.set(key, { at: Date.now(), result }); evictIfNeeded(); }
       return result;
     } finally {

@@ -80,7 +80,6 @@ const APPS: Record<string, { url: string; name: string }> = {
   calendar:  { url: "https://calendar.google.com",  name: "Google Calendar" },
   chatgpt:   { url: "https://chat.openai.com",      name: "ChatGPT"   },
   claude:    { url: "https://claude.ai",            name: "Claude"    },
-  lovable:   { url: "https://lovable.dev",          name: "Lovable"   },
 };
 
 function norm(s: string) {

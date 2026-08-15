@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 export type ProviderHealth = {
   configured: boolean;
@@ -24,31 +25,29 @@ const configured = (value: string | undefined) => Boolean(value?.trim());
  * Server-only configuration health. It intentionally returns no key material.
  * The client can use this to explain setup problems without exposing secrets.
  */
-export const getAiHealth = createServerFn({ method: "GET" }).handler(async (): Promise<AiHealth> => {
-  const llmConfigured = configured(process.env.LOVABLE_API_KEY);
+export const getAiHealth = createServerFn({ method: "POST" })
+  .validator((input: unknown) => z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}))
+  .handler(async ({ data }): Promise<AiHealth> => {
+  const geminiConfigured = configured(data.userKey) || configured(process.env.GEMINI_API_KEY);
   const sttConfigured = configured(process.env.DEEPGRAM_API_KEY);
-  const realtimeConfigured = configured(process.env.GEMINI_API_KEY);
   const recommendations: string[] = [];
 
-  if (!llmConfigured) {
-    recommendations.push("Set LOVABLE_API_KEY for multilingual text replies and AI actions.");
+  if (!geminiConfigured) {
+    recommendations.push("Set GEMINI_API_KEY for Gemini chat, actions, summaries, vision and realtime voice.");
   }
   if (!sttConfigured) {
     recommendations.push("Set DEEPGRAM_API_KEY for browser microphone transcription.");
   }
-  if (!realtimeConfigured) {
-    recommendations.push("Set GEMINI_API_KEY to enable the recommended Gemini Live realtime voice provider.");
-  }
 
   return {
-    ok: llmConfigured && sttConfigured,
+    ok: geminiConfigured && sttConfigured,
     generatedAt: new Date().toISOString(),
     providers: {
       llm: {
-        configured: llmConfigured,
-        purpose: "Multilingual chat, intent extraction, summaries and safe action plans",
-        env: "LOVABLE_API_KEY",
-        message: llmConfigured ? "Configured: Google Gemini 2.5 Flash through the Lovable gateway." : "Missing server configuration.",
+        configured: geminiConfigured,
+        purpose: "Gemini multilingual chat, intent extraction, summaries, vision and safe action plans",
+        env: "GEMINI_API_KEY",
+        message: geminiConfigured ? "Configured: Google Gemini 2.5 Flash through the server-side Gemini API." : "Missing GEMINI_API_KEY in the server environment.",
       },
       stt: {
         configured: sttConfigured,
@@ -57,12 +56,12 @@ export const getAiHealth = createServerFn({ method: "GET" }).handler(async (): P
         message: sttConfigured ? "Configured: short-lived browser tokens can be minted." : "Missing server configuration.",
       },
       realtime: {
-        configured: realtimeConfigured,
-        purpose: "Optional low-latency realtime audio provider",
+        configured: geminiConfigured,
+        purpose: "Low-latency Gemini Live realtime audio provider",
         env: "GEMINI_API_KEY",
-        message: realtimeConfigured ? "Configured: Gemini Live short-lived session tokens are issued server-side." : "Missing GEMINI_API_KEY; Gemini Live is unavailable until it is added to Vercel.",
+        message: geminiConfigured ? "Configured: Gemini Live short-lived session tokens are issued server-side." : "Missing GEMINI_API_KEY; Gemini Live is unavailable until it is added to Vercel.",
       },
     },
     recommendations,
   };
-});
+  });
