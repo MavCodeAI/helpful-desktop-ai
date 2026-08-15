@@ -20,6 +20,7 @@ import { ApiKeysSection } from "@/components/realtime/settings/ApiKeysSection";
 import { ProviderSection } from "@/components/realtime/settings/ProviderSection";
 import { DangerSection } from "@/components/realtime/settings/DangerSection";
 import { BriefingSection } from "@/components/realtime/settings/BriefingSection";
+import { PrivacySection } from "@/components/realtime/settings/PrivacySection";
 
 export interface SettingsDrawerProps {
   open: boolean;
@@ -209,6 +210,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             onToggle={toggleBriefing}
             onChangeTime={changeBriefingTime}
           />
+          <PrivacySection />
           <ThemeSection />
           <ApiKeysSection geminiKey={geminiKey} onApplyGeminiKey={applyGeminiKey} />
           <DangerSection clearMemories={clearMemories} />
