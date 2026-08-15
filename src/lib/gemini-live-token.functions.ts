@@ -18,6 +18,28 @@ function resolveApiKey(userKey?: string) {
   return (userKey || process.env.GEMINI_API_KEY || "").trim();
 }
 
+function sanitizeProviderDetail(text: string): string {
+  return text
+    .replace(/\s+/g, " ")
+    .replace(/(?:AIza|AQ\.)[A-Za-z0-9_-]{16,}/g, "[redacted]")
+    .slice(0, 360)
+    .trim();
+}
+
+function providerErrorDetail(text: string, status: number): string {
+  const trimmed = sanitizeProviderDetail(text);
+  if (!trimmed) return `Gemini token service returned HTTP ${status}.`;
+  try {
+    const parsed = JSON.parse(trimmed) as { error?: { message?: unknown; status?: unknown } };
+    const message = typeof parsed.error?.message === "string" ? parsed.error.message : "";
+    const providerStatus = typeof parsed.error?.status === "string" ? ` (${parsed.error.status})` : "";
+    if (message) return `Gemini token service returned HTTP ${status}: ${sanitizeProviderDetail(message)}${providerStatus}`;
+  } catch {
+    // Keep the sanitized raw response when Google does not return JSON.
+  }
+  return `Gemini token service returned HTTP ${status}: ${trimmed}`;
+}
+
 async function mintGeminiLiveToken(apiKey: string): Promise<MintedToken> {
   if (!apiKey) {
     return { ok: false, status: "missing", error: "GEMINI_API_KEY is not configured on the server." };
@@ -37,28 +59,24 @@ async function mintGeminiLiveToken(apiKey: string): Promise<MintedToken> {
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
+      // Keep provisioning minimal and let the client send the documented setup
+      // message. This avoids rejecting a valid key because a model/config lock
+      // is not available for that account or current Live API revision.
       body: JSON.stringify({
         uses: 1,
         expireTime: expiresAt,
         newSessionExpireTime,
-        liveConnectConstraints: {
-          model: GEMINI_LIVE_MODEL_PATH,
-          config: {
-            responseModalities: ["AUDIO"],
-            inputAudioTranscription: {},
-            outputAudioTranscription: {},
-          },
-        },
       }),
       signal: AbortSignal.timeout(10_000),
     });
 
     if (!response.ok) {
       const providerText = await response.text().catch(() => "");
-      const detail = providerText.toLowerCase().includes("api key")
-        ? "Google rejected the configured API key."
-        : `Gemini token service returned HTTP ${response.status}.`;
-      return { ok: false, status: "provider_error", error: detail };
+      return {
+        ok: false,
+        status: "provider_error",
+        error: providerErrorDetail(providerText, response.status),
+      };
     }
 
     const payload = await response.json() as { name?: unknown };
