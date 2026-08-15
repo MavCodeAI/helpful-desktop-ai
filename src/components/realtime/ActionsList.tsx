@@ -21,6 +21,7 @@ export function ActionsList({
   onReject,
 }: Props) {
   if (actions.length === 0 && !pendingApproval) return null;
+  const pendingIsNative = Boolean(pendingApproval?.intent.action);
 
   return (
     <div className="max-w-2xl mx-auto mb-3 space-y-2 text-left">
@@ -34,13 +35,19 @@ export function ActionsList({
             <span className="mt-0.5 text-amber-200" aria-hidden="true">!</span>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-200">Approval required</p>
-              <p className="mt-1 text-sm text-white/90">Alpha wants to open this link:</p>
-              <p className="mt-1 truncate text-xs text-amber-100/80" title={pendingApproval.intent.url}>
+              <p className="mt-1 text-sm text-white/90">
+                {pendingIsNative ? "Alpha wants permission for this desktop action:" : "Alpha wants to open this link:"}
+              </p>
+              <p className="mt-1 truncate text-xs text-amber-100/80" title={pendingApproval.intent.label}>
                 {pendingApproval.intent.label}
               </p>
-              <p className="mt-1 truncate text-[11px] text-white/50" title={pendingApproval.intent.url}>
-                {pendingApproval.intent.url}
-              </p>
+              {pendingApproval.intent.url ? (
+                <p className="mt-1 truncate text-[11px] text-white/50" title={pendingApproval.intent.url}>
+                  {pendingApproval.intent.url}
+                </p>
+              ) : (
+                <p className="mt-1 text-[11px] text-white/50">No external link will be opened.</p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"

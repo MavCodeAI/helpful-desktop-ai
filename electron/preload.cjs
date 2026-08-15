@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld("alpha", {
   getAutoLaunch: () => ipcRenderer.invoke("alpha:getAutoLaunch"),
   readFile: () => ipcRenderer.invoke("alpha:readFile"),
   writeFile: (name, content) => ipcRenderer.invoke("alpha:writeFile", name, content),
+  getHotkey: () => ipcRenderer.invoke("alpha:getHotkey"),
+  getActiveWindow: () => ipcRenderer.invoke("alpha:getActiveWindow"),
+  captureScreenshot: () => ipcRenderer.invoke("alpha:captureScreenshot"),
   quit: () => ipcRenderer.send("alpha:quit"),
 
   onHotkey: (cb) => {

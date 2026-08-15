@@ -13,6 +13,8 @@ export type Intent = {
     | { type: "clipboard-copy"; text: string }
     | { type: "clipboard-read" }
     | { type: "screenshot" }
+    | { type: "active-window" }
+    | { type: "hotkey-status" }
     | { type: "screen-vision" }
     | { type: "ai-answer"; question: string }
     | { type: "news"; query: string }
@@ -48,7 +50,7 @@ export function matchNoteIntent(text: string): string | null {
 // Only include apps that have a real web presence; native-only apps get
 // dropped so we don't 404. Web URLs by default; the OS deep-links the
 // installed app on mobile where available.
-const APPS: Record<string, { url: string; name: string }> = {
+  const APPS: Record<string, { url: string; name: string }> = {
   facebook:  { url: "https://facebook.com",         name: "Facebook"  },
   fb:        { url: "https://facebook.com",         name: "Facebook"  },
   instagram: { url: "https://instagram.com",        name: "Instagram" },
@@ -73,6 +75,10 @@ const APPS: Record<string, { url: string; name: string }> = {
   wikipedia: { url: "https://wikipedia.org",        name: "Wikipedia" },
   wiki:      { url: "https://wikipedia.org",        name: "Wikipedia" },
   google:    { url: "https://google.com",           name: "Google"    },
+  browser:   { url: "https://www.google.com",      name: "Default browser" },
+  chrome:    { url: "https://www.google.com",      name: "Chrome"    },
+  edge:      { url: "https://www.google.com",      name: "Microsoft Edge" },
+  firefox:   { url: "https://www.google.com",      name: "Firefox"    },
   "جوجل":    { url: "https://google.com",           name: "Google"    },
   "غوغل":    { url: "https://google.com",           name: "Google"    },
   maps:      { url: "https://maps.google.com",      name: "Google Maps" },
@@ -189,6 +195,14 @@ export function detectIntent(raw: string): Intent | null {
   // ── 0e. Screenshot ──────────────────────────────────────────────────
   if (/\b(screenshot|screen shot|screen capture|screen ki tasveer)\b/.test(text)) {
     return { kind: "screenshot", label: "Screenshot", url: "", action: { type: "screenshot" } };
+  }
+
+  // ── 0e1. Native desktop context ─────────────────────────────────────
+  if (/(?:active|current|foreground)\s+window|which\s+window|active window batao|current window batao|کون سی ونڈو|موجودہ ونڈو|فعال ونڈو/iu.test(text)) {
+    return { kind: "active-window", label: "Active window", url: "", action: { type: "active-window" } };
+  }
+  if (/(?:what(?:'s| is)\s+the\s+)?(?:global\s+)?hotkey|shortcut\s+(?:batao|show|dikhao)|hotkey\s+بتاؤ|شارٹ کٹ|ہاٹ کی/iu.test(text)) {
+    return { kind: "hotkey", label: "Global hotkey", url: "", action: { type: "hotkey-status" } };
   }
 
   // ── 0e2. Screen understanding (AI vision) ───────────────────────────

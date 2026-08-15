@@ -62,6 +62,18 @@ describe("detectIntent — core intents", () => {
     expect(i?.action?.type).toBe("ai-answer");
   });
 
+  it("detects native desktop context actions", () => {
+    expect(detectIntent("active window batao")?.action?.type).toBe("active-window");
+    expect(detectIntent("global hotkey batao")?.action?.type).toBe("hotkey-status");
+    expect(detectIntent("screenshot le lo")?.action?.type).toBe("screenshot");
+  });
+
+  it("detects default browser opening", () => {
+    const i = detectIntent("open browser");
+    expect(i?.kind).toBe("open");
+    expect(i?.url).toBe("https://www.google.com");
+  });
+
   it("returns null for empty / chit-chat", () => {
     expect(detectIntent("")).toBeNull();
     expect(detectIntent("hey how are you")).toBeNull();

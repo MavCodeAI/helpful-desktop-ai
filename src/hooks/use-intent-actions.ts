@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { detectIntent, type Intent } from "@/lib/intents";
-import { openExternal, readTextFile, writeTextFile } from "@/lib/electron-bridge";
+import { captureNativeScreenshot, getActiveWindowTitle, getRegisteredHotkey, isElectron, openExternal, readTextFile, writeTextFile } from "@/lib/electron-bridge";
 import { addNoteRaw } from "@/lib/utilities/notes";
 import { addMemory } from "@/lib/persona";
 import { describeScreen, askAI } from "@/lib/ai-vision.functions";
@@ -24,6 +24,12 @@ type Options = {
   /** Route news intents to the free-first country-aware news provider. */
   onNews?: (query: string) => void;
 };
+
+function requiresNativeApproval(intent: Intent): boolean {
+  const type = intent.action?.type;
+  return type === "clipboard-copy" || type === "clipboard-read" || type === "file-open" ||
+    type === "file-save" || type === "screenshot" || type === "screen-vision" || type === "active-window";
+}
 
 async function captureScreenBase64(): Promise<{ b64: string; mime: string } | null> {
   const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -151,11 +157,22 @@ export function useIntentActions(opts: Options = {}) {
         }
         break;
       case "screenshot":
-        if (!navigator.mediaDevices?.getDisplayMedia) {
-          toast.error("Screen capture support نہیں", { description: "یہ feature desktop Chrome/Edge/Firefox میں چلتا ہے۔" });
-          pushAction(intent, false); break;
-        }
         try {
+          if (isElectron()) {
+            const saved = await captureNativeScreenshot();
+            if (!saved) {
+              toast("Screenshot cancel ہو گیا", { description: "Save location منتخب نہیں ہوئی یا native capture دستیاب نہیں۔" });
+              pushAction(intent, false);
+              break;
+            }
+            toast.success("Screenshot save ہو گیا", { description: saved.name });
+            pushAction(intent, true);
+            break;
+          }
+          if (!navigator.mediaDevices?.getDisplayMedia) {
+            toast.error("Screen capture support نہیں", { description: "یہ feature desktop Chrome/Edge/Firefox میں چلتا ہے۔" });
+            pushAction(intent, false); break;
+          }
           const cap = await captureScreenBase64();
           if (!cap) throw new Error("no blob");
           const link = document.createElement("a");
@@ -170,6 +187,35 @@ export function useIntentActions(opts: Options = {}) {
           toast.error(denied ? "Permission نہیں ملی" : "Screenshot cancel ہو گیا", {
             description: denied ? "براہِ کرم screen share کی permission دیں اور کوئی screen/window منتخب کریں۔" : "دوبارہ کہیں اور share dialog میں screen/window select کریں۔",
           });
+          pushAction(intent, false);
+        }
+        break;
+
+      case "active-window":
+        try {
+          const title = await getActiveWindowTitle();
+          if (!title) {
+            toast.error("Active window دستیاب نہیں", { description: "یہ action Windows Electron app میں چلتا ہے؛ browser میں supported نہیں۔" });
+            pushAction(intent, false);
+            break;
+          }
+          toast.success("Active window", { description: title.slice(0, 160) });
+          onReplyRef.current?.(`Active window: ${title}`);
+          pushAction(intent, true);
+        } catch {
+          toast.error("Active window پڑھا نہیں جا سکا");
+          pushAction(intent, false);
+        }
+        break;
+
+      case "hotkey-status":
+        try {
+          const hotkey = await getRegisteredHotkey();
+          toast.success("Global hotkey", { description: hotkey });
+          onReplyRef.current?.(`Global hotkey: ${hotkey}`);
+          pushAction(intent, true);
+        } catch {
+          toast.error("Global hotkey دستیاب نہیں");
           pushAction(intent, false);
         }
         break;
@@ -255,7 +301,16 @@ export function useIntentActions(opts: Options = {}) {
   }, [pushAction]);
 
   const execute = useCallback(async (intent: Intent) => {
-    if (intent.action) return runInApp(intent);
+    if (intent.action) {
+      if (requiresNativeApproval(intent)) {
+        const at = Date.now();
+        const id = `${at}-${Math.random().toString(36).slice(2, 8)}`;
+        setPendingApproval({ id, intent, at });
+        appendActionAudit({ id, at, status: "pending", kind: intent.kind, label: intent.label, url: intent.url });
+        return;
+      }
+      return runInApp(intent);
+    }
     // Route web-search intents to in-app AI summary instead of opening Google.
     if (intent.kind === "search" && onSearchRef.current) {
       const q = intent.label.replace(/^Google\s*→\s*"?|"$/g, "").trim();
@@ -279,9 +334,13 @@ export function useIntentActions(opts: Options = {}) {
     if (!pending) return;
     setPendingApproval(null);
     updateActionAudit(pending.id, "approved");
-    await openUrl(pending.intent);
+    if (pending.intent.action) {
+      await runInApp(pending.intent);
+    } else {
+      await openUrl(pending.intent);
+    }
     updateActionAudit(pending.id, "completed");
-  }, [openUrl, pendingApproval]);
+  }, [openUrl, runInApp, pendingApproval]);
 
   const rejectPending = useCallback(() => {
     if (!pendingApproval) return;

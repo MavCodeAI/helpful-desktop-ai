@@ -13,6 +13,9 @@ type Bridge = {
   onTrayAction: (cb: (action: "start" | "stop" | "show") => void) => () => void;
   readFile: () => Promise<{ name: string; content: string } | null>;
   writeFile: (name: string, content: string) => Promise<boolean>;
+  getHotkey: () => Promise<string>;
+  getActiveWindow: () => Promise<string | null>;
+  captureScreenshot: () => Promise<{ name: string } | null>;
   quit: () => void;
 };
 
@@ -132,4 +135,19 @@ export async function writeTextFile(suggestedName: string, content: string): Pro
   a.click();
   URL.revokeObjectURL(a.href);
   return true;
+}
+
+export async function getRegisteredHotkey(): Promise<string> {
+  if (!isElectron()) return "Control+Shift+A";
+  try { return await window.alpha!.getHotkey(); } catch { return "Control+Shift+A"; }
+}
+
+export async function getActiveWindowTitle(): Promise<string | null> {
+  if (!isElectron()) return null;
+  try { return await window.alpha!.getActiveWindow(); } catch { return null; }
+}
+
+export async function captureNativeScreenshot(): Promise<{ name: string } | null> {
+  if (!isElectron()) return null;
+  try { return await window.alpha!.captureScreenshot(); } catch { return null; }
 }
