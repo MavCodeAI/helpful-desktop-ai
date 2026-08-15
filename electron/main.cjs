@@ -14,14 +14,15 @@ const path = require("node:path");
 const fs = require("node:fs/promises");
 
 const DEV_URL = process.env.ALPHA_DEV_URL || "http://localhost:8080";
-const PROD_URL = process.env.ALPHA_PROD_URL || "https://alpha.lovable.app";
+const PROD_URL = process.env.ALPHA_PROD_URL || "https://alpha9in-1lhpaoimz-abdulbasitdarwesh-gmailcoms-projects.vercel.app";
 const IS_DEV = !app.isPackaged;
 
 let mainWindow = null;
 let tray = null;
 
 function iconPath() {
-  return path.join(__dirname, "..", "public", "alpha-icon.png");
+  const icon = process.platform === "win32" ? "alpha-icon.ico" : "alpha-icon.png";
+  return path.join(__dirname, "..", "public", icon);
 }
 
 function createWindow() {

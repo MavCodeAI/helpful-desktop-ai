@@ -21,6 +21,7 @@ import { generateNote } from "@/lib/note-ai.functions";
 import { addNoteRaw } from "@/lib/utilities/notes";
 import { matchNoteIntent } from "@/lib/intents";
 import { isAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
+import { trackPilotEvent } from "@/lib/pilot-telemetry";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
@@ -30,6 +31,10 @@ import { isAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 export function useVoiceApp() {
   const overlays = useOverlays();
   const { setShowHistory, anyOverlay } = overlays;
+
+  useEffect(() => {
+    trackPilotEvent("app_opened", { desktop: isElectron() });
+  }, []);
   const [showNotes, setShowNotes] = useState(false);
   const timers = useTimers();
 
@@ -182,6 +187,7 @@ export function useVoiceApp() {
   // Text chat: send user text → intent-shortcut for notes, else AI reply.
   const [textBusy, setTextBusy] = useState(false);
   const sendText = useCallback(async (text: string) => {
+    trackPilotEvent("chat_sent", { characters: text.length, lang: settings.lang });
     const userMsg: VoiceMessage = { role: "you", text };
     handleFinalMessage(userMsg, { atBottom: scroll.atBottom });
 
@@ -208,6 +214,7 @@ export function useVoiceApp() {
       const res = await chatReply({ data: { messages: convo, systemPrompt: settings.systemPrompt, lang: settings.lang } });
       handleFinalMessage({ role: "assistant", text: res.text }, { atBottom: scroll.atBottom });
     } catch (e) {
+      trackPilotEvent("chat_failed", { lang: settings.lang });
       toast.error(e instanceof Error ? e.message : "Chat failed");
     } finally {
       setTextBusy(false);
