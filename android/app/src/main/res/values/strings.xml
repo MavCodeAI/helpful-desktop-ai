@@ -4,4 +4,8 @@
     <string name="title_activity_main">Alpha</string>
     <string name="package_name">com.mavcodeai.alpha</string>
     <string name="custom_url_scheme">com.mavcodeai.alpha</string>
+    <string name="shortcut_listen">Listen</string>
+    <string name="shortcut_listen_long">Start Alpha listening</string>
+    <string name="shortcut_open">Open Alpha</string>
+    <string name="shortcut_open_long">Open the Alpha voice assistant</string>
 </resources>

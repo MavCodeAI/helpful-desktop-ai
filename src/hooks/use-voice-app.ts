@@ -236,6 +236,17 @@ export function useVoiceApp() {
     return () => { offHk(); offTray(); };
   }, [active, disabled, session.start, session.stop]);
 
+  // Android launcher shortcut: native MainActivity dispatches a start event into the WebView.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onQuickAction = (event: Event) => {
+      const action = (event as CustomEvent<string>).detail;
+      if (action === "start" && !active && !disabled) session.start();
+    };
+    window.addEventListener("alpha:quick-action", onQuickAction);
+    return () => window.removeEventListener("alpha:quick-action", onQuickAction);
+  }, [active, disabled, session.start]);
+
   // Text chat: send user text → intent-shortcut for notes, else AI reply.
   const [textBusy, setTextBusy] = useState(false);
   const sendText = useCallback(async (text: string) => {

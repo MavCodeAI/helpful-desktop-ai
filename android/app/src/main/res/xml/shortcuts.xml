@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="listen"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_listen"
+        android:shortcutLongLabel="@string/shortcut_listen_long">
+        <intent
+            android:action="com.mavcodeai.alpha.ACTION_QUICK_ACTION"
+            android:targetPackage="com.mavcodeai.alpha"
+            android:targetClass="com.mavcodeai.alpha.MainActivity">
+            <extra android:name="alpha_action" android:value="start" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="open_alpha"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_open"
+        android:shortcutLongLabel="@string/shortcut_open_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.mavcodeai.alpha"
+            android:targetClass="com.mavcodeai.alpha.MainActivity" />
+    </shortcut>
+</shortcuts>
