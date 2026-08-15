@@ -135,6 +135,7 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           open={showChat}
           onClose={() => setShowChat(false)}
           messages={history.messages}
+          lang={settings.lang}
           onSend={onSendText}
           busy={textBusy}
           onNote={onCreateNote}

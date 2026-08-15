@@ -3,9 +3,10 @@ import { Send, Loader2, StickyNote, Mic, MicOff, ShieldCheck } from "lucide-reac
 import { useServerFn } from "@tanstack/react-start";
 import { useDeepgramLive } from "@/hooks/use-deepgram-live";
 import { checkDeepgramKey } from "@/lib/deepgram-token.functions";
-import { loadLang } from "@/lib/persona";
+import { loadLang, type LangCode } from "@/lib/persona";
 
 type Props = {
+  lang?: LangCode;
   onSend: (text: string) => void | Promise<void>;
   onNote?: (text: string) => void | Promise<void>;
   notePending?: boolean;
@@ -14,7 +15,7 @@ type Props = {
   autoFocus?: boolean;
 };
 
-export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
+export function ChatComposer({ lang, onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
   const [value, setValue] = useState("");
   const [interim, setInterim] = useState("");
   const [keyCheck, setKeyCheck] = useState<{ status: "idle" | "checking" | "ok" | "bad"; message: string }>({ status: "idle", message: "" });
@@ -33,7 +34,7 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
   };
 
   const live = useDeepgramLive({
-    lang: loadLang(),
+    lang: lang ?? loadLang(),
     onFinal: (text) => {
       setValue((prev) => (prev ? `${prev.trimEnd()} ${text}` : text) + " ");
       requestAnimationFrame(() => taRef.current?.focus());

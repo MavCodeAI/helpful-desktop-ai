@@ -4,11 +4,13 @@ import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import { MessageBubble } from "@/components/realtime/MessageBubble";
 import { ChatComposer } from "@/components/realtime/ChatComposer";
 import type { VoiceMessage } from "@/lib/voice-providers";
+import type { LangCode } from "@/lib/persona";
 
 export interface ChatDrawerProps {
   open: boolean;
   onClose: () => void;
   messages: VoiceMessage[];
+  lang?: LangCode;
   onSend: (text: string) => void | Promise<void>;
   busy?: boolean;
   onNote?: (text: string) => void | Promise<void>;
@@ -21,6 +23,7 @@ export function ChatDrawer({
   open,
   onClose,
   messages,
+  lang,
   onSend,
   busy,
   onNote,
@@ -111,6 +114,7 @@ export function ChatDrawer({
         </div>
         <div className="border-t border-border p-3">
           <ChatComposer
+            lang={lang}
             onSend={onSend}
             busy={busy}
             onNote={onNote}

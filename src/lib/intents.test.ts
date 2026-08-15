@@ -23,6 +23,17 @@ describe("detectIntent — core intents", () => {
     expect(i?.url).toMatch(/^https:\/\/www\.google\.com/);
   });
 
+  it("detects Arabic search and open commands", () => {
+    expect(detectIntent("ابحث عن الطقس في الرياض")?.kind).toBe("search");
+    expect(detectIntent("افتح جوجل")?.kind).toBe("open");
+  });
+
+  it("detects Arabic timer", () => {
+    const i = detectIntent("مؤقت 5 دقائق");
+    expect(i?.kind).toBe("timer");
+    expect(i?.action?.type).toBe("timer");
+  });
+
   it("detects weather", () => {
     expect(detectIntent("weather in karachi")?.kind).toBe("weather");
   });
@@ -49,6 +60,9 @@ describe("matchNoteIntent", () => {
   });
   it("matches Urdu note", () => {
     expect(matchNoteIntent("yaad rakho meeting 5pm")).toBe("meeting 5pm");
+  });
+  it("matches Arabic note", () => {
+    expect(matchNoteIntent("ملاحظة: اجتماع الساعة 5")).toBe("اجتماع الساعة 5");
   });
   it("returns null for non-notes", () => {
     expect(matchNoteIntent("hello")).toBeNull();

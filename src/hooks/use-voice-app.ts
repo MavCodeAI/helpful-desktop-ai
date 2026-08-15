@@ -205,14 +205,14 @@ export function useVoiceApp() {
     setTextBusy(true);
     try {
       const convo = [...messages, userMsg];
-      const res = await chatReply({ data: { messages: convo, systemPrompt: settings.systemPrompt } });
+      const res = await chatReply({ data: { messages: convo, systemPrompt: settings.systemPrompt, lang: settings.lang } });
       handleFinalMessage({ role: "assistant", text: res.text }, { atBottom: scroll.atBottom });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Chat failed");
     } finally {
       setTextBusy(false);
     }
-  }, [handleFinalMessage, messages, settings.systemPrompt, scroll.atBottom, overlays, setShowNotes]);
+  }, [handleFinalMessage, messages, settings.lang, settings.systemPrompt, scroll.atBottom, overlays, setShowNotes]);
 
   // From ChatComposer's "Note" button: turn current text into an AI-crafted note.
   const [notePending, setNotePending] = useState(false);

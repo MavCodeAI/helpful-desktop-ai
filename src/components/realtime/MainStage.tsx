@@ -50,7 +50,10 @@ export function MainStage({
   } = session;
   const { messages } = history;
   const { scrollRef, atBottom, unread, onScroll, jumpToLatest } = scroll;
-  const { actions, autoOpen, setAutoOpen } = intents;
+  const {
+    actions, autoOpen, setAutoOpen,
+    pendingApproval, approvePending, rejectPending,
+  } = intents;
   const showInlineComposer = messages.length > 0 || !!partial;
 
   return (
@@ -111,7 +114,7 @@ export function MainStage({
             />
             {showInlineComposer && (
               <div className="mt-3">
-                <ChatComposer onSend={onSendText} busy={textBusy} onNote={onCreateNote} notePending={notePending} placeholder="Reply with text…" />
+                <ChatComposer lang={settings.lang} onSend={onSendText} busy={textBusy} onNote={onCreateNote} notePending={notePending} placeholder="Reply with text…" />
               </div>
             )}
           </aside>
@@ -121,7 +124,14 @@ export function MainStage({
 
 
       <section className="relative z-10 px-4 sm:px-6 pb-6 text-center">
-        <ActionsList actions={actions} autoOpen={autoOpen} onToggleAutoOpen={setAutoOpen} />
+        <ActionsList
+          actions={actions}
+          autoOpen={autoOpen}
+          onToggleAutoOpen={setAutoOpen}
+          pendingApproval={pendingApproval}
+          onApprove={approvePending}
+          onReject={rejectPending}
+        />
         <StatusPill
           status={status}
           disabled={disabled}

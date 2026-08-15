@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { detectIntent, type Intent } from "@/lib/intents";
-import { openExternal, isElectron, readTextFile, writeTextFile } from "@/lib/electron-bridge";
+import { openExternal, readTextFile, writeTextFile } from "@/lib/electron-bridge";
 import { addNoteRaw } from "@/lib/utilities/notes";
 import { addMemory } from "@/lib/persona";
 import { describeScreen, askAI } from "@/lib/ai-vision.functions";
+import { appendActionAudit, updateActionAudit } from "@/lib/action-audit";
 
 export type ActionEntry = Intent & { at: number; opened: boolean };
+export type PendingApproval = { id: string; intent: Intent; at: number };
 
 type Options = {
   confirmBeforeOpen?: boolean;
@@ -54,6 +56,7 @@ async function captureScreenBase64(): Promise<{ b64: string; mime: string } | nu
 export function useIntentActions(opts: Options = {}) {
   const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext, onSearch } = opts;
   const [actions, setActions] = useState<ActionEntry[]>([]);
+  const [pendingApproval, setPendingApproval] = useState<PendingApproval | null>(null);
   const [autoOpen, setAutoOpen] = useState(true);
   const autoOpenRef = useRef(true);
   const confirmRef = useRef(confirmBeforeOpen);
@@ -70,8 +73,18 @@ export function useIntentActions(opts: Options = {}) {
   useEffect(() => { onCtxRef.current = onUserContext; }, [onUserContext]);
   useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
 
-  const pushAction = useCallback((intent: Intent, opened: boolean) => {
-    setActions((prev) => [{ ...intent, at: Date.now(), opened }, ...prev].slice(0, 5));
+  const pushAction = useCallback((intent: Intent, opened: boolean, auditId?: string) => {
+    const at = Date.now();
+    setActions((prev) => [{ ...intent, at, opened }, ...prev].slice(0, 5));
+    if (auditId) updateActionAudit(auditId, opened ? "completed" : "failed");
+    else appendActionAudit({
+      id: `${at}-${Math.random().toString(36).slice(2, 8)}`,
+      at,
+      status: opened ? "completed" : "failed",
+      kind: intent.kind,
+      label: intent.label,
+      url: intent.url,
+    });
   }, []);
 
   const openUrl = useCallback(async (intent: Intent) => {
@@ -240,17 +253,31 @@ export function useIntentActions(opts: Options = {}) {
       return;
     }
     if (!autoOpenRef.current) { pushAction(intent, false); return; }
-    if (confirmRef.current && !isElectron()) {
-      pushAction(intent, false);
-      toast(intent.label, {
-        description: intent.url,
-        action: { label: "Open", onClick: () => openUrl(intent) },
-        cancel: { label: "Cancel", onClick: () => {} },
-      });
+    if (confirmRef.current) {
+      const at = Date.now();
+      const id = `${at}-${Math.random().toString(36).slice(2, 8)}`;
+      setPendingApproval({ id, intent, at });
+      appendActionAudit({ id, at, status: "pending", kind: intent.kind, label: intent.label, url: intent.url });
       return;
     }
     await openUrl(intent);
   }, [openUrl, runInApp, pushAction]);
+
+  const approvePending = useCallback(async () => {
+    const pending = pendingApproval;
+    if (!pending) return;
+    setPendingApproval(null);
+    updateActionAudit(pending.id, "approved");
+    await openUrl(pending.intent);
+    updateActionAudit(pending.id, "completed");
+  }, [openUrl, pendingApproval]);
+
+  const rejectPending = useCallback(() => {
+    if (!pendingApproval) return;
+    updateActionAudit(pendingApproval.id, "rejected");
+    setPendingApproval(null);
+    toast("Action cancelled", { description: pendingApproval.intent.label });
+  }, [pendingApproval]);
 
   const handleUserText = useCallback((text: string) => {
     const intent = detectIntent(text);
@@ -258,5 +285,8 @@ export function useIntentActions(opts: Options = {}) {
     void execute(intent);
   }, [execute]);
 
-  return { actions, autoOpen, setAutoOpen, handleUserText };
+  return {
+    actions, autoOpen, setAutoOpen, handleUserText,
+    pendingApproval, approvePending, rejectPending,
+  };
 }

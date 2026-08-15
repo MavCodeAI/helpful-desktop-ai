@@ -28,8 +28,8 @@ export function matchNoteIntent(text: string): string | null {
   const t = text.trim();
   if (!t) return null;
   const patterns: RegExp[] = [
-    /^(?:note|notes?|take\s+a?\s*note|save\s+(?:as\s+)?note|jot(?:\s+down)?|remember|yaad\s+rakho|note\s+likho|note\s+kar\s*do|note\s+karo|note\s+karna|likh\s+lo|likho)\s*[:،\-–—]\s*(.+)$/i,
-    /^(?:note|take\s+a?\s*note|remember|yaad\s+rakho|note\s+likho|note\s+kar\s*do|note\s+karo|note\s+karna|likh\s+lo|likho)\s+(.+)$/i,
+    /^(?:note|notes?|take\s+a?\s*note|save\s+(?:as\s+)?note|jot(?:\s+down)?|remember|yaad\s+rakho|note\s+likho|note\s+kar\s*do|note\s+karo|note\s+karna|likh\s+lo|likho|ملاحظة|ملاحظه|دوّن|دون|تذكر|تذكّر|اكتب|سجّل|سجل|احفظ)\s*[:،\-–—]\s*(.+)$/i,
+    /^(?:note|take\s+a?\s*note|remember|yaad\s+rakho|note\s+likho|note\s+kar\s*do|note\s+karo|note\s+karna|likh\s+lo|likho|ملاحظة|ملاحظه|دوّن|دون|تذكر|تذكّر|اكتب|سجّل|سجل|احفظ)\s+(.+)$/i,
     /^(.+?)\s+(?:ko\s+)?note\s+(?:likho|kar\s*do|karo|karna)$/i,
     /^(.+?)\s+(?:ko\s+)?(?:yaad\s+rakho|remember)$/i,
   ];
@@ -72,6 +72,8 @@ const APPS: Record<string, { url: string; name: string }> = {
   wikipedia: { url: "https://wikipedia.org",        name: "Wikipedia" },
   wiki:      { url: "https://wikipedia.org",        name: "Wikipedia" },
   google:    { url: "https://google.com",           name: "Google"    },
+  "جوجل":    { url: "https://google.com",           name: "Google"    },
+  "غوغل":    { url: "https://google.com",           name: "Google"    },
   maps:      { url: "https://maps.google.com",      name: "Google Maps" },
   drive:     { url: "https://drive.google.com",     name: "Google Drive" },
   calendar:  { url: "https://calendar.google.com",  name: "Google Calendar" },
@@ -107,12 +109,12 @@ function findApp(fragment: string): { key: string; app: { url: string; name: str
 }
 
 const DUR_UNITS: Record<string, number> = {
-  s: 1, sec: 1, secs: 1, second: 1, seconds: 1,
-  m: 60, min: 60, mins: 60, minute: 60, minutes: 60,
-  h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600,
+  s: 1, sec: 1, secs: 1, second: 1, seconds: 1, ث: 1, ثانية: 1, ثواني: 1,
+  m: 60, min: 60, mins: 60, minute: 60, minutes: 60, د: 60, دقيقة: 60, دقائق: 60,
+  h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600, س: 3600, ساعة: 3600, ساعات: 3600,
 };
 function parseDurationLocal(text: string): number | null {
-  const re = /(\d+(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h)\b/gi;
+  const re = /(\d+(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|ثواني?|ث|دقائق?|د|ساعات?|س)/giu;
   let total = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) total += parseFloat(m[1]) * (DUR_UNITS[m[2].toLowerCase()] ?? 0);
@@ -144,7 +146,7 @@ export function detectIntent(raw: string): Intent | null {
 
   // ── 0b. Timer / Alarm ───────────────────────────────────────────────
   // "5 minute ka timer", "set a timer for 2 minutes 30 seconds", "10 second timer"
-  if (/\b(timer|alarm|remind\s+me|yaad\s+dilana)\b/.test(text)) {
+  if (/(?:\btimer\b|\balarm\b|\bremind\s+me\b|\byaad\s+dilana\b|مؤقت|منبه|ذكرني|ذكّرني)/u.test(text)) {
     const secs = parseDurationLocal(text);
     if (secs && secs > 0) {
       const mm = Math.floor(secs / 60), ss = secs % 60;
@@ -244,7 +246,7 @@ export function detectIntent(raw: string): Intent | null {
   }
 
   // ── 0g. Translate ───────────────────────────────────────────────────
-  const trans = /(?:translate|tarjuma)\s+(.+?)(?:\s+(?:to|into|me|mein)\s+([a-z]+))?$/i.exec(text);
+  const trans = /(?:translate|tarjuma|ترجم)\s+(.+?)(?:\s+(?:to|into|me|mein|إلى|الى)\s+([a-z\u0600-\u06ff]+))?$/iu.exec(text);
   if (trans) {
     const phrase = trans[1].trim();
     const tl = (trans[2] || "en").toLowerCase().slice(0, 5);
@@ -354,7 +356,7 @@ export function detectIntent(raw: string): Intent | null {
   }
 
   // ── 6. Web search: "search X" / "google X" / "X search kar" ─────────
-  const search = /(?:search(?:\s+for)?|google|find|dhoondo|khoj)\s+(.+)/.exec(text);
+  const search = /(?:search(?:\s+for)?|google|find|dhoondo|khoj|ابحث(?:\s+عن)?|بحث\s+عن)\s+(.+)/u.exec(text);
   if (search) {
     const q = search[1].replace(/\s+on\s+google$/, "").trim();
     if (q) {
@@ -370,8 +372,8 @@ export function detectIntent(raw: string): Intent | null {
   // English: "open X" / "launch X" / "go to X"
   // Urdu/Hindi transliteration: "X kholo" / "X khol do" / "X open karo"
   const openMatch =
-    /^(?:open|launch|start|go to|visit)\s+(.+)$/.exec(text) ||
-    /^(.+?)\s+(?:kholo|khol do|kholiye|open karo|open kar do)$/.exec(text);
+    /^(?:open|launch|start|go to|visit|افتح|شغّل|شغل|اذهب\s+(?:إلى|الى))\s+(.+)$/iu.exec(text) ||
+    /^(.+?)\s+(?:kholo|khol do|kholiye|open karo|open kar do|افتح|افتحه|شغّل|شغل)$/iu.exec(text);
   if (openMatch) {
     const rest = openMatch[1].trim();
     // Try alias first

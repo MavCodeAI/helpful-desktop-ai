@@ -54,7 +54,8 @@ export const DEFAULTS = {
   wakeClap: false,
   wakeWord: false,
   wakeHotkey: true,
-  confirmBeforeOpen: false,
+  // Safer production default: external links require explicit approval.
+  confirmBeforeOpen: true,
   desktopAutoLaunch: false,
 };
 
