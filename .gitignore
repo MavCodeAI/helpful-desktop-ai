@@ -31,5 +31,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Android release signing secrets and artifacts
+android/keystore.properties
+android/*.jks
+android/app/*.jks
+
 # Electron packaging artifacts
 electron-release/
