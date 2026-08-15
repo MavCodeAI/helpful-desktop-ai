@@ -14,6 +14,8 @@ export type VoiceStatus =
 
 export type VoiceMessage = { role: "you" | "assistant"; text: string };
 
+import type { LangCode } from "@/lib/persona";
+
 export interface Handlers {
   onStatus: (s: VoiceStatus) => void;
   onMessage: (m: VoiceMessage) => void;
@@ -40,6 +42,8 @@ export interface VoiceOptions {
   sensitivity?: number;
   /** Full persona/language/memory system prompt (built by src/lib/persona.ts). */
   systemPrompt?: string;
+  /** Explicit reply/STT language. Hindi is intentionally not supported. */
+  lang?: LangCode;
 }
 
 export const HF_VOICES = ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"] as const;
@@ -55,7 +59,20 @@ function paceInstruction(pace: Pace | undefined): string {
 
 function buildInstructions(opts?: VoiceOptions): string {
   const base = opts?.systemPrompt?.trim() || "You are Alpha, a friendly, concise voice assistant.";
-  return `${base}\n\n${paceInstruction(opts?.pace)}\n\nThe user may interrupt you at any time — stop speaking immediately when they start.`;
+  const language = opts?.lang === "ur"
+    ? "Urdu is mandatory for this session. Understand and answer in natural Urdu using Urdu script; do not use Hindi or Devanagari."
+    : opts?.lang === "ar"
+      ? "Answer in clear Arabic for this session. Do not switch to Hindi or Devanagari."
+      : opts?.lang === "en"
+        ? "Answer in clear English for this session. Do not switch to Hindi or Devanagari."
+        : opts?.lang === "tr"
+          ? "Answer in clear Turkish for this session. Do not switch to Hindi or Devanagari."
+          : opts?.lang === "fr"
+            ? "Answer in clear French for this session. Do not switch to Hindi or Devanagari."
+            : opts?.lang === "es"
+              ? "Answer in clear Spanish for this session. Do not switch to Hindi or Devanagari."
+              : "Follow the user's selected language, but Hindi and Devanagari are disabled. If the user speaks Hindi, ask them to use Urdu, English, Arabic, Turkish, French or Spanish.";
+  return `${base}\n\n${language}\n\n${paceInstruction(opts?.pace)}\n\nThe user may interrupt you at any time — stop speaking immediately when they start.`;
 }
 
 export interface Controller {
@@ -379,16 +396,24 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
   };
 
   ws.onopen = () => {
+    const languageCode = opts?.lang === "ur" ? "ur-PK"
+      : opts?.lang === "ar" ? "ar-SA"
+        : opts?.lang === "en" ? "en-US"
+          : opts?.lang === "tr" ? "tr-TR"
+            : opts?.lang === "fr" ? "fr-FR"
+              : opts?.lang === "es" ? "es-ES"
+                : undefined;
     ws.send(JSON.stringify({
       setup: {
         model: GEMINI_LIVE_MODEL_PATH,
         generationConfig: {
           responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: opts?.voice || "Aoede" },
+            speechConfig: {
+              ...(languageCode ? { languageCode } : {}),
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: opts?.voice || "Aoede" },
+              },
             },
-          },
         },
         systemInstruction: { parts: [{ text: buildInstructions(opts) }] },
         inputAudioTranscription: {},

@@ -38,6 +38,20 @@ describe("detectIntent — core intents", () => {
     expect(detectIntent("weather in karachi")?.kind).toBe("weather");
   });
 
+  it("detects Urdu news command", () => {
+    const i = detectIntent("نیوز سناؤ");
+    expect(i?.kind).toBe("news");
+    expect(i?.action).toEqual({ type: "news", query: "latest news" });
+  });
+
+  it("detects Arabic news command", () => {
+    expect(detectIntent("آخر الأخبار")?.action?.type).toBe("news");
+  });
+
+  it("extracts an English news topic", () => {
+    expect(detectIntent("news about Riyadh business")?.action).toEqual({ type: "news", query: "riyadh business" });
+  });
+
   it("detects screen-vision", () => {
     expect(detectIntent("screen dekho")?.action?.type).toBe("screen-vision");
     expect(detectIntent("what's on my screen")?.action?.type).toBe("screen-vision");

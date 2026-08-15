@@ -10,8 +10,13 @@ export function useUILang() {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "alpha_lang") setLang(loadLang());
     };
+    const onLanguageChange = () => setLang(loadLang());
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("alpha-language-change", onLanguageChange);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("alpha-language-change", onLanguageChange);
+    };
   }, []);
   return { lang, isUrdu: lang === "ur", isArabic: lang === "ar" };
 }

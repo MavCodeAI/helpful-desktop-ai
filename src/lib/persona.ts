@@ -1,7 +1,9 @@
 // Persona presets, language config, and long-term memory storage.
 // Injected into the realtime session's system_instruction.
 
-export type LangCode = "auto" | "en" | "ur" | "ar" | "hi" | "tr" | "fr" | "es";
+import { localeContext, type CountryCode, type TimezoneMode } from "@/lib/locale";
+
+export type LangCode = "auto" | "en" | "ur" | "ar" | "tr" | "fr" | "es";
 export type PersonaId = "alpha" | "jarvis" | "friday" | "custom";
 
 export const PERSONAS: Record<Exclude<PersonaId, "custom">, { name: string; prompt: string }> = {
@@ -27,7 +29,6 @@ const LANG_HINT: Record<LangCode, string> = {
   en: "Always reply in clear, natural English.",
   ur: "ہمیشہ صاف اور قدرتی اردو میں جواب دیں۔ ضرورت کے مطابق Roman Urdu یا English technical terms رکھ سکتے ہیں۔",
   ar: "أجب دائمًا باللغة العربية الفصحى الواضحة، مع الحفاظ على أسماء المنتجات والمصطلحات التقنية كما هي عند الحاجة.",
-  hi: "हमेशा स्वाभाविक और स्पष्ट हिंदी में उत्तर दें। तकनीकी नाम और उत्पाद नाम आवश्यकतानुसार वैसे ही रखें।",
   tr: "Always reply in clear, natural Turkish.",
   fr: "Always reply in clear, natural French.",
   es: "Always reply in clear, natural Spanish.",
@@ -38,7 +39,6 @@ export const LANG_STT_CODE: Record<LangCode, string | undefined> = {
   en: "en-US",
   ur: "ur-PK",
   ar: "ar-SA",
-  hi: "hi-IN",
   tr: "tr-TR",
   fr: "fr-FR",
   es: "es-ES",
@@ -49,7 +49,6 @@ export const SUPPORTED_LANGUAGES: ReadonlyArray<{ code: LangCode; label: string;
   { code: "en", label: "English", nativeLabel: "English" },
   { code: "ur", label: "Urdu", nativeLabel: "اردو" },
   { code: "ar", label: "Arabic", nativeLabel: "العربية" },
-  { code: "hi", label: "Hindi", nativeLabel: "हिन्दी" },
   { code: "tr", label: "Turkish", nativeLabel: "Türkçe" },
   { code: "fr", label: "French", nativeLabel: "Français" },
   { code: "es", label: "Spanish", nativeLabel: "Español" },
@@ -78,9 +77,13 @@ export function saveCustomPrompt(v: string) { safe.set(KEY_CUSTOM, v); }
 
 export function loadLang(): LangCode {
   const v = safe.get(KEY_LANG);
+  if (v === "hi") return "ur";
   return v && LANG_CODES.has(v as LangCode) ? (v as LangCode) : "auto";
 }
-export function saveLang(l: LangCode) { safe.set(KEY_LANG, l); }
+export function saveLang(l: LangCode) {
+  safe.set(KEY_LANG, l);
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("alpha-language-change", { detail: l }));
+}
 
 export function loadMemories(): string[] {
   const raw = safe.get(KEY_MEMS);
@@ -116,11 +119,14 @@ export function buildPersonaSystemPrompt(opts: {
   customPrompt: string;
   lang: LangCode;
   memories: string[];
+  country?: CountryCode;
+  timezoneMode?: TimezoneMode;
 }): string {
   const parts = [
     personaBasePrompt(opts.persona, opts.customPrompt),
     LANG_HINT[opts.lang],
-    "You are a Saudi-Arabia-first productivity assistant. Use Asia/Riyadh for dates and times unless the user specifies another timezone. Never send, delete, purchase, publish, or change an external system without explicit user approval.",
+    localeContext(opts.country ?? "SA", opts.timezoneMode ?? "country"),
+    "You are a Saudi-Arabia-first productivity assistant by default, but follow the user's selected country/market when one is set. Never send, delete, purchase, publish, or change an external system without explicit user approval.",
   ];
   const mems = opts.memories.filter(Boolean).slice(0, MAX_MEMORIES);
   if (mems.length) {

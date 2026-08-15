@@ -15,6 +15,7 @@ export type Intent = {
     | { type: "screenshot" }
     | { type: "screen-vision" }
     | { type: "ai-answer"; question: string }
+    | { type: "news"; query: string }
     | { type: "memory-add"; text: string }
     | { type: "file-open" }
     | { type: "file-save" }
@@ -232,6 +233,18 @@ export function detectIntent(raw: string): Intent | null {
     return { kind: "file", label: "Save file…", url: "", action: { type: "file-save" } };
   }
 
+
+  // ── 0f. News ────────────────────────────────────────────────────────
+  const news = /^(?:news\s+about\s+(.+)|(?:latest\s+)?news(?:\s+(?:sunao|batao|do|suna(?:\s+do)?))?|(?:khabrein|khabar)\s+(?:sunao|batao|do)|(?:مجھے\s+)?(?:تازہ\s+)?(?:نیوز|خبریں|خبر)\s*(?:سناؤ|سنائیں|بتاؤ|بتائیں|دو)?|(?:آخر\s+)?الأخبار\s*(?:اليوم|الآن)?)$/iu.exec(text);
+  if (news) {
+    const query = (news[1] || "latest news").trim();
+    return {
+      kind: "news",
+      label: `News → "${query}"`,
+      url: "",
+      action: { type: "news", query },
+    };
+  }
 
   // ── 0f. Weather ─────────────────────────────────────────────────────
   const weather = /(?:weather|mausam|temperature)(?:\s+(?:in|of|ka)\s+(.+))?/i.exec(text);

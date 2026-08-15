@@ -4,6 +4,7 @@ import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import type { LiteMode } from "@/lib/realtime/constants";
 import type { ProviderId, Pace } from "@/lib/voice-providers";
 import type { PersonaId, LangCode } from "@/lib/persona";
+import type { CountryCode, TimezoneMode } from "@/lib/locale";
 
 import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSection";
 import { MicSection } from "@/components/realtime/settings/MicSection";
@@ -12,6 +13,7 @@ import { TriggersSection } from "@/components/realtime/settings/TriggersSection"
 import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
 import { PersonaSection } from "@/components/realtime/settings/PersonaSection";
 import { LanguageSection } from "@/components/realtime/settings/LanguageSection";
+import { RegionSection } from "@/components/realtime/settings/RegionSection";
 import { MemorySection } from "@/components/realtime/settings/MemorySection";
 import { ThemeSection } from "@/components/realtime/settings/ThemeSection";
 import { ApiKeysSection } from "@/components/realtime/settings/ApiKeysSection";
@@ -67,6 +69,10 @@ export interface SettingsDrawerProps {
   changePersona: (p: PersonaId) => void;
   changeCustomPrompt: (v: string) => void;
   changeLang: (l: LangCode) => void;
+  country: CountryCode;
+  timezoneMode: TimezoneMode;
+  changeCountry: (country: CountryCode) => void;
+  changeTimezoneMode: (mode: TimezoneMode) => void;
   addMemory: (t: string) => void;
   removeMemory: (i: number) => void;
   clearMemories: () => void;
@@ -79,7 +85,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
   if (!props.open) return null;
 
   const {
-    onClose, provider, changeProvider, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey,
+    onClose, geminiKey, geminiKeyReady, geminiKeyError, applyGeminiKey,
     currentVoice, voiceList, changeVoice, pace, changePace, rate, changeRate,
     active, micPermission, sensitivity, changeSensitivity,
     micTest, startMicTestMode, stopMicTest, level,
@@ -89,8 +95,8 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
     confirmBeforeOpen, toggleConfirmBeforeOpen,
     desktopAutoLaunch, toggleDesktopAutoLaunch,
-    persona, customPrompt, lang, memories,
-    changePersona, changeCustomPrompt, changeLang,
+    persona, customPrompt, lang, country, timezoneMode, memories,
+    changePersona, changeCustomPrompt, changeLang, changeCountry, changeTimezoneMode,
     addMemory, removeMemory, clearMemories,
   } = props;
 
@@ -131,8 +137,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-6 divide-y divide-white/5 [&>section]:py-7 [&>section:first-child]:pt-1 [&>section:last-child]:pb-2">
           <ProviderSection
-            provider={provider}
-            changeProvider={changeProvider}
             geminiReady={geminiKeyReady}
             geminiError={geminiKeyError}
           />
@@ -180,6 +184,12 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             changeCustomPrompt={changeCustomPrompt}
           />
           <LanguageSection lang={lang} changeLang={changeLang} />
+          <RegionSection
+            country={country}
+            timezoneMode={timezoneMode}
+            changeCountry={changeCountry}
+            changeTimezoneMode={changeTimezoneMode}
+          />
           <MemorySection
             memories={memories}
             addMemory={addMemory}

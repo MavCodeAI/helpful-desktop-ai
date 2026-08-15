@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const LangSchema = z.enum(["auto", "en", "ur", "ar", "hi", "tr", "fr", "es"]);
+const LangSchema = z.enum(["auto", "en", "ur", "ar", "tr", "fr", "es"]);
 
 const MessageSchema = z.object({
   role: z.enum(["you", "assistant"]),
@@ -13,7 +13,6 @@ const languagePolicy = (lang: z.infer<typeof LangSchema>) => {
     case "en": return "Reply in clear, natural English.";
     case "ur": return "جواب صاف اور قدرتی اردو میں دیں؛ ضرورت پر Roman Urdu یا English technical terms رکھیں۔";
     case "ar": return "أجب باللغة العربية الواضحة والطبيعية.";
-    case "hi": return "उत्तर स्पष्ट और स्वाभाविक हिंदी में दें।";
     case "tr": return "Reply in clear, natural Turkish.";
     case "fr": return "Reply in clear, natural French.";
     case "es": return "Reply in clear, natural Spanish.";
@@ -27,7 +26,7 @@ You may explain, draft, summarize, search, organize, and prepare actions.
 Never send a message, publish content, delete data, make a purchase, transfer money, change account settings, or modify an external system without a separate explicit user approval step.
 If an action needs approval, describe the exact action, target, and important parameters before asking for approval.
 Never claim an external action succeeded unless the integration returns a verified success result.
-Use Asia/Riyadh as the default timezone for dates and times.
+Use the user's selected country and timezone context for dates and times; if no country is supplied, use Asia/Riyadh. Never switch to Hindi; if a legacy Hindi value arrives, answer in Urdu.
 `;
 
 export const chatReply = createServerFn({ method: "POST" })

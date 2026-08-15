@@ -15,6 +15,10 @@ import {
   loadLang, saveLang, loadMemories, saveMemories, addMemory, removeMemory, clearMemories,
   buildPersonaSystemPrompt,
 } from "@/lib/persona";
+import {
+  type CountryCode, type TimezoneMode,
+  loadCountry, saveCountry, loadTimezoneMode, saveTimezoneMode,
+} from "@/lib/locale";
 
 type Options = {
   onStop: () => void;
@@ -48,6 +52,8 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   const [persona, setPersonaState] = useState<PersonaId>("alpha");
   const [customPrompt, setCustomPromptState] = useState<string>("");
   const [lang, setLangState] = useState<LangCode>("auto");
+  const [country, setCountryState] = useState<CountryCode>("SA");
+  const [timezoneMode, setTimezoneModeState] = useState<TimezoneMode>("country");
   const [memories, setMemoriesState] = useState<string[]>([]);
 
   useEffect(() => {
@@ -68,15 +74,15 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     setPersonaState(loadPersona());
     setCustomPromptState(loadCustomPrompt());
     setLangState(loadLang());
+    setCountryState(loadCountry());
+    setTimezoneModeState(loadTimezoneMode());
     setMemoriesState(loadMemories());
-    const migrationKey = "alpha_voice_provider_migrated_v2";
-    const needsProviderMigration = localStorage.getItem(migrationKey) !== "1";
-    const savedProvider: ProviderId = needsProviderMigration
-      ? "gemini"
-      : (s.provider === "hf" || s.provider === "gemini" ? s.provider : "gemini");
+    // Gemini Live is the single production voice path. Keep the HF adapter for
+    // internal rollback compatibility, but migrate every persisted user to Gemini.
+    const migrationKey = "alpha_voice_provider_migrated_v3";
     localStorage.setItem(migrationKey, "1");
-    setProvider(savedProvider);
-    persist.provider(savedProvider);
+    setProvider("gemini");
+    persist.provider("gemini");
     getGeminiKey()
       .then((result) => {
         setGeminiKeyReady(result.configured);
@@ -168,6 +174,12 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   const changeLang = useCallback((l: LangCode) => {
     setLangState(l); saveLang(l); onStop();
   }, [onStop]);
+  const changeCountry = useCallback((next: CountryCode) => {
+    setCountryState(next); saveCountry(next); onStop();
+  }, [onStop]);
+  const changeTimezoneMode = useCallback((next: TimezoneMode) => {
+    setTimezoneModeState(next); saveTimezoneMode(next); onStop();
+  }, [onStop]);
   const addMemoryUi = useCallback((text: string) => {
     addMemory(text); setMemoriesState(loadMemories());
   }, []);
@@ -182,8 +194,8 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   const voiceList = provider === "gemini" ? GEMINI_VOICES : HF_VOICES;
 
   const systemPrompt = useMemo(
-    () => buildPersonaSystemPrompt({ persona, customPrompt, lang, memories }),
-    [persona, customPrompt, lang, memories],
+    () => buildPersonaSystemPrompt({ persona, customPrompt, lang, memories, country, timezoneMode }),
+    [persona, customPrompt, lang, memories, country, timezoneMode],
   );
 
   return {
@@ -191,14 +203,14 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
     hfVoice, geminiVoice, pace, rate, sensitivity, autoRate, liteMode,
     wakeClap, wakeWord, wakeHotkey,
     confirmBeforeOpen, desktopAutoLaunch,
-    persona, customPrompt, lang, memories, systemPrompt,
+    persona, customPrompt, lang, country, timezoneMode, memories, systemPrompt,
     currentVoice, voiceList,
     setRate,
     changeProvider, changeVoice, changePace, changeRate,
     changeSensitivity, toggleAutoRate, changeLiteMode,
     toggleWakeClap, toggleWakeWord, toggleWakeHotkey,
     toggleConfirmBeforeOpen, toggleDesktopAutoLaunch,
-    changePersona, changeCustomPrompt, changeLang,
+    changePersona, changeCustomPrompt, changeLang, changeCountry, changeTimezoneMode,
     addMemory: addMemoryUi, removeMemory: removeMemoryUi, clearMemories: clearMemoriesUi,
   };
 }

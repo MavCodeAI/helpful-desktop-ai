@@ -123,10 +123,14 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           persona={settings.persona}
           customPrompt={settings.customPrompt}
           lang={settings.lang}
+          country={settings.country}
+          timezoneMode={settings.timezoneMode}
           memories={settings.memories}
           changePersona={settings.changePersona}
           changeCustomPrompt={settings.changeCustomPrompt}
           changeLang={settings.changeLang}
+          changeCountry={settings.changeCountry}
+          changeTimezoneMode={settings.changeTimezoneMode}
           addMemory={settings.addMemory}
           removeMemory={settings.removeMemory}
           clearMemories={settings.clearMemories}

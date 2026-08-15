@@ -25,6 +25,7 @@ export function useDeepgramLive({ lang, onFinal, onInterim }: Opts) {
   const recRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const blockedHindiRef = useRef(false);
 
   const stop = useCallback(() => {
     if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null; }
@@ -47,6 +48,7 @@ export function useDeepgramLive({ lang, onFinal, onInterim }: Opts) {
 
   const start = useCallback(async () => {
     if (status === "listening" || status === "connecting") return;
+    blockedHindiRef.current = false;
     setStatus("connecting");
 
     let stream: MediaStream;
@@ -70,8 +72,21 @@ export function useDeepgramLive({ lang, onFinal, onInterim }: Opts) {
       return;
     }
 
-    // Nova-3 multilingual for auto/ur/ar; english when explicitly en.
-    const language = lang === "en" ? "en" : "multi";
+    // Use an explicit locale for Urdu so Hindi is never an accepted Urdu-mode fallback.
+    // Auto mode remains multilingual for the supported catalog, but Devanagari output is blocked below.
+    const language = lang === "ur"
+      ? "ur"
+      : lang === "en"
+        ? "en"
+        : lang === "ar"
+          ? "ar"
+          : lang === "tr"
+            ? "tr"
+            : lang === "fr"
+              ? "fr"
+              : lang === "es"
+                ? "es"
+                : "multi";
     const params = new URLSearchParams({
       model: "nova-3",
       language,
@@ -108,6 +123,14 @@ export function useDeepgramLive({ lang, onFinal, onInterim }: Opts) {
         const msg = JSON.parse(evt.data as string);
         const transcript: string = msg?.channel?.alternatives?.[0]?.transcript ?? "";
         if (!transcript) return;
+        if (/[\u0900-\u097F]/u.test(transcript)) {
+          onInterim?.("");
+          if (!blockedHindiRef.current) {
+            blockedHindiRef.current = true;
+            toast.error("Hindi is disabled. Please speak in Urdu, English, Arabic, Turkish, French or Spanish.");
+          }
+          return;
+        }
         if (msg.is_final) { onFinal(transcript); onInterim?.(""); }
         else onInterim?.(transcript);
       } catch { /* noop */ }

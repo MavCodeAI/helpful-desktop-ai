@@ -15,6 +15,7 @@ import { onGlobalHotkey, onTrayAction, isElectron } from "@/lib/electron-bridge"
 import type { VoiceMessage } from "@/lib/voice-providers";
 import { LANG_STT_CODE, loadMemories, addMemory } from "@/lib/persona";
 import { cachedWebSearch } from "@/lib/web-search-cache";
+import { getLatestNews } from "@/lib/news.functions";
 import { extractMemoryFacts } from "@/lib/memories.functions";
 import { chatReply } from "@/lib/chat-reply.functions";
 import { generateNote } from "@/lib/note-ai.functions";
@@ -85,7 +86,7 @@ export function useVoiceApp() {
     try {
       const { loadWebCitations } = await import("@/lib/realtime/constants");
       const showCitations = loadWebCitations();
-      const res = await cachedWebSearch(query);
+      const res = await cachedWebSearch(query, undefined, { country: settings.country, lang: settings.lang });
       let text: string;
       if (showCitations) {
         const sources = res.sources.map((s, i) => `[${i + 1}] ${s.title}\n${s.url}`).join("\n");
@@ -109,7 +110,33 @@ export function useVoiceApp() {
       toast.error(msg);
       setMessages((prev) => prev.filter((m) => !m.text.startsWith("🔎 Searching")));
     }
-  }, []);
+  }, [settings.country, settings.lang]);
+
+  const runNews = useCallback(async (query: string) => {
+    const setMessages = setMessagesRef.current;
+    if (!setMessages) return;
+    setMessages((prev) => [...prev, { role: "assistant", text: `📰 ${settings.country} news تلاش کی جا رہی ہے…` }]);
+    try {
+      const res = await getLatestNews({ data: { query: query || "latest news", country: settings.country, lang: settings.lang } });
+      const showCitations = (await import("@/lib/realtime/constants")).loadWebCitations();
+      const sources = res.items.map((item, index) => `[${index + 1}] ${item.title}\n${item.url}`).join("\n");
+      const text = showCitations && sources ? `${res.summary}\n\n**Sources:**\n${sources}` : res.summary.replace(/\s*\[\d+\]/g, "").replace(/\s{2,}/g, " ").trim();
+      setMessages((prev) => {
+        const next = [...prev];
+        for (let i = next.length - 1; i >= 0; i--) {
+          if (next[i].role === "assistant" && next[i].text.startsWith("📰")) {
+            next[i] = { role: "assistant", text };
+            return next;
+          }
+        }
+        return [...next, { role: "assistant", text }];
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "News fetch failed";
+      toast.error(msg);
+      setMessages((prev) => prev.filter((m) => !m.text.startsWith("📰")));
+    }
+  }, [settings.country, settings.lang]);
 
   const intents = useIntentActions({
     confirmBeforeOpen: settings.confirmBeforeOpen,
@@ -118,6 +145,7 @@ export function useVoiceApp() {
     onAssistantReply: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "assistant", text }]),
     onUserContext: (text) => setMessagesRef.current?.((prev) => [...prev, { role: "you", text }]),
     onSearch: runWebSearch,
+    onNews: runNews,
   });
 
   const history = useThreadHistory({
@@ -155,7 +183,7 @@ export function useVoiceApp() {
     hfVoice: settings.hfVoice, geminiVoice: settings.geminiVoice,
     pace: settings.pace, rate: settings.rate,
     sensitivity: settings.sensitivity, autoRate: settings.autoRate,
-    systemPrompt: settings.systemPrompt,
+    systemPrompt: settings.systemPrompt, lang: settings.lang,
     onFinalMessage: handleFinalMessage,
     onRateAdapt: settings.setRate,
     onRequestKey: () => {},

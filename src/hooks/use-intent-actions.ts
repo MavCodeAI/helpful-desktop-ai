@@ -20,6 +20,8 @@ type Options = {
   onUserContext?: (text: string) => void;
   /** Route web-search intents to in-app AI summary instead of opening Google. */
   onSearch?: (query: string) => void;
+  /** Route news intents to the free-first country-aware news provider. */
+  onNews?: (query: string) => void;
 };
 
 async function captureScreenBase64(): Promise<{ b64: string; mime: string } | null> {
@@ -54,7 +56,7 @@ async function captureScreenBase64(): Promise<{ b64: string; mime: string } | nu
 }
 
 export function useIntentActions(opts: Options = {}) {
-  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext, onSearch } = opts;
+  const { confirmBeforeOpen = false, lang = "auto", onTimer, onAssistantReply, onUserContext, onSearch, onNews } = opts;
   const [actions, setActions] = useState<ActionEntry[]>([]);
   const [pendingApproval, setPendingApproval] = useState<PendingApproval | null>(null);
   const [autoOpen, setAutoOpen] = useState(true);
@@ -65,6 +67,7 @@ export function useIntentActions(opts: Options = {}) {
   const onReplyRef = useRef(onAssistantReply);
   const onCtxRef = useRef(onUserContext);
   const onSearchRef = useRef(onSearch);
+  const onNewsRef = useRef(onNews);
   useEffect(() => { autoOpenRef.current = autoOpen; }, [autoOpen]);
   useEffect(() => { confirmRef.current = confirmBeforeOpen; }, [confirmBeforeOpen]);
   useEffect(() => { langRef.current = lang; }, [lang]);
@@ -72,6 +75,7 @@ export function useIntentActions(opts: Options = {}) {
   useEffect(() => { onReplyRef.current = onAssistantReply; }, [onAssistantReply]);
   useEffect(() => { onCtxRef.current = onUserContext; }, [onUserContext]);
   useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
+  useEffect(() => { onNewsRef.current = onNews; }, [onNews]);
 
   const pushAction = useCallback((intent: Intent, opened: boolean, auditId?: string) => {
     const at = Date.now();
@@ -193,6 +197,10 @@ export function useIntentActions(opts: Options = {}) {
           toast.error("AI failed", { description: msg });
           pushAction(intent, false);
         }
+        break;
+      case "news":
+        onNewsRef.current?.(a.query);
+        pushAction(intent, true);
         break;
       case "memory-add":
         addMemory(a.text);

@@ -14,6 +14,7 @@ import { useMicTest } from "./use-mic-test";
 import { hapticError, hapticLight } from "@/lib/capacitor-native";
 import { getGeminiLiveToken } from "@/lib/gemini-live-token.functions";
 import { classifyVoiceError, type VoiceErrorInfo } from "@/lib/voice-errors";
+import type { LangCode } from "@/lib/persona";
 
 export type { MicPermission };
 
@@ -27,6 +28,7 @@ type Options = {
   sensitivity: number;
   autoRate: boolean;
   systemPrompt?: string;
+  lang: LangCode;
   onFinalMessage: (m: VoiceMessage, ctx: { atBottom: boolean }) => void;
   onRateAdapt: (r: number) => void;
   onRequestKey: () => void;
@@ -35,7 +37,7 @@ type Options = {
 export function useRealtimeSession(opts: Options) {
   const {
     provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, autoRate,
-    systemPrompt,
+    systemPrompt, lang,
     onFinalMessage, onRateAdapt, onRequestKey,
   } = opts;
 
@@ -142,6 +144,7 @@ export function useRealtimeSession(opts: Options) {
         rate,
         sensitivity,
         systemPrompt,
+        lang,
       };
       let geminiToken = geminiKey;
       if (provider === "gemini") {
@@ -161,7 +164,7 @@ export function useRealtimeSession(opts: Options) {
     } catch (e: unknown) {
       reportError(e instanceof Error ? e.message : "Failed to start");
     }
-  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, micTest, stopMicTestMode, onRequestKey, clearError, reportError]);
+  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, lang, micTest, stopMicTestMode, onRequestKey, clearError, reportError]);
 
   // Cleanup on unmount
   useEffect(() => () => {
