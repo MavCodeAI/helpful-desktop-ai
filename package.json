@@ -16,10 +16,21 @@
     "format": "prettier --write .",
     "electron:dev": "ALPHA_DEV_URL=http://localhost:8080 electron electron/main.cjs",
     "electron:package": "vite build && electron-packager . Alpha --platform=linux --arch=x64 --out=electron-release --overwrite --ignore='node_modules' --ignore='^/src' --ignore='^/electron-release'",
-    "electron:package:win": "vite build && electron-packager . Alpha --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore='node_modules' --ignore='^/src' --ignore='^/electron-release' --icon=public/alpha-icon.ico"
+    "electron:package:win": "vite build && electron-packager . Alpha --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore='node_modules' --ignore='^/src' --ignore='^/electron-release' --icon=public/alpha-icon.ico",
+    "android:sync": "pnpm exec cap sync android",
+    "android:open": "pnpm exec cap open android",
+    "android:build:debug": "pnpm run build && pnpm run android:sync && cd android && ./gradlew assembleDebug --no-daemon"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.6",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.1.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@fontsource-variable/inter-tight": "^5.2.7",
     "@fontsource/poppins": "^5.2.7",
     "@hookform/resolvers": "^5.2.2",
@@ -81,6 +92,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@electron/packager": "^20.3.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^2.7.1",

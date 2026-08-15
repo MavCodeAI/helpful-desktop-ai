@@ -22,6 +22,11 @@ import { addNoteRaw } from "@/lib/utilities/notes";
 import { matchNoteIntent } from "@/lib/intents";
 import { isAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 import { trackPilotEvent } from "@/lib/pilot-telemetry";
+import {
+  configureCapacitorShell,
+  isCapacitorAndroid,
+  listenForCapacitorAppState,
+} from "@/lib/capacitor-native";
 
 /**
  * Top-level orchestrator — wires every voice hook together and resolves the
@@ -33,8 +38,9 @@ export function useVoiceApp() {
   const { setShowHistory, anyOverlay } = overlays;
 
   useEffect(() => {
-    trackPilotEvent("app_opened", { desktop: isElectron() });
+    trackPilotEvent("app_opened", { desktop: isElectron(), mobile: isCapacitorAndroid() });
   }, []);
+
   const [showNotes, setShowNotes] = useState(false);
   const timers = useTimers();
 
@@ -45,6 +51,22 @@ export function useVoiceApp() {
     reset: () => void;
     bumpUnread: () => void;
   }>({ stop: () => {}, clearPartial: () => {}, setLiveRate: () => {}, reset: () => {}, bumpUnread: () => {} });
+
+  useEffect(() => {
+    let disposed = false;
+    let disposeAppState = () => {};
+    void configureCapacitorShell();
+    void listenForCapacitorAppState((isActive) => {
+      if (!isActive) sessionRef.current.stop();
+    }).then((dispose) => {
+      if (disposed) dispose();
+      else disposeAppState = dispose;
+    });
+    return () => {
+      disposed = true;
+      disposeAppState();
+    };
+  }, [sessionRef]);
 
   const settings = useVoiceSettings({
     onStop: () => sessionRef.current.stop(),

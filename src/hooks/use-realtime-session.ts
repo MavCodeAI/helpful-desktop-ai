@@ -11,6 +11,7 @@ import {
 import { useMicPermission, type MicPermission } from "./use-mic-permission";
 import { useCooldownTimer } from "./use-cooldown-timer";
 import { useMicTest } from "./use-mic-test";
+import { hapticError, hapticLight } from "@/lib/capacitor-native";
 
 export type { MicPermission };
 
@@ -60,6 +61,7 @@ export function useRealtimeSession(opts: Options) {
 
   const stop = useCallback(() => {
     controllerRef.current?.stop();
+    hapticLight();
     controllerRef.current = null;
     setStatus("idle");
     setPartial(null);
@@ -68,10 +70,12 @@ export function useRealtimeSession(opts: Options) {
   }, []);
 
   const start = useCallback(async () => {
+    hapticLight();
     if (micTest) stopMicTestMode();
     if (provider === "gemini" && !geminiKey) {
       setError("Gemini key not configured on server. Ask admin to set GEMINI_API_KEY.");
       setStatus("error");
+      hapticError();
       onRequestKey();
       return;
     }
@@ -90,6 +94,7 @@ export function useRealtimeSession(opts: Options) {
           : "Could not access microphone."
       );
       setStatus("error");
+      hapticError();
       return;
     }
     const handlers = {
@@ -119,6 +124,7 @@ export function useRealtimeSession(opts: Options) {
       onError: (msg: string, meta?: { retryAfterSec?: number }) => {
         setError(msg);
         setStatus("error");
+        hapticError();
         if (meta?.retryAfterSec) setCooldown(meta.retryAfterSec);
       },
     };
@@ -138,6 +144,7 @@ export function useRealtimeSession(opts: Options) {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to start");
       setStatus("error");
+      hapticError();
     }
   }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, micTest, stopMicTestMode, onRequestKey]);
 
