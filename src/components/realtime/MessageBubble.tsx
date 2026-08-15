@@ -39,12 +39,11 @@ const sanitizeOptions: SanitizeOptions = {
     href: ["http", "https", "mailto"],
     src: ["http", "https", "data"],
   },
-  disallowedTags: [
-    "script", "iframe", "object", "embed", "form", "input", "textarea", "button", "style",
-  ],
 };
 
-const rehypePlugins = [[rehypeSanitize, sanitizeOptions]];
+const rehypePlugins = [
+  [rehypeSanitize, sanitizeOptions] as [typeof rehypeSanitize, SanitizeOptions],
+];
 
 export const MessageBubble = memo(function MessageBubble({
   role,
