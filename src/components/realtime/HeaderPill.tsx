@@ -1,7 +1,5 @@
-import { Settings2, History, StickyNote, MessageSquare, Radar } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Settings2, History, StickyNote, MessageSquare } from "lucide-react";
 import { useNotes } from "@/lib/utilities/notes";
-import { useWatchlist } from "@/lib/utilities/watchlist";
 import type { Pace, ProviderId } from "@/lib/voice-providers";
 
 type Props = {
@@ -41,8 +39,6 @@ export function HeaderPill({
 }: Props) {
   const { notes } = useNotes();
   const noteCount = notes.length;
-  const { watches } = useWatchlist();
-  const watchNew = watches.filter((w) => w.changed).length;
   return (
     <header className="relative z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mx-3 sm:mx-6 mt-3 sm:mt-4 px-3 sm:px-6 py-2.5 glass-pill rounded-full">
       <div className="flex min-w-0 items-center gap-2">
@@ -79,16 +75,6 @@ export function HeaderPill({
           <span className="hidden sm:inline">Notes</span>
           <Badge n={noteCount} tone="amber" />
         </button>
-        <Link
-          to="/watch"
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
-          aria-label={watchNew > 0 ? `Open watchlist, ${watchNew} updated` : "Open watchlist"}
-          title="Watchlist"
-        >
-          <Radar className="w-3.5 h-3.5 text-cyan-300/90" strokeWidth={1.75} />
-          <span className="hidden sm:inline">Watch</span>
-          <Badge n={watchNew} tone="amber" />
-        </Link>
         <button
           onClick={onOpenHistory}
           className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"

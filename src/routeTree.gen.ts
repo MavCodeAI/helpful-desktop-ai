@@ -9,16 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WatchRouteImport } from './routes/watch'
 import { Route as MemoriesRouteImport } from './routes/memories'
 import { Route as ApiSettingsRouteImport } from './routes/api-settings'
 import { Route as IndexRouteImport } from './routes/index'
 
-const WatchRoute = WatchRouteImport.update({
-  id: '/watch',
-  path: '/watch',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MemoriesRoute = MemoriesRouteImport.update({
   id: '/memories',
   path: '/memories',
@@ -39,45 +33,34 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api-settings': typeof ApiSettingsRoute
   '/memories': typeof MemoriesRoute
-  '/watch': typeof WatchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api-settings': typeof ApiSettingsRoute
   '/memories': typeof MemoriesRoute
-  '/watch': typeof WatchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api-settings': typeof ApiSettingsRoute
   '/memories': typeof MemoriesRoute
-  '/watch': typeof WatchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api-settings' | '/memories' | '/watch'
+  fullPaths: '/' | '/api-settings' | '/memories'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api-settings' | '/memories' | '/watch'
-  id: '__root__' | '/' | '/api-settings' | '/memories' | '/watch'
+  to: '/' | '/api-settings' | '/memories'
+  id: '__root__' | '/' | '/api-settings' | '/memories'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
   MemoriesRoute: typeof MemoriesRoute
-  WatchRoute: typeof WatchRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/watch': {
-      id: '/watch'
-      path: '/watch'
-      fullPath: '/watch'
-      preLoaderRoute: typeof WatchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/memories': {
       id: '/memories'
       path: '/memories'
@@ -106,7 +89,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiSettingsRoute: ApiSettingsRoute,
   MemoriesRoute: MemoriesRoute,
-  WatchRoute: WatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
