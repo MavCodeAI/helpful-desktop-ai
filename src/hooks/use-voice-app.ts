@@ -78,6 +78,7 @@ export function useVoiceApp() {
   });
   const liteActive = useLiteMode(settings.liteMode);
   const briefing = useBriefingSettings();
+  const { enabled: briefingEnabled, lastRun: briefingLastRun, markBriefingRun, time: briefingTime } = briefing;
 
   const setMessagesRef = useRef<((updater: (prev: VoiceMessage[]) => VoiceMessage[]) => void) | null>(null);
 
@@ -194,19 +195,28 @@ export function useVoiceApp() {
   });
 
   const scroll = useAutoScroll({ messages, partial: session.partial, status: session.status });
-  useEffect(() => { session.setAtBottom(scroll.atBottom); }, [scroll.atBottom, session.setAtBottom]);
+  const {
+    setAtBottom: setSessionAtBottom,
+    stop: stopSession,
+    setPartial: setSessionPartial,
+    setLiveRate: setSessionLiveRate,
+    clearError: clearSessionError,
+    setCooldown: setSessionCooldown,
+    start: startSession,
+  } = session;
+  useEffect(() => { setSessionAtBottom(scroll.atBottom); }, [scroll.atBottom, setSessionAtBottom]);
 
   useEffect(() => {
     sessionRef.current = {
-      stop: session.stop,
-      clearPartial: () => session.setPartial(null),
-      setLiveRate: session.setLiveRate,
-      reset: () => { session.clearError(); session.setCooldown(0); },
+      stop: stopSession,
+      clearPartial: () => setSessionPartial(null),
+      setLiveRate: setSessionLiveRate,
+      reset: () => { clearSessionError(); setSessionCooldown(0); },
       bumpUnread: scroll.bumpUnread,
     };
   }, [
-    session.stop, session.setPartial, session.setLiveRate,
-    session.clearError, session.setCooldown,
+    stopSession, setSessionPartial, setSessionLiveRate,
+    clearSessionError, setSessionCooldown,
     scroll.bumpUnread, sessionRef,
   ]);
 
@@ -229,25 +239,25 @@ export function useVoiceApp() {
   useEffect(() => {
     if (!isElectron()) return;
     const offHk = onGlobalHotkey(() => {
-      if (!active && !disabled) session.start();
+      if (!active && !disabled) startSession();
     });
     const offTray = onTrayAction((a) => {
-      if (a === "start" && !active && !disabled) session.start();
-      else if (a === "stop" && active) session.stop();
+      if (a === "start" && !active && !disabled) startSession();
+      else if (a === "stop" && active) stopSession();
     });
     return () => { offHk(); offTray(); };
-  }, [active, disabled, session.start, session.stop]);
+  }, [active, disabled, startSession, stopSession]);
 
   // Android launcher shortcut: native MainActivity dispatches a start event into the WebView.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onQuickAction = (event: Event) => {
       const action = (event as CustomEvent<string>).detail;
-      if (action === "start" && !active && !disabled) session.start();
+      if (action === "start" && !active && !disabled) startSession();
     };
     window.addEventListener("alpha:quick-action", onQuickAction);
     return () => window.removeEventListener("alpha:quick-action", onQuickAction);
-  }, [active, disabled, session.start]);
+  }, [active, disabled, startSession]);
 
   // Text chat: send user text → intent-shortcut for notes, else AI reply.
   const [textBusy, setTextBusy] = useState(false);
@@ -288,17 +298,17 @@ export function useVoiceApp() {
 
   // Optional local-only briefing: runs once per device day after the selected time.
   useEffect(() => {
-    if (!briefing.enabled) return;
+    if (!briefingEnabled) return;
     const today = new Date().toISOString().slice(0, 10);
-    if (briefing.lastRun === today) return;
+    if (briefingLastRun === today) return;
 
-    const [hours, minutes] = briefing.time.split(":").map(Number);
+    const [hours, minutes] = briefingTime.split(":").map(Number);
     const now = new Date();
     const scheduled = new Date(now);
     scheduled.setHours(hours, minutes, 0, 0);
     const delay = Math.max(0, scheduled.getTime() - now.getTime());
     const run = () => {
-      briefing.markBriefingRun(today);
+      markBriefingRun(today);
       const prompt = settings.lang === "ur"
         ? "مجھے آج کی مختصر صبح کی بریفنگ دو: سعودی عرب اور میرے منتخب ملک کی اہم تازہ خبریں، موسم کا مختصر خلاصہ، اور آج کے کاموں کی ترجیحی فہرست۔ کیلنڈر ابھی connected نہیں ہے، اس لیے اسے واضح طور پر بتاؤ۔ جواب صرف اردو رسم الخط میں دو، ہندی یا رومن اردو استعمال نہ کرو۔"
         : "Give me a concise morning briefing: important recent Saudi and selected-country news, a short weather summary, and a prioritized work plan. Calendar is not connected yet, so say that clearly. Reply only in English; never use Hindi or Devanagari.";
@@ -306,7 +316,7 @@ export function useVoiceApp() {
     };
     const timer = window.setTimeout(run, delay);
     return () => window.clearTimeout(timer);
-  }, [briefing.enabled, briefing.lastRun, briefing.markBriefingRun, briefing.time, sendText, settings.lang]);
+  }, [briefingEnabled, briefingLastRun, briefingTime, markBriefingRun, sendText, settings.lang]);
 
   // From ChatComposer's "Note" button: turn current text into an AI-crafted note.
   const [notePending, setNotePending] = useState(false);

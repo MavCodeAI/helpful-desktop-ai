@@ -163,7 +163,7 @@ export function useRealtimeSession(opts: Options) {
     } catch (e: unknown) {
       reportError(e instanceof Error ? e.message : "Failed to start");
     }
-  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, lang, micTest, stopMicTestMode, onRequestKey, clearError, reportError]);
+  }, [provider, geminiKey, hfVoice, geminiVoice, pace, rate, sensitivity, systemPrompt, lang, micTest, stopMicTestMode, onRequestKey, clearError, reportError, setMicPermission]);
 
   // Cleanup on unmount
   useEffect(() => () => {
