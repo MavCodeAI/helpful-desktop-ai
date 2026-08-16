@@ -3,7 +3,7 @@
 
 import { localeContext, type CountryCode, type TimezoneMode } from "@/lib/locale";
 
-export type LangCode = "auto" | "en" | "ur" | "ar" | "tr" | "fr" | "es";
+export type LangCode = "en" | "ur";
 export type PersonaId = "alpha" | "jarvis" | "friday" | "custom";
 
 export const PERSONAS: Record<Exclude<PersonaId, "custom">, { name: string; prompt: string }> = {
@@ -25,33 +25,18 @@ export const PERSONAS: Record<Exclude<PersonaId, "custom">, { name: string; prom
 };
 
 const LANG_HINT: Record<LangCode, string> = {
-  auto: "Reply in the same language the user spoke. If the user mixes languages, follow the dominant language and preserve important names and technical terms.",
-  en: "Always reply in clear, natural English.",
-  ur: "ہمیشہ صاف اور قدرتی اردو میں جواب دیں۔ ضرورت کے مطابق Roman Urdu یا English technical terms رکھ سکتے ہیں۔",
-  ar: "أجب دائمًا باللغة العربية الفصحى الواضحة، مع الحفاظ على أسماء المنتجات والمصطلحات التقنية كما هي عند الحاجة.",
-  tr: "Always reply in clear, natural Turkish.",
-  fr: "Always reply in clear, natural French.",
-  es: "Always reply in clear, natural Spanish.",
+  en: "Always reply in clear, natural English. Never use Hindi, Devanagari, or Roman Urdu.",
+  ur: "ہمیشہ صاف اور قدرتی اردو رسم الخط میں جواب دیں۔ ہندی، دیوناگری اور رومن اردو کسی صورت استعمال نہ کریں۔",
 };
 
-export const LANG_STT_CODE: Record<LangCode, string | undefined> = {
-  auto: undefined,
+export const LANG_STT_CODE: Record<LangCode, string> = {
   en: "en-US",
   ur: "ur-PK",
-  ar: "ar-SA",
-  tr: "tr-TR",
-  fr: "fr-FR",
-  es: "es-ES",
 };
 
 export const SUPPORTED_LANGUAGES: ReadonlyArray<{ code: LangCode; label: string; nativeLabel: string }> = [
-  { code: "auto", label: "Auto-detect", nativeLabel: "خودکار" },
-  { code: "en", label: "English", nativeLabel: "English" },
   { code: "ur", label: "Urdu", nativeLabel: "اردو" },
-  { code: "ar", label: "Arabic", nativeLabel: "العربية" },
-  { code: "tr", label: "Turkish", nativeLabel: "Türkçe" },
-  { code: "fr", label: "French", nativeLabel: "Français" },
-  { code: "es", label: "Spanish", nativeLabel: "Español" },
+  { code: "en", label: "English", nativeLabel: "English" },
 ];
 
 const KEY_PERSONA = "alpha_persona";
@@ -77,8 +62,8 @@ export function saveCustomPrompt(v: string) { safe.set(KEY_CUSTOM, v); }
 
 export function loadLang(): LangCode {
   const v = safe.get(KEY_LANG);
-  if (v === "hi") return "ur";
-  return v && LANG_CODES.has(v as LangCode) ? (v as LangCode) : "auto";
+  if (v === "en") return "en";
+  return "ur";
 }
 export function saveLang(l: LangCode) {
   safe.set(KEY_LANG, l);

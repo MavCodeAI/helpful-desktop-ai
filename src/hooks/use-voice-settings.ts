@@ -51,7 +51,7 @@ export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options
   const [desktopAutoLaunch, setDesktopAutoLaunch] = useState<boolean>(DEFAULTS.desktopAutoLaunch);
   const [persona, setPersonaState] = useState<PersonaId>("alpha");
   const [customPrompt, setCustomPromptState] = useState<string>("");
-  const [lang, setLangState] = useState<LangCode>("auto");
+  const [lang, setLangState] = useState<LangCode>("ur");
   const [country, setCountryState] = useState<CountryCode>("SA");
   const [timezoneMode, setTimezoneModeState] = useState<TimezoneMode>("country");
   const [memories, setMemoriesState] = useState<string[]>([]);

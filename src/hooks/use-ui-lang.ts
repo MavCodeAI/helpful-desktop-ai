@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { loadLang, type LangCode } from "@/lib/persona";
 
-/** Read current UI language; returns { isUrdu, isArabic, lang } and stays live. */
+/** Read current UI language; only Urdu and English are supported. */
 export function useUILang() {
   const [lang, setLang] = useState<LangCode>(() =>
-    typeof window === "undefined" ? "auto" : loadLang(),
+    typeof window === "undefined" ? "ur" : loadLang(),
   );
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -18,5 +18,5 @@ export function useUILang() {
       window.removeEventListener("alpha-language-change", onLanguageChange);
     };
   }, []);
-  return { lang, isUrdu: lang === "ur", isArabic: lang === "ar" };
+  return { lang, isUrdu: lang === "ur", isArabic: false };
 }

@@ -6,15 +6,14 @@ import { generateGeminiText, geminiUserText } from "./gemini-text.server";
 const DescribeInput = z.object({
   imageBase64: z.string().min(100),
   mimeType: z.string().default("image/png"),
-  lang: z.string().default("auto"),
+  lang: z.enum(["en", "ur"]).default("ur"),
   userKey: z.string().trim().max(200).optional(),
 });
 
-const langLine = (lang: string) => {
-  if (lang === "en") return "Answer in English.";
-  if (lang === "ur") return "جواب اردو میں دیں۔ ہندی یا دیوناگری استعمال نہ کریں۔";
-  if (lang === "ar") return "أجب باللغة العربية. لا تستخدم الهندية أو الديفاناغارية.";
-  return "Answer in the same language the user typically speaks. Never use Hindi or Devanagari.";
+const langLine = (lang: "en" | "ur") => {
+  return lang === "ur"
+    ? "جواب صرف قدرتی اردو رسم الخط میں دیں۔ ہندی، دیوناگری اور Roman Urdu استعمال نہ کریں۔"
+    : "Answer only in clear English. Never use Hindi or Devanagari.";
 };
 
 export const describeScreen = createServerFn({ method: "POST" })
@@ -37,7 +36,7 @@ export const describeScreen = createServerFn({ method: "POST" })
 
 const AskInput = z.object({
   question: z.string().min(2).max(2000),
-  lang: z.string().default("auto"),
+  lang: z.enum(["en", "ur"]).default("ur"),
   userKey: z.string().trim().max(200).optional(),
 });
 

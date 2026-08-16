@@ -8,7 +8,7 @@ export type WebSource = { title: string; url: string; snippet?: string };
 export type WebSearchProvider = "tavily" | "gemini" | "none";
 export type WebSearchResult = { query: string; summary: string; sources: WebSource[]; provider: WebSearchProvider };
 
-const SUPPORTED_LANGS = ["auto", "en", "ur"] as const;
+const SUPPORTED_LANGS = ["en", "ur"] as const;
 const SUPPORTED_COUNTRIES = ["SA", "AE", "QA", "KW", "BH", "OM", "JO", "EG", "PK", "TR", "GB", "US", "CA", "AU", "FR", "ES", "DE", "MY", "ID", "NG", "ZA"] as const;
 
 type TavilyResult = { title?: string; url?: string; content?: string };
@@ -56,7 +56,7 @@ export const webSearchSummarize = createServerFn({ method: "POST" })
   .validator((input: unknown) => z.object({
     query: z.string().trim().min(2).max(400),
     country: z.enum(SUPPORTED_COUNTRIES).default("SA"),
-    lang: z.enum(SUPPORTED_LANGS).default("auto"),
+    lang: z.enum(SUPPORTED_LANGS).default("ur"),
     userKey: z.string().trim().max(200).optional(),
     tavilyKey: z.string().trim().max(200).optional(),
   }).parse(input))

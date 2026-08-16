@@ -8,12 +8,12 @@ interface Props {
 }
 
 export function LanguageSection({ lang, changeLang }: Props) {
-  const { isUrdu, isArabic } = useUILang();
-  const heading = isUrdu ? "زبان (جواب)" : isArabic ? "لغة الرد" : "Reply language";
+  const { isUrdu } = useUILang();
+  const heading = isUrdu ? "جواب کی زبان" : "Reply language";
   return (
     <section>
       <SectionHeader>{heading}</SectionHeader>
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
         {SUPPORTED_LANGUAGES.map((language) => (
           <button
             key={language.code}
@@ -26,16 +26,14 @@ export function LanguageSection({ lang, changeLang }: Props) {
                 : "bg-white/[0.03] text-white/70 border-white/10 hover:bg-white/[0.06]"
             }`}
           >
-            {isUrdu || isArabic ? language.nativeLabel : language.label}
+            {isUrdu ? language.nativeLabel : language.label}
           </button>
         ))}
       </div>
       <p className="mt-2 text-[10px] leading-relaxed text-white/50">
         {isUrdu
-          ? "خودکار موڈ میں Alpha صارف کی بولی ہوئی زبان میں جواب دے گا۔"
-          : isArabic
-            ? "في الوضع التلقائي، يجيب Alpha بلغة المستخدم."
-            : "Auto-detect follows the language spoken by the user."}
+          ? "اردو منتخب کریں تو جواب صرف اردو رسم الخط میں ہوگا؛ ہندی اور رومن اردو بند ہیں۔"
+          : "Choose Urdu or English. Hindi, Devanagari, and Roman Urdu are disabled."}
       </p>
     </section>
   );

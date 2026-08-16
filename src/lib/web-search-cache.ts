@@ -15,7 +15,7 @@ const cache = new Map<string, Entry>();
 const inflight = new Map<string, Promise<WebSearchResult>>();
 
 function normalizedContext(context: WebSearchContext = {}): Required<WebSearchContext> {
-  return { country: context.country ?? "SA", lang: context.lang ?? "auto", geminiKey: context.geminiKey ?? "", tavilyKey: context.tavilyKey ?? "" };
+  return { country: context.country ?? "SA", lang: context.lang ?? "ur", geminiKey: context.geminiKey ?? "", tavilyKey: context.tavilyKey ?? "" };
 }
 
 function normKey(q: string, context: WebSearchContext = {}): string {

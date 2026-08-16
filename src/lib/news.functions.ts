@@ -36,7 +36,7 @@ type GoogleRssItem = {
   source?: string;
 };
 
-const SUPPORTED_LANGS = ["auto", "en", "ur", "ar", "tr", "fr", "es"] as const;
+const SUPPORTED_LANGS = ["en", "ur"] as const;
 const SUPPORTED_COUNTRIES = [
   "SA", "AE", "QA", "KW", "BH", "OM", "JO", "EG", "PK", "IN", "TR", "GB", "US", "CA", "AU", "FR", "ES", "DE", "MY", "ID", "NG", "ZA",
 ] as const;
@@ -44,35 +44,25 @@ const SUPPORTED_COUNTRIES = [
 const InputSchema = z.object({
   query: z.string().trim().max(180).default("latest news"),
   country: z.enum(SUPPORTED_COUNTRIES).default("SA"),
-  lang: z.enum(SUPPORTED_LANGS).default("auto"),
+  lang: z.enum(SUPPORTED_LANGS).default("ur"),
   userKey: z.string().trim().max(200).optional(),
 });
 
 function languageInstruction(lang: LangCode): string {
-  switch (lang) {
-    case "ur": return "Write the summary in natural Urdu script. Hindi and Devanagari are disabled.";
-    case "ar": return "اكتب الملخص باللغة العربية الواضحة. لا تستخدم الهندية أو الديفاناغارية.";
-    case "en": return "Write the summary in clear English. Do not use Hindi or Devanagari.";
-    case "tr": return "Write the summary in clear Turkish. Do not use Hindi or Devanagari.";
-    case "fr": return "Write the summary in clear French. Do not use Hindi or Devanagari.";
-    case "es": return "Write the summary in clear Spanish. Do not use Hindi or Devanagari.";
-    default: return "Use the user's question language, but never use Hindi or Devanagari. If Urdu is requested, use Urdu script.";
-  }
+  return lang === "ur"
+    ? "Write the summary in natural Urdu script only. Never use Hindi, Devanagari, or Roman Urdu."
+    : "Write the summary in clear English only. Never use Hindi or Devanagari.";
 }
 
 function fallbackSummary(items: NewsItem[], lang: LangCode, countryLabel: string): string {
   if (items.length === 0) {
     return lang === "ur"
       ? `${countryLabel} کے لیے حالیہ خبریں نہیں مل سکیں۔`
-      : lang === "ar"
-        ? `لم يتم العثور على أخبار حديثة عن ${countryLabel}.`
-        : `No recent news was found for ${countryLabel}.`;
+      : `No recent news was found for ${countryLabel}.`;
   }
   const prefix = lang === "ur"
     ? `${countryLabel} کی تازہ دستیاب خبریں:`
-    : lang === "ar"
-      ? `أحدث الأخبار المتاحة عن ${countryLabel}:`
-      : `Latest available news for ${countryLabel}:`;
+    : `Latest available news for ${countryLabel}:`;
   return `${prefix}\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.title}`).join("\n")}`;
 }
 
@@ -132,14 +122,7 @@ function readXmlTag(block: string, tag: string): string | undefined {
 }
 
 function googleNewsLanguage(lang: LangCode): string {
-  switch (lang) {
-    case "ur": return "ur";
-    case "ar": return "ar";
-    case "tr": return "tr";
-    case "fr": return "fr";
-    case "es": return "es";
-    default: return "en";
-  }
+  return lang === "ur" ? "ur" : "en";
 }
 
 async function fetchGoogleNewsRss(query: string, country: CountryCode, lang: LangCode, countryLabel: string): Promise<NewsItem[]> {

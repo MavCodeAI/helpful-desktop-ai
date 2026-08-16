@@ -299,10 +299,8 @@ export function useVoiceApp() {
     const run = () => {
       briefing.markBriefingRun(today);
       const prompt = settings.lang === "ur"
-        ? "مجھے آج کی مختصر صبح کی بریفنگ دو: سعودی عرب اور میرے منتخب ملک کی اہم تازہ خبریں، موسم کا مختصر خلاصہ، اور آج کے کاموں کی ترجیحی فہرست۔ کیلنڈر ابھی connected نہیں ہے، اس لیے اسے واضح طور پر بتاؤ۔ جواب اردو میں دو۔"
-        : settings.lang === "ar"
-          ? "أعطني إحاطة صباحية قصيرة لليوم: أهم الأخبار الحديثة للسعودية وبلدي المختار، ملخص الطقس، وأولويات العمل. التقويم غير متصل بعد، فاذكر ذلك بوضوح. أجب بالعربية."
-          : "Give me a concise morning briefing: important recent Saudi and selected-country news, a short weather summary, and a prioritized work plan. Calendar is not connected yet, so say that clearly. Reply in my selected language.";
+        ? "مجھے آج کی مختصر صبح کی بریفنگ دو: سعودی عرب اور میرے منتخب ملک کی اہم تازہ خبریں، موسم کا مختصر خلاصہ، اور آج کے کاموں کی ترجیحی فہرست۔ کیلنڈر ابھی connected نہیں ہے، اس لیے اسے واضح طور پر بتاؤ۔ جواب صرف اردو رسم الخط میں دو، ہندی یا رومن اردو استعمال نہ کرو۔"
+        : "Give me a concise morning briefing: important recent Saudi and selected-country news, a short weather summary, and a prioritized work plan. Calendar is not connected yet, so say that clearly. Reply only in English; never use Hindi or Devanagari.";
       void sendText(prompt);
     };
     const timer = window.setTimeout(run, delay);

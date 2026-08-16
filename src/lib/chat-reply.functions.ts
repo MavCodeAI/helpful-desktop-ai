@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateGeminiText, geminiModelText, geminiUserText, type GeminiContent } from "./gemini-text.server";
 
-const LangSchema = z.enum(["auto", "en", "ur", "ar", "tr", "fr", "es"]);
+const LangSchema = z.enum(["en", "ur"]);
 
 const MessageSchema = z.object({
   role: z.enum(["you", "assistant"]),
@@ -10,15 +10,9 @@ const MessageSchema = z.object({
 });
 
 const languagePolicy = (lang: z.infer<typeof LangSchema>) => {
-  switch (lang) {
-    case "en": return "Reply in clear, natural English.";
-    case "ur": return "جواب صاف اور قدرتی اردو میں دیں؛ ضرورت پر Roman Urdu یا English technical terms رکھیں۔ ہندی یا دیوناگری ہرگز استعمال نہ کریں۔";
-    case "ar": return "أجب باللغة العربية الواضحة والطبيعية. لا تستخدم الهندية أو الديفاناغارية.";
-    case "tr": return "Reply in clear, natural Turkish. Do not use Hindi or Devanagari.";
-    case "fr": return "Reply in clear, natural French. Do not use Hindi or Devanagari.";
-    case "es": return "Reply in clear, natural Spanish. Do not use Hindi or Devanagari.";
-    default: return "Reply in the same language the user used. Preserve names and technical terms when appropriate. Never use Hindi or Devanagari; for Urdu requests use Urdu script.";
-  }
+  return lang === "ur"
+    ? "جواب صرف صاف اور قدرتی اردو رسم الخط میں دیں۔ ہندی، دیوناگری اور Roman Urdu ہرگز استعمال نہ کریں۔"
+    : "Reply only in clear, natural English. Never use Hindi or Devanagari.";
 };
 
 const SAFETY_POLICY = `
@@ -35,7 +29,7 @@ export const chatReply = createServerFn({ method: "POST" })
     z.object({
       messages: z.array(MessageSchema).min(1).max(50),
       systemPrompt: z.string().trim().min(1).max(8000),
-      lang: LangSchema.default("auto"),
+      lang: LangSchema.default("ur"),
       userKey: z.string().trim().max(200).optional(),
     }).parse(input),
   )

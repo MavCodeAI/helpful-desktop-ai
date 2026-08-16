@@ -237,13 +237,7 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
   };
 
   ws.onopen = () => {
-    const languageCode = opts?.lang === "ur" ? "ur-PK"
-      : opts?.lang === "ar" ? "ar-SA"
-        : opts?.lang === "en" ? "en-US"
-          : opts?.lang === "tr" ? "tr-TR"
-            : opts?.lang === "fr" ? "fr-FR"
-              : opts?.lang === "es" ? "es-ES"
-                : undefined;
+    const languageCode = opts?.lang === "ur" ? "ur-PK" : "en-US";
     ws.send(JSON.stringify({
       setup: {
         model: GEMINI_LIVE_MODEL_PATH,
