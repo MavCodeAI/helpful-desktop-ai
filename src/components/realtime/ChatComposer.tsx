@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Send, Loader2, StickyNote } from "lucide-react";
 import type { LangCode } from "@/lib/persona";
 
@@ -11,10 +11,14 @@ type Props = {
   busy?: boolean;
   placeholder?: string;
   autoFocus?: boolean;
+  initialValue?: string;
 };
 
-export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus }: Props) {
-  const [value, setValue] = useState("");
+export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = "Type a message…", autoFocus, initialValue = "" }: Props) {
+  const [value, setValue] = useState(initialValue);
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const submit = async () => {

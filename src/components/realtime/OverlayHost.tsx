@@ -37,9 +37,11 @@ interface Props {
   onCreateNote: (text: string) => void | Promise<void>;
   notePending: boolean;
   briefing: Briefing;
+  chatInitialValue?: string;
+  onChatClose?: () => void;
 }
 
-export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy, onCreateNote, notePending, briefing }: Props) {
+export function OverlayHost({ overlays, settings, history, session, liteActive, active, onSendText, textBusy, onCreateNote, notePending, briefing, chatInitialValue, onChatClose }: Props) {
   const {
     showHistory, setShowHistory,
     showVoiceMenu, setShowVoiceMenu,
@@ -148,7 +150,7 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
       {showChat && (
         <ChatDrawer
           open={showChat}
-          onClose={() => setShowChat(false)}
+          onClose={() => (onChatClose ? onChatClose() : setShowChat(false))}
           messages={history.messages}
           lang={settings.lang}
           onSend={onSendText}
@@ -157,6 +159,7 @@ export function OverlayHost({ overlays, settings, history, session, liteActive, 
           notePending={notePending}
           onClear={() => history.setMessages([])}
           onNewChat={() => { history.newConversation(); }}
+          initialValue={chatInitialValue}
         />
       )}
     </Suspense>

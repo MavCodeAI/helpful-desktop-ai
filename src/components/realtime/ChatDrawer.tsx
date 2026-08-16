@@ -17,6 +17,7 @@ export interface ChatDrawerProps {
   notePending?: boolean;
   onClear: () => void;
   onNewChat: () => void;
+  initialValue?: string;
 }
 
 export function ChatDrawer({
@@ -30,6 +31,7 @@ export function ChatDrawer({
   notePending,
   onClear,
   onNewChat,
+  initialValue,
 }: ChatDrawerProps) {
   const drawerRef = useRef<HTMLElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -120,6 +122,7 @@ export function ChatDrawer({
             busy={busy}
             onNote={onNote}
             notePending={notePending}
+            initialValue={initialValue}
             autoFocus
           />
         </div>

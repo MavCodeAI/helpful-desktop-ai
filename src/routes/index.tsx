@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useVoiceApp } from "@/hooks/use-voice-app";
 import { MainStage } from "@/components/realtime/MainStage";
 import { OverlayHost } from "@/components/realtime/OverlayHost";
@@ -21,6 +21,16 @@ function Index() {
     sendText, textBusy,
     createAiNote, notePending, briefing,
   } = useVoiceApp();
+  const [chatInitialValue, setChatInitialValue] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const command = params.get("command");
+    if (!command) return;
+    setChatInitialValue(command);
+    if (params.get("open") === "chat") overlays.setShowChat(true);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [overlays]);
 
   return (
     <main
@@ -65,6 +75,8 @@ function Index() {
         onCreateNote={createAiNote}
         notePending={notePending}
         briefing={briefing}
+        chatInitialValue={chatInitialValue}
+        onChatClose={() => { overlays.setShowChat(false); setChatInitialValue(""); }}
       />
 
       {showNotes && (
