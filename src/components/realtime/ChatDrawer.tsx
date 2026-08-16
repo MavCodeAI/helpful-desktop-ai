@@ -34,6 +34,7 @@ export function ChatDrawer({
   const drawerRef = useRef<HTMLElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const isUrdu = lang === "ur";
 
   useSwipeClose(drawerRef, "right", onClose, open);
   useFocusTrap(drawerRef, open);
@@ -73,10 +74,10 @@ export function ChatDrawer({
               onNewChat();
               setConfirmClear(false);
             }}
-            className="glass-item flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
+            className="glass-item flex min-h-10 items-center gap-1 rounded-full px-3 py-2 text-[11px] touch-manipulation"
             title="New chat"
           >
-            <Plus className="h-3.5 w-3.5" /> New
+            <Plus className="h-3.5 w-3.5" /> {isUrdu ? "نئی گفتگو" : "New"}
           </button>
           <button
             onClick={() => {
@@ -87,14 +88,14 @@ export function ChatDrawer({
                 setConfirmClear(true);
               }
             }}
-            className={`glass-item flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${confirmClear ? "glass-item-danger" : ""}`}
+            className={`glass-item flex min-h-10 items-center gap-1 rounded-full px-3 py-2 text-[11px] touch-manipulation ${confirmClear ? "glass-item-danger" : ""}`}
             title="Clear chat"
           >
-            <Trash2 className="h-3.5 w-3.5" /> {confirmClear ? "Sure?" : "Clear"}
+            <Trash2 className="h-3.5 w-3.5" /> {confirmClear ? (isUrdu ? "یقین ہے؟" : "Sure?") : (isUrdu ? "صاف کریں" : "Clear")}
           </button>
           <button
             onClick={onClose}
-            className="glass-item ml-1 grid h-8 w-8 place-items-center rounded-full"
+            className="glass-item ml-1 grid min-h-11 min-w-11 place-items-center rounded-full touch-manipulation"
             aria-label="Close chat"
           >
             <X className="h-4 w-4" />
@@ -103,7 +104,7 @@ export function ChatDrawer({
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
           {messages.length === 0 ? (
             <p className="mt-8 text-center text-xs text-muted-foreground">
-              No messages yet — say something or type below.
+              {isUrdu ? "ابھی کوئی پیغام نہیں — کچھ کہیں یا نیچے لکھیں۔" : "No messages yet — say something or type below."}
             </p>
           ) : (
             messages.map((m, i) => (

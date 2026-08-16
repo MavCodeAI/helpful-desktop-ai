@@ -189,7 +189,7 @@ function ApiSettingsPage() {
                 type="button"
                 onClick={() => setReveal((v) => !v)}
                 aria-label={reveal ? "Hide" : "Show"}
-                className="absolute end-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-muted-foreground hover:text-foreground"
+                className="absolute end-2 top-1/2 -translate-y-1/2 min-h-10 min-w-10 rounded p-2 text-muted-foreground hover:text-foreground inline-flex items-center justify-center touch-manipulation"
               >
                 {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -266,7 +266,7 @@ function ApiSettingsPage() {
                         onClick={() => runTest(m.id)}
                         disabled={anyBusy}
                         aria-label={`Test ${m.id}`}
-                        className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-accent/60 px-2 py-1 text-[11px] hover:bg-accent disabled:opacity-40"
+                        className="mt-0.5 inline-flex min-h-10 shrink-0 items-center gap-1 rounded-md border border-border bg-accent/60 px-3 py-2 text-[11px] hover:bg-accent disabled:opacity-40 touch-manipulation"
                       >
                         <Play className="h-3 w-3" /> {isUrdu ? "ٹیسٹ" : "Test"}
                       </button>

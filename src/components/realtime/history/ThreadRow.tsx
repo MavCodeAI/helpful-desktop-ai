@@ -37,13 +37,13 @@ export function ThreadRow({
               else if (e.key === "Escape") { e.preventDefault(); cancelRename(); }
             }}
             maxLength={80}
-            className="glass-input flex-1 min-w-0 rounded px-2 py-1 text-xs sm:text-sm"
+            className="glass-input flex-1 min-w-0 min-h-11 rounded px-3 py-2 text-xs sm:text-sm"
             aria-label="Rename conversation"
           />
-          <button onClick={commitRename} className="p-1.5 rounded hover:bg-cyan-400/20 text-cyan-200 shrink-0" aria-label="Save name" title="Save">
+          <button onClick={commitRename} className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-cyan-400/20 text-cyan-200 shrink-0 touch-manipulation" aria-label="Save name" title="Save">
             <Check className="w-3.5 h-3.5" />
           </button>
-          <button onClick={cancelRename} className="p-1.5 rounded hover:bg-white/10 text-white/60 shrink-0" aria-label="Cancel rename" title="Cancel">
+          <button onClick={cancelRename} className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-white/10 text-white/60 shrink-0 touch-manipulation" aria-label="Cancel rename" title="Cancel">
             <X className="w-3.5 h-3.5" />
           </button>
         </>
@@ -52,7 +52,7 @@ export function ThreadRow({
           <button
             onClick={() => openThread(t.id)}
             onDoubleClick={() => beginRename(t)}
-            className="flex-1 text-left min-w-0"
+            className="flex-1 min-h-11 text-left min-w-0 touch-manipulation"
           >
             <div className={`text-xs sm:text-sm truncate ${isActive ? "text-cyan-100" : "text-white/85"}`}>
               {t.title}
@@ -70,14 +70,14 @@ export function ThreadRow({
           </button>
           <button
             onClick={() => beginRename(t)}
-            className="p-1.5 rounded hover:bg-cyan-400/20 text-white/60 hover:text-cyan-200 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-cyan-400/20 text-white/60 hover:text-cyan-200 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 touch-manipulation"
             aria-label="Rename conversation" title="Rename"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onRequestDelete(t)}
-            className="p-1.5 rounded hover:bg-red-500/20 text-white/60 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-red-500/20 text-white/60 hover:text-red-300 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 touch-manipulation"
             aria-label="Delete conversation" title="Delete"
           >
             <Trash2 className="w-3.5 h-3.5" />

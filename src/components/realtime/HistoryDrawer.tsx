@@ -71,7 +71,7 @@ export function HistoryDrawer(props: HistoryDrawerProps) {
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 p-1.5 rounded-full hover:bg-white/5 text-white/60 hover:text-white"
+            className="shrink-0 min-h-11 min-w-11 inline-flex items-center justify-center rounded-full hover:bg-white/5 text-white/60 hover:text-white touch-manipulation"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -80,7 +80,7 @@ export function HistoryDrawer(props: HistoryDrawerProps) {
         <div className="shrink-0 px-3 sm:px-5 pt-3 sm:pt-4 pb-2">
           <button
             onClick={onNewConversation}
-            className="glass-item glass-item-active w-full text-sm px-3 py-2 rounded-md flex items-center justify-center gap-1.5"
+            className="glass-item glass-item-active w-full min-h-11 text-sm px-3 py-2 rounded-md flex items-center justify-center gap-1.5 touch-manipulation"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
             New conversation
