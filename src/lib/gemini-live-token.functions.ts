@@ -32,8 +32,10 @@ function providerErrorDetail(text: string, status: number): string {
   try {
     const parsed = JSON.parse(trimmed) as { error?: { message?: unknown; status?: unknown } };
     const message = typeof parsed.error?.message === "string" ? parsed.error.message : "";
-    const providerStatus = typeof parsed.error?.status === "string" ? ` (${parsed.error.status})` : "";
-    if (message) return `Gemini token service returned HTTP ${status}: ${sanitizeProviderDetail(message)}${providerStatus}`;
+    const providerStatus =
+      typeof parsed.error?.status === "string" ? ` (${parsed.error.status})` : "";
+    if (message)
+      return `Gemini token service returned HTTP ${status}: ${sanitizeProviderDetail(message)}${providerStatus}`;
   } catch {
     // Keep the sanitized raw response when Google does not return JSON.
   }
@@ -42,7 +44,11 @@ function providerErrorDetail(text: string, status: number): string {
 
 async function mintGeminiLiveToken(apiKey: string): Promise<MintedToken> {
   if (!apiKey) {
-    return { ok: false, status: "missing", error: "GEMINI_API_KEY is not configured on the server." };
+    return {
+      ok: false,
+      status: "missing",
+      error: "GEMINI_API_KEY is not configured on the server.",
+    };
   }
   if (apiKey.length < 20) {
     return { ok: false, status: "invalid", error: "GEMINI_API_KEY appears invalid." };
@@ -79,14 +85,22 @@ async function mintGeminiLiveToken(apiKey: string): Promise<MintedToken> {
       };
     }
 
-    const payload = await response.json() as { name?: unknown };
+    const payload = (await response.json()) as { name?: unknown };
     if (typeof payload.name !== "string" || !payload.name) {
-      return { ok: false, status: "provider_error", error: "Gemini token service returned no usable token." };
+      return {
+        ok: false,
+        status: "provider_error",
+        error: "Gemini token service returned no usable token.",
+      };
     }
 
     return { ok: true, token: payload.name, expiresAt };
   } catch {
-    return { ok: false, status: "provider_error", error: "Could not reach the Gemini token service." };
+    return {
+      ok: false,
+      status: "provider_error",
+      error: "Could not reach the Gemini token service.",
+    };
   }
 }
 
@@ -115,21 +129,38 @@ async function websocketEventText(data: unknown): Promise<string> {
   return String(data ?? "");
 }
 
-async function probeLiveWebSocket(token: string): Promise<{ ok: true; latencyMs: number } | { ok: false; latencyMs: number; error: string; closeCode?: number }> {
+async function probeLiveWebSocket(
+  token: string,
+): Promise<
+  | { ok: true; latencyMs: number }
+  | { ok: false; latencyMs: number; error: string; closeCode?: number }
+> {
   const startedAt = performance.now();
   const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`;
 
   return await new Promise((resolve) => {
     let settled = false;
-    const finish = (result: { ok: true; latencyMs: number } | { ok: false; latencyMs: number; error: string; closeCode?: number }) => {
+    const finish = (
+      result:
+        | { ok: true; latencyMs: number }
+        | { ok: false; latencyMs: number; error: string; closeCode?: number },
+    ) => {
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
       resolve(result);
     };
     const timeout = setTimeout(() => {
-      try { ws.close(); } catch {}
-      finish({ ok: false, latencyMs: Math.round(performance.now() - startedAt), error: "Gemini Live handshake timed out." });
+      try {
+        ws.close();
+      } catch {
+        // The socket may already be closed; continue with the handshake result.
+      }
+      finish({
+        ok: false,
+        latencyMs: Math.round(performance.now() - startedAt),
+        error: "Gemini Live handshake timed out.",
+      });
     }, 10_000);
     const ws = new WebSocket(url);
 
@@ -137,7 +168,11 @@ async function probeLiveWebSocket(token: string): Promise<{ ok: true; latencyMs:
       try {
         ws.send(JSON.stringify(liveSetupMessage()));
       } catch {
-        finish({ ok: false, latencyMs: Math.round(performance.now() - startedAt), error: "Could not send the Gemini Live setup message." });
+        finish({
+          ok: false,
+          latencyMs: Math.round(performance.now() - startedAt),
+          error: "Could not send the Gemini Live setup message.",
+        });
       }
     });
     ws.addEventListener("message", async (event) => {
@@ -148,23 +183,42 @@ async function probeLiveWebSocket(token: string): Promise<{ ok: true; latencyMs:
           error?: { message?: string; code?: number; status?: string };
         };
         if (payload.setupComplete !== undefined) {
-          try { ws.close(); } catch {}
+          try {
+            ws.close();
+          } catch {
+            // The socket may already be closed; continue with the handshake result.
+          }
           finish({ ok: true, latencyMs: Math.round(performance.now() - startedAt) });
         } else if (payload.error) {
-          try { ws.close(); } catch {}
+          try {
+            ws.close();
+          } catch {
+            // The socket may already be closed; continue with the handshake result.
+          }
           finish({
             ok: false,
             latencyMs: Math.round(performance.now() - startedAt),
-            error: payload.error.message || payload.error.status || "Gemini rejected the Live setup message.",
+            error:
+              payload.error.message ||
+              payload.error.status ||
+              "Gemini rejected the Live setup message.",
             closeCode: payload.error.code,
           });
         }
       } catch {
-        finish({ ok: false, latencyMs: Math.round(performance.now() - startedAt), error: "Gemini returned an invalid Live setup response." });
+        finish({
+          ok: false,
+          latencyMs: Math.round(performance.now() - startedAt),
+          error: "Gemini returned an invalid Live setup response.",
+        });
       }
     });
     ws.addEventListener("error", () => {
-      finish({ ok: false, latencyMs: Math.round(performance.now() - startedAt), error: "Gemini Live WebSocket could not be opened." });
+      finish({
+        ok: false,
+        latencyMs: Math.round(performance.now() - startedAt),
+        error: "Gemini Live WebSocket could not be opened.",
+      });
     });
     ws.addEventListener("close", (event) => {
       if (!settled) {
@@ -181,7 +235,9 @@ async function probeLiveWebSocket(token: string): Promise<{ ok: true; latencyMs:
 
 /** Issues a short-lived, single-use Gemini Live token. The long-lived API key never leaves the server. */
 export const getGeminiLiveToken = createServerFn({ method: "POST" })
-  .validator((input: unknown) => z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}))
+  .validator((input: unknown) =>
+    z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}),
+  )
   .handler(async ({ data }): Promise<GeminiLiveTokenResult> => {
     const result = await mintGeminiLiveToken(resolveApiKey(data.userKey));
     return result.ok
@@ -191,7 +247,9 @@ export const getGeminiLiveToken = createServerFn({ method: "POST" })
 
 /** Mints a one-use token and verifies the real Gemini Live setup handshake server-side. */
 export const testGeminiLiveConnection = createServerFn({ method: "POST" })
-  .validator((input: unknown) => z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}))
+  .validator((input: unknown) =>
+    z.object({ userKey: z.string().trim().max(200).optional() }).parse(input ?? {}),
+  )
   .handler(async ({ data }): Promise<GeminiLiveConnectionTestResult> => {
     const minted = await mintGeminiLiveToken(resolveApiKey(data.userKey));
     if (!minted.ok) {

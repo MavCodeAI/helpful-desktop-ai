@@ -5,12 +5,7 @@ import { GEMINI_LIVE_MODEL_PATH } from "./gemini-live-config";
 
 export type ProviderId = "gemini";
 
-export type VoiceStatus =
-  | "connecting"
-  | "listening"
-  | "speaking"
-  | "idle"
-  | "error";
+export type VoiceStatus = "connecting" | "listening" | "speaking" | "idle" | "error";
 
 export type VoiceMessage = { role: "you" | "assistant"; text: string };
 
@@ -57,21 +52,34 @@ export interface VoiceOptions {
   lang?: LangCode;
 }
 
-export const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"] as const;
+export const GEMINI_VOICES = [
+  "Puck",
+  "Charon",
+  "Kore",
+  "Fenrir",
+  "Aoede",
+  "Leda",
+  "Orus",
+  "Zephyr",
+] as const;
 
 function paceInstruction(pace: Pace | undefined): string {
   switch (pace) {
-    case "slow": return "Speak slowly and warmly, with natural pauses between phrases.";
-    case "brisk": return "Speak at a brisk, energetic pace.";
-    default: return "Speak at a natural, conversational pace.";
+    case "slow":
+      return "Speak slowly and warmly, with natural pauses between phrases.";
+    case "brisk":
+      return "Speak at a brisk, energetic pace.";
+    default:
+      return "Speak at a natural, conversational pace.";
   }
 }
 
 function buildInstructions(opts?: VoiceOptions): string {
   const base = opts?.systemPrompt?.trim() || "You are Alpha, a friendly, concise voice assistant.";
-  const language = opts?.lang === "ur"
-    ? "Urdu is mandatory for this session. Understand and answer in natural Urdu using Urdu script; never use Hindi, Devanagari, or Roman Urdu."
-    : "English is mandatory for this session. Answer in clear English; never use Hindi, Devanagari, or Roman Urdu.";
+  const language =
+    opts?.lang === "ur"
+      ? "Urdu is mandatory for this session. Understand and answer in natural Urdu using Urdu script; never use Hindi, Devanagari, or Roman Urdu."
+      : "English is mandatory for this session. Answer in clear English; never use Hindi, Devanagari, or Roman Urdu.";
   return `${base}\n\n${language}\n\n${paceInstruction(opts?.pace)}\n\nThe user may interrupt you at any time — stop speaking immediately when they start.`;
 }
 
@@ -95,13 +103,21 @@ export async function startMicTest(onLevel: (rms: number) => void): Promise<Cont
     for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
     const rms = Math.sqrt(sum / data.length);
     const now = performance.now();
-    if (now - lastEmit > LEVEL_THROTTLE_MS) { onLevel(rms); lastEmit = now; }
+    if (now - lastEmit > LEVEL_THROTTLE_MS) {
+      onLevel(rms);
+      lastEmit = now;
+    }
   };
   source.connect(proc);
   proc.connect(ctx.destination);
   return {
     stop: () => {
-      try { proc.disconnect(); source.disconnect(); } catch {}
+      try {
+        proc.disconnect();
+        source.disconnect();
+      } catch {
+        // Audio nodes may already be disconnected during teardown.
+      }
       stream.getTracks().forEach((t) => t.stop());
       ctx.close().catch(() => {});
       onLevel(0);
@@ -135,18 +151,16 @@ function floatToPCM16(input: Float32Array) {
 }
 
 /** Player queues raw PCM16 chunks at the given sample rate. */
-function makePlayer(
-  sampleRate: number,
-  onSpeaking: (v: boolean) => void,
-  initialRate = 1,
-) {
+function makePlayer(sampleRate: number, onSpeaking: (v: boolean) => void, initialRate = 1) {
   const ctx = new AudioContext({ sampleRate });
   let playTime = 0;
   let active = 0;
   let rate = Math.max(0.5, Math.min(2, initialRate));
   return {
     ctx,
-    setRate(r: number) { rate = Math.max(0.5, Math.min(2, r)); },
+    setRate(r: number) {
+      rate = Math.max(0.5, Math.min(2, r));
+    },
     play(bytes: Uint8Array) {
       const int16 = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength / 2);
       const f32 = new Float32Array(int16.length);
@@ -167,7 +181,9 @@ function makePlayer(
         if (active <= 0) onSpeaking(false);
       };
     },
-    close() { ctx.close().catch(() => {}); },
+    close() {
+      ctx.close().catch(() => {});
+    },
   };
 }
 
@@ -190,7 +206,11 @@ function activityThreshold(sensitivity?: number) {
 const GEMINI_IN_SR = 16000;
 const GEMINI_OUT_SR = 24000;
 
-export async function startGemini(accessToken: string, h: Handlers, opts?: VoiceOptions): Promise<Controller> {
+export async function startGemini(
+  accessToken: string,
+  h: Handlers,
+  opts?: VoiceOptions,
+): Promise<Controller> {
   const trimmedToken = accessToken.trim();
   if (!trimmedToken) {
     h.onError("Gemini Live session token missing. Configure GEMINI_API_KEY on the server.");
@@ -203,10 +223,16 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
   });
   const inCtx = new AudioContext({ sampleRate: GEMINI_IN_SR });
   let speaking = false;
-  const player = makePlayer(GEMINI_OUT_SR, (v) => { speaking = v; h.onStatus(v ? "speaking" : "listening"); }, opts?.rate ?? 1);
+  const player = makePlayer(
+    GEMINI_OUT_SR,
+    (v) => {
+      speaking = v;
+      h.onStatus(v ? "speaking" : "listening");
+    },
+    opts?.rate ?? 1,
+  );
 
-  const url =
-    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(trimmedToken)}`;
+  const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(trimmedToken)}`;
   const ws = new WebSocket(url);
   let connected = false;
   let closedByUser = false;
@@ -223,7 +249,11 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
 
   const cleanup = () => {
     closedByUser = true;
-    try { ws.close(); } catch {}
+    try {
+      ws.close();
+    } catch {
+      // The WebSocket may already be closed during teardown.
+    }
     stream.getTracks().forEach((t) => t.stop());
     inCtx.close().catch(() => {});
     player.close();
@@ -238,41 +268,50 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
 
   ws.onopen = () => {
     const languageCode = opts?.lang === "ur" ? "ur-PK" : "en-US";
-    ws.send(JSON.stringify({
-      setup: {
-        model: GEMINI_LIVE_MODEL_PATH,
-        generationConfig: {
-          responseModalities: ["AUDIO"],
+    ws.send(
+      JSON.stringify({
+        setup: {
+          model: GEMINI_LIVE_MODEL_PATH,
+          generationConfig: {
+            responseModalities: ["AUDIO"],
             speechConfig: {
               ...(languageCode ? { languageCode } : {}),
               voiceConfig: {
                 prebuiltVoiceConfig: { voiceName: opts?.voice || "Aoede" },
               },
             },
+          },
+          systemInstruction: { parts: [{ text: buildInstructions(opts) }] },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
         },
-        systemInstruction: { parts: [{ text: buildInstructions(opts) }] },
-        inputAudioTranscription: {},
-        outputAudioTranscription: {},
-      },
-    }));
+      }),
+    );
   };
 
   const partialBuf = { you: "", assistant: "" };
 
   ws.onmessage = async (ev) => {
-    const raw = ev.data instanceof Blob ? await ev.data.text() : typeof ev.data === "string" ? ev.data : "";
+    const raw =
+      ev.data instanceof Blob ? await ev.data.text() : typeof ev.data === "string" ? ev.data : "";
     if (!raw) return;
     let msg: {
       setupComplete?: unknown;
       serverContent?: {
-        modelTurn?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string }; text?: string }> };
+        modelTurn?: {
+          parts?: Array<{ inlineData?: { mimeType?: string; data?: string }; text?: string }>;
+        };
         inputTranscription?: { text?: string; finished?: boolean };
         outputTranscription?: { text?: string; finished?: boolean };
         turnComplete?: boolean;
         interrupted?: boolean;
       };
     };
-    try { msg = JSON.parse(raw); } catch { return; }
+    try {
+      msg = JSON.parse(raw);
+    } catch {
+      return;
+    }
 
     if (msg.setupComplete !== undefined) {
       connected = true;
@@ -297,11 +336,13 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
           sttFirstAt = 0;
         }
         const pcm = floatToPCM16(data);
-        ws.send(JSON.stringify({
-          realtimeInput: {
-            audio: { mimeType: `audio/pcm;rate=${GEMINI_IN_SR}`, data: b64FromBuf(pcm.buffer) },
-          },
-        }));
+        ws.send(
+          JSON.stringify({
+            realtimeInput: {
+              audio: { mimeType: `audio/pcm;rate=${GEMINI_IN_SR}`, data: b64FromBuf(pcm.buffer) },
+            },
+          }),
+        );
       };
       source.connect(proc);
       proc.connect(inCtx.destination);
@@ -343,7 +384,8 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
       } else if (containsHindiScript(partialBuf.you)) {
         h.onError(voiceTranscriptError(opts?.lang ?? "en"));
       }
-      if (partialBuf.assistant.trim()) h.onMessage({ role: "assistant", text: partialBuf.assistant.trim() });
+      if (partialBuf.assistant.trim())
+        h.onMessage({ role: "assistant", text: partialBuf.assistant.trim() });
       partialBuf.you = "";
       partialBuf.assistant = "";
     }
@@ -357,14 +399,19 @@ export async function startGemini(accessToken: string, h: Handlers, opts?: Voice
     if (closedByUser) return;
     cleanup();
     if (ev.code === 1007) {
-      h.onError("Gemini Live setup rejected (1007: invalid frame payload). Check the Live model and setup protocol.");
+      h.onError(
+        "Gemini Live setup rejected (1007: invalid frame payload). Check the Live model and setup protocol.",
+      );
       return;
     }
     if (ev.code === 1008 || ev.code === 4001 || ev.code === 4003) {
       h.onError(`Gemini auth failed (${ev.code}). The server-issued session token was rejected.`);
       return;
     }
-    if (!connected) h.onError(`Gemini did not connect (${ev.code || "closed"}). ${ev.reason || "Check server configuration and internet, then try again."}`);
+    if (!connected)
+      h.onError(
+        `Gemini did not connect (${ev.code || "closed"}). ${ev.reason || "Check server configuration and internet, then try again."}`,
+      );
   };
   return { stop, setRate: (r) => player.setRate(r) };
 }

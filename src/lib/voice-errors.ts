@@ -87,6 +87,7 @@ export function classifyVoiceError(
       action: "Check your internet connection and try Gemini Live again.",
       provider,
       canRetry: true,
+      retryAfterSec: meta?.retryAfterSec,
       technical,
     };
   }
@@ -95,7 +96,8 @@ export function classifyVoiceError(
     code: "unknown",
     title: "Voice session could not start",
     message: "Something prevented Alpha from starting voice mode.",
-      action: "Try Gemini Live again. If it continues, open Settings, run Apply & Test for Gemini, and review the technical details.",
+    action:
+      "Try Gemini Live again. If it continues, open Settings, run Apply & Test for Gemini, and review the technical details.",
     provider,
     canRetry: true,
     technical,
