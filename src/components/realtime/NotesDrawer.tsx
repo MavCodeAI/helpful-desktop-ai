@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import { useNotes } from "@/lib/utilities/notes";
 import { useAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
+import { useUILang } from "@/hooks/use-ui-lang";
 import { generateNote } from "@/lib/note-ai.functions";
 
 interface Props {
@@ -16,6 +17,12 @@ export function NotesDrawer({ open, onClose }: Props) {
   useSwipeClose(ref, "left", onClose, open);
   useFocusTrap(ref, open);
   const { notes, add, remove, clear } = useNotes();
+  const { isUrdu } = useUILang();
+  const copy = isUrdu ? {
+    title: "یادداشتیں", close: "یادداشتیں بند کریں", aiOn: "AI فعال ہے — بند کرنے کے لیے دبائیں", aiOff: "AI بند ہے — فعال کرنے کے لیے دبائیں", aiLabel: "AI", on: "فعال", off: "بند", clearAll: "سب صاف کریں", aiDisabled: "AI mode بند ہے — header سے فعال کریں", aiModeOn: "AI mode فعال — مختصر خیال لکھیں", toggleAi: "AI note mode تبدیل کریں", aiPlaceholder: "AI: مختصر خیال → صاف یادداشت…", addPlaceholder: "یادداشت شامل کریں…", add: "شامل کریں", noNotes: "ابھی کوئی یادداشت نہیں۔", helper: "کہیں “یاد رکھو …”، اوپر لکھیں، یا AI کے لیے ✨ دبائیں۔", justAdded: "ابھی شامل ہوئی", delete: "یادداشت حذف کریں", dialog: "یادداشتیں"
+  } : {
+    title: "Notes", close: "Close notes", aiOn: "AI note generation is ON — click to disable", aiOff: "AI note generation is OFF — click to enable", aiLabel: "AI", on: "on", off: "off", clearAll: "Clear all", aiDisabled: "AI mode is disabled — enable it from the header", aiModeOn: "AI mode ON — write a rough idea", toggleAi: "Toggle AI-generate mode", aiPlaceholder: "AI: rough idea → clean note…", addPlaceholder: "Add a note…", add: "Add", noNotes: "No notes yet.", helper: "Say ‘note: buy milk’, type above, or hit ✨ for AI.", justAdded: "just added", delete: "Delete note", dialog: "Notes"
+  };
   const [aiEnabled, setAiEnabled] = useAiNotesEnabled();
 
   const [draft, setDraft] = useState("");
@@ -78,8 +85,8 @@ export function NotesDrawer({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label="Notes">
-      <button aria-label="Close notes" className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+    <div className="fixed inset-0 z-40 flex" role="dialog" aria-modal="true" aria-label={copy.dialog}>
+      <button aria-label={copy.close} className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <aside
         ref={ref}
         className="glass-card relative h-full w-full max-w-[100vw] sm:w-[400px] rounded-none sm:rounded-r-2xl overflow-hidden flex flex-col"
@@ -95,7 +102,7 @@ export function NotesDrawer({ open, onClose }: Props) {
             <button
               onClick={() => { setAiEnabled(!aiEnabled); if (aiEnabled) setAiMode(false); }}
               aria-pressed={aiEnabled}
-              title={aiEnabled ? "AI note generation is ON — click to disable" : "AI note generation is OFF — click to enable"}
+              title={aiEnabled ? copy.aiOn : copy.aiOff}
               className={`text-[10px] px-2 py-1 rounded-full border flex items-center gap-1 transition-colors ${
                 aiEnabled
                   ? "bg-cyan-400/15 border-cyan-400/40 text-cyan-200"
@@ -103,15 +110,15 @@ export function NotesDrawer({ open, onClose }: Props) {
               }`}
             >
               <Sparkles className="w-3 h-3" strokeWidth={1.75} />
-              <span>AI {aiEnabled ? "on" : "off"}</span>
+              <span>{copy.aiLabel} {aiEnabled ? copy.on : copy.off}</span>
             </button>
             {notes.length > 0 && (
               <button
                 onClick={clear}
-                className="text-[10px] text-white/50 hover:text-red-300 px-2 py-1 rounded hover:bg-white/5"
-              >Clear all</button>
+                className="min-h-11 px-2 text-[10px] text-white/50 hover:text-red-300 rounded hover:bg-white/5 touch-manipulation"
+              >{copy.clearAll}</button>
             )}
-            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/5 text-white/60 hover:text-white" aria-label="Close">
+            <button onClick={onClose} className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-full hover:bg-white/5 text-white/60 hover:text-white touch-manipulation" aria-label={copy.close}>
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -125,12 +132,12 @@ export function NotesDrawer({ open, onClose }: Props) {
             aria-pressed={aiMode && aiEnabled}
             title={
               !aiEnabled
-                ? "AI mode is disabled — enable it from the header"
+                ? copy.aiDisabled
                 : aiMode
-                  ? "AI mode ON — write a rough idea"
-                  : "Toggle AI-generate mode"
+                  ? copy.aiModeOn
+                  : copy.toggleAi
             }
-            className={`shrink-0 w-8 h-8 grid place-items-center rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`shrink-0 min-h-11 min-w-11 grid place-items-center rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               aiMode && aiEnabled
                 ? "bg-cyan-400/20 border-cyan-400/50 text-cyan-200"
                 : "bg-white/5 border-white/10 text-white/60 hover:text-white/90"
@@ -142,7 +149,7 @@ export function NotesDrawer({ open, onClose }: Props) {
             ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={aiMode && aiEnabled ? "AI: rough idea → clean note…" : "Add a note…"}
+            placeholder={aiMode && aiEnabled ? copy.aiPlaceholder : copy.addPlaceholder}
             className="flex-1 bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-400/50"
           />
           <button
@@ -151,15 +158,15 @@ export function NotesDrawer({ open, onClose }: Props) {
             className="shrink-0 px-3 py-2 rounded-md bg-cyan-500/20 border border-cyan-400/40 text-cyan-100 text-sm hover:bg-cyan-500/30 disabled:opacity-40 flex items-center gap-1"
           >
             {aiBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            <span>{aiMode && aiEnabled ? "AI" : "Add"}</span>
+            <span>{aiMode && aiEnabled ? copy.aiLabel : copy.add}</span>
           </button>
         </form>
 
         <div ref={listRef} className="flex-1 overflow-y-auto p-3 space-y-2">
           {notes.length === 0 ? (
             <div className="text-center text-xs text-white/50 mt-8 px-4 leading-relaxed">
-              No notes yet.<br />
-              Say <span className="text-cyan-300/80 font-mono text-[11px]">"note: buy milk"</span>, type above, or hit ✨ for AI.
+              {copy.noNotes}<br />
+              {copy.helper}
             </div>
           ) : (
             notes.map((n) => {
@@ -178,12 +185,12 @@ export function NotesDrawer({ open, onClose }: Props) {
                   <div className="mt-1.5 flex items-center justify-between">
                     <span className="text-[10px] text-white/40 tabular-nums flex items-center gap-1.5">
                       {new Date(n.at).toLocaleString()}
-                      {flash && <span className="text-cyan-300/90">· just added</span>}
+                      {flash && <span className="text-cyan-300/90">· {copy.justAdded}</span>}
                     </span>
                     <button
                       onClick={() => remove(n.id)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-white/50 hover:text-red-300 p-1"
-                      aria-label="Delete note"
+                      aria-label={copy.delete}
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

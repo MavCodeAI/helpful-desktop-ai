@@ -3,6 +3,7 @@ import { X, Plus } from "lucide-react";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import type { Thread } from "@/lib/chat-history";
 import { ThreadRow } from "@/components/realtime/history/ThreadRow";
+import { useUILang } from "@/hooks/use-ui-lang";
 import { HistorySearch } from "@/components/realtime/history/HistorySearch";
 
 export interface HistoryDrawerProps {
@@ -26,6 +27,12 @@ export interface HistoryDrawerProps {
 
 export function HistoryDrawer(props: HistoryDrawerProps) {
   const drawerRef = useRef<HTMLElement | null>(null);
+  const { isUrdu } = useUILang();
+  const copy = isUrdu ? {
+    dialog: "گفتگو کی تاریخ", title: "گفتگوئیں", saved: "محفوظ · یہ browser", newConversation: "نئی گفتگو", noConversations: "ابھی کوئی گفتگو نہیں۔", noMatches: "اس تلاش سے کوئی نتیجہ نہیں ملا۔", close: "بند کریں", closeHistory: "گفتگو کی تاریخ بند کریں"
+  } : {
+    dialog: "Conversation history", title: "Conversations", saved: "saved · this browser", newConversation: "New conversation", noConversations: "No conversations yet.", noMatches: "No matches for this search.", close: "Close", closeHistory: "Close history"
+  };
   useSwipeClose(drawerRef, "left", props.onClose, props.open);
   useFocusTrap(drawerRef, props.open);
   if (!props.open) return null;
@@ -53,7 +60,7 @@ export function HistoryDrawer(props: HistoryDrawerProps) {
       className="fixed inset-0 z-40 flex"
       role="dialog"
       aria-modal="true"
-      aria-label="Conversation history"
+      aria-label={copy.dialog}
     >
       <aside
         ref={drawerRef}
@@ -63,16 +70,16 @@ export function HistoryDrawer(props: HistoryDrawerProps) {
         <div className="shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 py-3 sm:py-4 border-b border-white/10">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-white/90 tracking-wide truncate">
-              Conversations
+              {copy.title}
             </h2>
             <div className="text-[10px] uppercase tracking-widest text-white/60 mt-0.5 truncate">
-              {threads.length} saved · this browser
+              {threads.length} {copy.saved}
             </div>
           </div>
           <button
             onClick={onClose}
             className="shrink-0 min-h-11 min-w-11 inline-flex items-center justify-center rounded-full hover:bg-white/5 text-white/60 hover:text-white touch-manipulation"
-            aria-label="Close"
+            aria-label={copy.close}
           >
             <X className="w-4 h-4" />
           </button>
@@ -83,21 +90,21 @@ export function HistoryDrawer(props: HistoryDrawerProps) {
             className="glass-item glass-item-active w-full min-h-11 text-sm px-3 py-2 rounded-md flex items-center justify-center gap-1.5 touch-manipulation"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
-            New conversation
+            {copy.newConversation}
           </button>
         </div>
         <div className="shrink-0 px-3 sm:px-5 pb-3">
-          <HistorySearch historyQuery={historyQuery} setHistoryQuery={setHistoryQuery} />
+          <HistorySearch historyQuery={historyQuery} setHistoryQuery={setHistoryQuery} isUrdu={isUrdu} />
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 sm:px-3 pb-4 space-y-1.5">
           {threads.length === 0 && (
             <div className="text-xs text-white/60 italic px-2 py-4 text-center">
-              No conversations yet.
+              {copy.noConversations}
             </div>
           )}
           {threads.length > 0 && filteredThreads.length === 0 && (
             <div className="text-xs text-white/60 italic px-2 py-4 text-center">
-              No matches for “{historyQuery}”.
+              {copy.noMatches}
             </div>
           )}
           {filteredThreads.map((t) => (
@@ -118,7 +125,7 @@ export function HistoryDrawer(props: HistoryDrawerProps) {
         </div>
       </aside>
       <button
-        aria-label="Close history"
+        aria-label={copy.closeHistory}
         className="flex-1 bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />

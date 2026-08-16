@@ -1,5 +1,6 @@
 import { X, Trash2, Pencil, Check } from "lucide-react";
 import type { Thread } from "@/lib/chat-history";
+import { useUILang } from "@/hooks/use-ui-lang";
 
 interface Props {
   t: Thread;
@@ -18,6 +19,8 @@ export function ThreadRow({
   t, isActive, isRenaming, renameDraft, setRenameDraft,
   beginRename, commitRename, cancelRename, openThread, onRequestDelete,
 }: Props) {
+  const { isUrdu } = useUILang();
+  const copy = isUrdu ? { rename: "گفتگو کا نام تبدیل کریں", save: "نام محفوظ کریں", cancel: "نام تبدیل کرنا منسوخ کریں", renameTitle: "نام تبدیل کریں", delete: "گفتگو حذف کریں", msg: "پیغام", msgs: "پیغامات" } : { rename: "Rename conversation", save: "Save name", cancel: "Cancel rename", renameTitle: "Rename", delete: "Delete conversation", msg: "msg", msgs: "msgs" };
   return (
     <div className={`glass-item ${isActive ? "glass-item-active" : ""} group flex items-center gap-2 rounded-lg p-2.5`}>
       {isRenaming ? (
@@ -38,12 +41,12 @@ export function ThreadRow({
             }}
             maxLength={80}
             className="glass-input flex-1 min-w-0 min-h-11 rounded px-3 py-2 text-xs sm:text-sm"
-            aria-label="Rename conversation"
+            aria-label={copy.rename}
           />
-          <button onClick={commitRename} className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-cyan-400/20 text-cyan-200 shrink-0 touch-manipulation" aria-label="Save name" title="Save">
+          <button onClick={commitRename} className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-cyan-400/20 text-cyan-200 shrink-0 touch-manipulation" aria-label={copy.save} title={copy.save}>
             <Check className="w-3.5 h-3.5" />
           </button>
-          <button onClick={cancelRename} className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-white/10 text-white/60 shrink-0 touch-manipulation" aria-label="Cancel rename" title="Cancel">
+          <button onClick={cancelRename} className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-white/10 text-white/60 shrink-0 touch-manipulation" aria-label={copy.cancel} title={copy.cancel}>
             <X className="w-3.5 h-3.5" />
           </button>
         </>
@@ -64,21 +67,21 @@ export function ThreadRow({
               </span>
               <span>·</span>
               <span className="tabular-nums">
-                {t.messages.length} msg{t.messages.length === 1 ? "" : "s"}
+                {t.messages.length} {t.messages.length === 1 ? copy.msg : copy.msgs}
               </span>
             </div>
           </button>
           <button
             onClick={() => beginRename(t)}
             className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-cyan-400/20 text-white/60 hover:text-cyan-200 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 touch-manipulation"
-            aria-label="Rename conversation" title="Rename"
+            aria-label={copy.rename} title={copy.renameTitle}
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onRequestDelete(t)}
             className="min-h-10 min-w-10 inline-flex items-center justify-center rounded hover:bg-red-500/20 text-white/60 hover:text-red-300 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 touch-manipulation"
-            aria-label="Delete conversation" title="Delete"
+            aria-label={copy.delete} title={copy.delete}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
