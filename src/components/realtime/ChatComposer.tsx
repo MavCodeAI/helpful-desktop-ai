@@ -64,7 +64,7 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
         type="submit"
         disabled={busy || !value.trim()}
         aria-label="Send message"
-        className="shrink-0 w-9 h-9 grid place-items-center rounded-full bg-cyan-400/15 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-400/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="shrink-0 min-w-11 min-h-11 grid place-items-center rounded-full bg-cyan-400/15 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-400/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors touch-manipulation"
       >
         {busy ? (
           <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />

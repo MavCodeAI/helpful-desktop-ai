@@ -57,7 +57,7 @@ export function HeaderPill({
       <div className="flex items-center gap-1.5 sm:gap-2">
         <button
           onClick={onOpenChat}
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
+          className="min-h-10 min-w-10 text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center justify-center gap-1.5 hover:border-cyan-400/40 transition-colors touch-manipulation"
           aria-label={messageCount > 0 ? `Open chat, ${messageCount} messages` : "Open chat"}
           title="Chat"
         >
@@ -67,7 +67,7 @@ export function HeaderPill({
         </button>
         <button
           onClick={onOpenNotes}
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
+          className="min-h-10 min-w-10 text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center justify-center gap-1.5 hover:border-cyan-400/40 transition-colors touch-manipulation"
           aria-label={noteCount > 0 ? `Open notes, ${noteCount} saved` : "Open notes"}
           title="Notes"
         >
@@ -77,7 +77,7 @@ export function HeaderPill({
         </button>
         <button
           onClick={onOpenHistory}
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
+          className="min-h-10 min-w-10 text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center justify-center gap-1.5 hover:border-cyan-400/40 transition-colors touch-manipulation"
           aria-label={threadCount > 0 ? `Open conversation history, ${threadCount} threads` : "Open conversation history"}
           title="History"
         >
@@ -92,7 +92,7 @@ export function HeaderPill({
         </div>
         <button
           onClick={onOpenSettings}
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center gap-1.5 hover:border-cyan-400/40 transition-colors"
+          className="min-h-10 min-w-10 text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 border border-white/10 rounded-full flex items-center justify-center gap-1.5 hover:border-cyan-400/40 transition-colors touch-manipulation"
           aria-label="Open voice settings"
           title="Voice settings"
         >

@@ -193,7 +193,7 @@ export function QuickSkills({ lang, onRun }: Props) {
         type="button"
         onClick={() => setShowMore((value) => !value)}
         aria-expanded={showMore}
-        className="mt-1.5 min-h-9 w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] text-white/55 transition hover:border-cyan-300/30 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
+        className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-[11px] text-white/55 transition hover:border-cyan-300/30 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-300/40 touch-manipulation"
       >
         {showMore ? (lang === "ur" ? "کم دکھائیں" : "Show less") : `${moreLabel} +${skills.length - PRIMARY_SKILL_IDS.size}`}
       </button>

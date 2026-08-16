@@ -101,7 +101,7 @@ export function MainStage({
               <div className="flex items-center justify-end gap-1 mb-2">
                 <button
                   onClick={() => history.newConversation()}
-                  className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-cyan-200 hover:bg-cyan-400/10 border border-cyan-400/20"
+                  className="min-h-10 flex items-center gap-1 px-3 py-2 rounded-full text-[11px] text-cyan-200 hover:bg-cyan-400/10 border border-cyan-400/20 touch-manipulation"
                   aria-label="New chat"
                   title="New chat"
                 >
@@ -109,7 +109,7 @@ export function MainStage({
                 </button>
                 <button
                   onClick={() => history.setMessages([])}
-                  className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-muted-foreground hover:text-foreground hover:bg-white/5 border border-white/10"
+                  className="min-h-10 flex items-center gap-1 px-3 py-2 rounded-full text-[11px] text-muted-foreground hover:text-foreground hover:bg-white/5 border border-white/10 touch-manipulation"
                   aria-label="Clear chat"
                   title="Clear chat"
                 >
