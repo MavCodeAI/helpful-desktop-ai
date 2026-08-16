@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Bell, Building2, CheckCircle2, Clock3, ExternalLink, FileText, LayoutDashboard, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Bell, CheckCircle2, Clock3, ExternalLink, FileText, LayoutDashboard, ListTodo, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
 import { loadBusinessProfile, loadBusinessReminders, type BusinessReminder } from "@/lib/business-profile";
 import { loadActionAudit, type ActionAuditRecord } from "@/lib/action-audit";
 import { loadLang } from "@/lib/persona";
@@ -26,9 +26,9 @@ function DashboardPage() {
   useEffect(() => { refresh(); }, []);
 
   const copy = useMemo(() => urdu ? {
-    back: "واپس", title: "کاروباری ڈیش بورڈ", subtitle: "آپ کے Alpha کام، یاددہانیاں اور محفوظ actions ایک نظر میں۔", profile: "پروفائل", configure: "پروفائل مکمل کریں", reminders: "یاددہانیاں", pending: "باقی", done: "مکمل", actions: "حالیہ actions", today: "آج", dueSoon: "قریب آنے والی", noReminders: "کوئی یاددہانی نہیں", noActions: "ابھی کوئی action record نہیں ہوا", open: "کھولیں", refresh: "تازہ کریں", quick: "فوری کام", whatsapp: "WhatsApp مسودہ", email: "Email مسودہ", briefing: "کاروباری بریفنگ", security: "Approval حفاظت فعال ہے", securityText: "WhatsApp، Email اور desktop actions user approval کے بغیر نہیں چلتے۔", todayActions: "آج کے actions"
+    back: "واپس", title: "کاروباری ڈیش بورڈ", subtitle: "آپ کے Alpha کام، یاددہانیاں اور محفوظ actions ایک نظر میں۔", profile: "پروفائل", configure: "پروفائل مکمل کریں", reminders: "یاددہانیاں", pending: "باقی", done: "مکمل", actions: "حالیہ actions", today: "آج", dueSoon: "قریب آنے والی", noReminders: "کوئی یاددہانی نہیں", noActions: "ابھی کوئی action record نہیں ہوا", open: "کھولیں", refresh: "تازہ کریں", quick: "فوری کام", whatsapp: "WhatsApp مسودہ", email: "Email مسودہ", briefing: "کاروباری بریفنگ", security: "Approval حفاظت فعال ہے", securityText: "WhatsApp، Email اور desktop actions user approval کے بغیر نہیں چلتے۔", todayActions: "آج کے actions", nextStep: "اگلا بہترین قدم", finishProfile: "اپنا business profile مکمل کریں تاکہ Alpha بہتر context استعمال کرے۔", reviewReminder: "اپنی اگلی reminder دیکھیں", allClear: "ابھی کوئی فوری کام نہیں۔"
   } : {
-    back: "Back", title: "Business dashboard", subtitle: "Your Alpha work, reminders, and approved actions in one view.", profile: "Profile", configure: "Complete profile", reminders: "Reminders", pending: "Pending", done: "Done", actions: "Recent actions", today: "Today", dueSoon: "Upcoming", noReminders: "No reminders yet", noActions: "No actions recorded yet", open: "Open", refresh: "Refresh", quick: "Quick actions", whatsapp: "WhatsApp draft", email: "Email draft", briefing: "Business briefing", security: "Approval safety is active", securityText: "WhatsApp, Email, and desktop actions require user approval before they run.", todayActions: "Actions today"
+    back: "Back", title: "Business dashboard", subtitle: "Your Alpha work, reminders, and approved actions in one view.", profile: "Profile", configure: "Complete profile", reminders: "Reminders", pending: "Pending", done: "Done", actions: "Recent actions", today: "Today", dueSoon: "Upcoming", noReminders: "No reminders yet", noActions: "No actions recorded yet", open: "Open", refresh: "Refresh", quick: "Quick actions", whatsapp: "WhatsApp draft", email: "Email draft", briefing: "Business briefing", security: "Approval safety is active", securityText: "WhatsApp, email, and desktop actions require user approval before they run.", todayActions: "Actions today", nextStep: "Next best step", finishProfile: "Complete your business profile so Alpha can use better context.", reviewReminder: "Review your next reminder", allClear: "No urgent work right now."
   }, [urdu]);
 
   const pending = reminders.filter((item) => !item.completed);
@@ -37,6 +37,7 @@ function DashboardPage() {
   const dueSoon = pending.filter((item) => item.dueDate >= today).sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, 5);
   const recent = audits.slice(0, 6);
   const actionsToday = audits.filter((item) => new Date(item.at).toISOString().slice(0, 10) === today).length;
+  const priority = !profileName ? { label: copy.finishProfile, href: "/business-profile" } : dueSoon[0] ? { label: `${copy.reviewReminder}: ${dueSoon[0].title}`, href: "/business-profile" } : { label: copy.allClear, href: "/business-profile" };
   const displayDate = (value: number) => new Intl.DateTimeFormat(urdu ? "ur-PK" : "en-SA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
   return (
@@ -50,6 +51,8 @@ function DashboardPage() {
         <div className="mb-7 flex items-start justify-between gap-4"><div className="flex items-start gap-3"><LayoutDashboard className="mt-1 h-6 w-6 text-cyan-300" /><div><h1 className="text-xl font-semibold sm:text-2xl">{copy.title}</h1><p className="mt-1 text-xs leading-relaxed text-white/55 sm:text-sm">{profileName ? `${profileName} · ` : ""}{copy.subtitle}</p></div></div><button type="button" onClick={refresh} aria-label={copy.refresh} className="min-h-11 min-w-11 rounded-lg border border-white/10 bg-white/5 p-2 text-white/60 hover:bg-white/10 hover:text-white touch-manipulation"><RefreshCw className="h-4 w-4" /></button></div>
 
         {!profileName && <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-amber-300/25 bg-amber-300/[0.07] p-4 text-xs text-amber-100"><span>{urdu ? "بہتر business context کے لیے اپنا پروفائل مکمل کریں۔" : "Complete your profile for better business context in Gemini."}</span><Link to="/business-profile" className="shrink-0 rounded-full border border-amber-200/30 px-3 py-1.5 hover:bg-amber-200/10">{copy.configure}</Link></div>}
+
+        <section className="mb-5 flex items-start gap-3 rounded-xl border border-cyan-300/20 bg-cyan-300/[0.06] p-4"><ListTodo className="mt-0.5 h-5 w-5 shrink-0 text-cyan-200" /><div className="min-w-0 flex-1"><h2 className="text-xs font-semibold text-cyan-100">{copy.nextStep}</h2><p className="mt-1 text-xs leading-relaxed text-white/65">{priority.label}</p></div><Link to={priority.href} className="shrink-0 rounded-full border border-cyan-200/25 px-3 py-2 text-[11px] text-cyan-100 hover:bg-cyan-200/10 touch-manipulation">{copy.open}</Link></section>
 
         <div className="grid gap-3 sm:grid-cols-4">
           <Stat icon={<Bell className="h-5 w-5" />} label={copy.reminders} value={reminders.length} tone="cyan" />
