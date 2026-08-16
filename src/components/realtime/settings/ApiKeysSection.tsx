@@ -253,8 +253,8 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
         </Link>
         <p className="text-[10px] leading-relaxed text-white/50">
           {isUrdu
-            ? "یہ in-app key اس device کی local settings میں رہتی ہے اور صرف server function کو بھیجی جاتی ہے۔ Production team key پھر بھی Vercel secret کے طور پر رکھیں۔"
-            : "This in-app key stays in this device's local settings and is sent only to the server function. Keep the production team key in Vercel secrets."}
+            ? "یہ key صرف موجودہ session میں استعمال ہوتی ہے، localStorage میں محفوظ نہیں کی جاتی، اور صرف server function کو بھیجی جاتی ہے۔ Production team key Vercel secret کے طور پر رکھیں۔"
+            : "This key is used only for the current session, is not saved in localStorage, and is sent only to the server function. Keep the production team key in Vercel secrets."}
         </p>
       </div>
     </section>

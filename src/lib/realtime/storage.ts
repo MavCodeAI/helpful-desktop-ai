@@ -1,4 +1,5 @@
-// Typed, defensive localStorage wrappers for realtime UI settings.
+// Typed, defensive browser storage wrappers for realtime UI settings.
+// API keys are intentionally session-scoped: they must never be persisted in localStorage.
 // Any read failure falls back to DEFAULTS; writes swallow QuotaExceededError.
 
 import type { Pace, ProviderId } from "@/lib/voice-providers";
@@ -35,6 +36,24 @@ function safeSet(key: string, value: string): void {
   try { window.localStorage.setItem(key, value); } catch { /* quota / private mode */ }
 }
 
+function safeSessionGet(key: string): string | null {
+  if (!isBrowser()) return null;
+  try { return window.sessionStorage.getItem(key); } catch { return null; }
+}
+
+function safeSessionSet(key: string, value: string): void {
+  if (!isBrowser()) return;
+  try {
+    if (value) window.sessionStorage.setItem(key, value);
+    else window.sessionStorage.removeItem(key);
+  } catch { /* restricted WebView/private mode */ }
+}
+
+function removeLegacySecret(key: string): void {
+  if (!isBrowser()) return;
+  try { window.localStorage.removeItem(key); } catch { /* storage may be unavailable */ }
+}
+
 function readBool(key: string, fallback: boolean): boolean {
   const v = safeGet(key);
   if (v === "1") return true;
@@ -43,14 +62,18 @@ function readBool(key: string, fallback: boolean): boolean {
 }
 
 export function loadSettings(): VoiceSettings {
+  // Migrate away from the previous insecure localStorage contract.
+  removeLegacySecret(STORAGE_KEYS.geminiKey);
+  removeLegacySecret(STORAGE_KEYS.tavilyKey);
+  removeLegacySecret(STORAGE_KEYS.geminiKeyValidated);
   const rawRate = parseFloat(safeGet(STORAGE_KEYS.rate) || "");
   const rawSens = parseFloat(safeGet(STORAGE_KEYS.sensitivity) || "");
   const lite = safeGet(STORAGE_KEYS.perfLite);
   return {
     provider: (safeGet(STORAGE_KEYS.provider) as ProviderId | null) || null,
-    geminiKey: readBool(STORAGE_KEYS.geminiKeyValidated, false) ? safeGet(STORAGE_KEYS.geminiKey) || "" : "",
-    geminiKeyValidated: readBool(STORAGE_KEYS.geminiKeyValidated, false),
-    tavilyKey: safeGet(STORAGE_KEYS.tavilyKey) || "",
+    geminiKey: safeSessionGet(STORAGE_KEYS.geminiKey) || "",
+    geminiKeyValidated: Boolean(safeSessionGet(STORAGE_KEYS.geminiKeyValidated)),
+    tavilyKey: safeSessionGet(STORAGE_KEYS.tavilyKey) || "",
     hfVoice: safeGet(STORAGE_KEYS.hfVoice) || DEFAULTS.hfVoice,
     geminiVoice: safeGet(STORAGE_KEYS.geminiVoice) || DEFAULTS.geminiVoice,
     pace: (safeGet(STORAGE_KEYS.pace) as Pace | null) || DEFAULTS.pace,
@@ -71,9 +94,9 @@ export function loadSettings(): VoiceSettings {
 
 export const persist = {
   provider: (v: ProviderId) => safeSet(STORAGE_KEYS.provider, v),
-  geminiKey: (v: string) => safeSet(STORAGE_KEYS.geminiKey, v),
-  geminiKeyValidated: (v: boolean) => safeSet(STORAGE_KEYS.geminiKeyValidated, v ? "1" : "0"),
-  tavilyKey: (v: string) => safeSet(STORAGE_KEYS.tavilyKey, v),
+  geminiKey: (v: string) => safeSessionSet(STORAGE_KEYS.geminiKey, v),
+  geminiKeyValidated: (v: boolean) => safeSessionSet(STORAGE_KEYS.geminiKeyValidated, v ? "1" : ""),
+  tavilyKey: (v: string) => safeSessionSet(STORAGE_KEYS.tavilyKey, v),
   hfVoice: (v: string) => safeSet(STORAGE_KEYS.hfVoice, v),
   geminiVoice: (v: string) => safeSet(STORAGE_KEYS.geminiVoice, v),
   pace: (v: Pace) => safeSet(STORAGE_KEYS.pace, v),

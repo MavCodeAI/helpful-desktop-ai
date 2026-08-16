@@ -27,9 +27,9 @@ type Options = {
 
 
 /**
- * All persisted voice/provider settings + their change handlers.
- * Gemini readiness comes from the server; an optional user key can be applied
- * from Settings for a direct connection test and a session-scoped voice flow.
+ * Voice/provider settings + their change handlers.
+ * Non-sensitive preferences are persisted locally; optional user API keys are
+ * session-scoped only and are never written to localStorage.
  */
 export function useVoiceSettings({ onStop, onSessionReset, onLiveRate }: Options) {
   const [provider, setProvider] = useState<ProviderId>("gemini");

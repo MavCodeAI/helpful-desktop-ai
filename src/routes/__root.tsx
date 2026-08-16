@@ -84,6 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Voice-powered AI assistant. Talk to Alpha naturally on any device.",
       },
       { name: "author", content: "Alpha" },
+      { name: "robots", content: "noindex, nofollow, noarchive" },
       { property: "og:title", content: "Alpha — Voice AI Assistant" },
       { property: "og:description", content: "Voice-powered AI assistant." },
       { property: "og:type", content: "website" },

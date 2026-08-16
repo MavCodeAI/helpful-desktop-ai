@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /
+
+# Alpha is an authenticated productivity app. Public marketing content should live
+# on a separate indexable origin or route with its own crawl policy.
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /business-profile
+Disallow: /api-settings
+Disallow: /memories
