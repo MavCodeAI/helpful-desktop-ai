@@ -23,6 +23,7 @@ import { generateNote } from "@/lib/note-ai.functions";
 import { addNoteRaw } from "@/lib/utilities/notes";
 import { matchNoteIntent } from "@/lib/intents";
 import { isAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
+import { businessProfilePrompt, loadBusinessProfile } from "@/lib/business-profile";
 import { trackPilotEvent } from "@/lib/pilot-telemetry";
 import {
   configureCapacitorShell,
@@ -186,7 +187,7 @@ export function useVoiceApp() {
     hfVoice: settings.hfVoice, geminiVoice: settings.geminiVoice,
     pace: settings.pace, rate: settings.rate,
     sensitivity: settings.sensitivity, autoRate: settings.autoRate,
-    systemPrompt: settings.systemPrompt, lang: settings.lang,
+    systemPrompt: `${settings.systemPrompt}\n\n${businessProfilePrompt(loadBusinessProfile())}`, lang: settings.lang,
     onFinalMessage: handleFinalMessage,
     onRateAdapt: settings.setRate,
     onRequestKey: () => {},

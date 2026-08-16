@@ -9,13 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MemoriesRouteImport } from './routes/memories'
-import { Route as ApiSettingsRouteImport } from './routes/api-settings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSettingsRouteImport } from './routes/api-settings'
+import { Route as BusinessProfileRouteImport } from './routes/business-profile'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as MemoriesRouteImport } from './routes/memories'
 
-const MemoriesRoute = MemoriesRouteImport.update({
-  id: '/memories',
-  path: '/memories',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSettingsRoute = ApiSettingsRouteImport.update({
@@ -23,49 +25,74 @@ const ApiSettingsRoute = ApiSettingsRouteImport.update({
   path: '/api-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const BusinessProfileRoute = BusinessProfileRouteImport.update({
+  id: '/business-profile',
+  path: '/business-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemoriesRoute = MemoriesRouteImport.update({
+  id: '/memories',
+  path: '/memories',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api-settings': typeof ApiSettingsRoute
+  '/business-profile': typeof BusinessProfileRoute
+  '/dashboard': typeof DashboardRoute
   '/memories': typeof MemoriesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api-settings': typeof ApiSettingsRoute
+  '/business-profile': typeof BusinessProfileRoute
+  '/dashboard': typeof DashboardRoute
   '/memories': typeof MemoriesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api-settings': typeof ApiSettingsRoute
+  '/business-profile': typeof BusinessProfileRoute
+  '/dashboard': typeof DashboardRoute
   '/memories': typeof MemoriesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api-settings' | '/memories'
+  fullPaths:
+    '/' | '/api-settings' | '/business-profile' | '/dashboard' | '/memories'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api-settings' | '/memories'
-  id: '__root__' | '/' | '/api-settings' | '/memories'
+  to: '/' | '/api-settings' | '/business-profile' | '/dashboard' | '/memories'
+  id:
+    | '__root__'
+    | '/'
+    | '/api-settings'
+    | '/business-profile'
+    | '/dashboard'
+    | '/memories'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiSettingsRoute: typeof ApiSettingsRoute
+  BusinessProfileRoute: typeof BusinessProfileRoute
+  DashboardRoute: typeof DashboardRoute
   MemoriesRoute: typeof MemoriesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/memories': {
-      id: '/memories'
-      path: '/memories'
-      fullPath: '/memories'
-      preLoaderRoute: typeof MemoriesRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api-settings': {
@@ -75,11 +102,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/business-profile': {
+      id: '/business-profile'
+      path: '/business-profile'
+      fullPath: '/business-profile'
+      preLoaderRoute: typeof BusinessProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/memories': {
+      id: '/memories'
+      path: '/memories'
+      fullPath: '/memories'
+      preLoaderRoute: typeof MemoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -88,8 +129,20 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiSettingsRoute: ApiSettingsRoute,
+  BusinessProfileRoute: BusinessProfileRoute,
+  DashboardRoute: DashboardRoute,
   MemoriesRoute: MemoriesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
