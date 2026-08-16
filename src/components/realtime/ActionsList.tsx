@@ -29,15 +29,17 @@ export function ActionsList({
         <div
           role="alertdialog"
           aria-label="Action approval required"
+          aria-describedby="approval-description"
           className="rounded-xl border border-amber-300/35 bg-amber-300/[0.08] px-4 py-3 shadow-lg shadow-amber-900/10"
         >
           <div className="flex items-start gap-3">
             <span className="mt-0.5 text-amber-200" aria-hidden="true">!</span>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-widest text-amber-200">Approval required</p>
-              <p className="mt-1 text-sm text-white/90">
+              <p id="approval-description" className="mt-1 text-sm text-white/90">
                 {pendingIsNative ? "Alpha wants permission for this desktop action:" : "Alpha wants to open this link:"}
               </p>
+              <p className="mt-1 text-[11px] text-white/60">Review the destination before approving. Alpha will not send or submit anything without your confirmation.</p>
               <p className="mt-1 truncate text-xs text-amber-100/80" title={pendingApproval.intent.label}>
                 {pendingApproval.intent.label}
               </p>
@@ -52,14 +54,14 @@ export function ActionsList({
                 <button
                   type="button"
                   onClick={() => void onApprove()}
-                  className="rounded-full border border-emerald-300/35 bg-emerald-300/15 px-3 py-1.5 text-xs font-medium text-emerald-100 hover:bg-emerald-300/25"
+                  className="min-h-11 rounded-full border border-emerald-300/35 bg-emerald-300/15 px-4 py-2 text-xs font-medium text-emerald-100 hover:bg-emerald-300/25 touch-manipulation"
                 >
                   Approve
                 </button>
                 <button
                   type="button"
                   onClick={onReject}
-                  className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 hover:bg-white/10"
+                  className="min-h-11 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/75 hover:bg-white/10 touch-manipulation"
                 >
                   Cancel
                 </button>
@@ -99,7 +101,7 @@ export function ActionsList({
                   href={a.url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="shrink-0 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-[10px] text-cyan-200 hover:bg-cyan-400/20"
+                  className="min-h-10 shrink-0 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-[10px] text-cyan-200 hover:bg-cyan-400/20 touch-manipulation"
                 >
                   Open
                 </a>

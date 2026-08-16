@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { KeyRound, CheckCircle2, AlertCircle, ExternalLink, Loader2, Play, Search, ShieldCheck, XCircle } from "lucide-react";
 import { SectionHeader } from "./SectionHeader";
@@ -53,17 +53,17 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
     setTavilyDraft(tavilyKey);
   }, [tavilyKey]);
 
-  const refreshHealth = (key = geminiKey) => {
+  const refreshHealth = useCallback((key = geminiKey) => {
     setLoading(true);
     getAiHealth({ data: { userKey: key.trim() || undefined } })
       .then((result) => setHealth(result))
       .catch(() => setHealth(null))
       .finally(() => setLoading(false));
-  };
+  }, [geminiKey]);
 
   useEffect(() => {
     refreshHealth(geminiKey);
-  }, [geminiKey]);
+  }, [geminiKey, refreshHealth]);
 
   const applyAndTest = async () => {
     const userKey = draftKey.trim();
@@ -146,7 +146,7 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
         <div className="flex items-center gap-2">
           <KeyRound className="w-3.5 h-3.5 text-cyan-300/80 shrink-0" />
-          <span className="text-xs text-white/85 font-medium">{isUrdu ? "Provider setup اور test" : "Provider setup & test"}</span>
+          <span className="text-xs text-white/85 font-medium">Provider setup & test</span>
           {loading ? (
             <Loader2 className="ms-auto w-3 h-3 animate-spin text-white/60" />
           ) : (
@@ -156,17 +156,18 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
             </span>
           )}
         </div>
+        <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] text-white/55" aria-label="API setup steps">
+          <span className="rounded-md border border-cyan-300/25 bg-cyan-300/10 px-2 py-1.5 text-cyan-100">1. Paste key</span>
+          <span className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1.5">2. Test</span>
+          <span className="rounded-md border border-white/10 bg-white/[0.03] px-2 py-1.5">3. Ready</span>
+        </div>
 
         <div className="rounded-lg border border-cyan-300/15 bg-cyan-300/[0.04] p-3 space-y-2.5">
           <div className="flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 mt-0.5 text-cyan-200 shrink-0" />
             <div>
               <p className="text-xs font-medium text-white/90">{isUrdu ? "Gemini Live کو یہاں سے configure کریں" : "Configure Gemini Live here"}</p>
-              <p className="text-[10px] leading-relaxed text-white/55 mt-1">
-                {isUrdu
-                  ? "Key یہاں paste کریں، Apply & Test دبائیں، اور app خود models اور اصل voice session دونوں check کرے گی۔"
-                  : "Paste a key, press Apply & Test, and Alpha will check both the models and a real voice session."}
-              </p>
+              <p className="text-[10px] leading-relaxed text-white/55 mt-1">Paste a key, press Apply &amp; Test, and Alpha will check both the models and a real voice session. If a server key is already configured, you can leave this field empty.</p>
             </div>
           </div>
           <input
@@ -184,7 +185,7 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
               type="button"
               onClick={applyAndTest}
               disabled={testState === "testing"}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-cyan-300/15 hover:bg-cyan-300/25 disabled:opacity-50 border border-cyan-200/25 px-3 py-2 text-xs text-cyan-100"
+              className="min-h-11 flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-cyan-300/15 hover:bg-cyan-300/25 disabled:opacity-50 border border-cyan-200/25 px-3 py-2 text-xs text-cyan-100 touch-manipulation"
             >
               {testState === "testing" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
               {testState === "testing" ? (isUrdu ? "Test ہو رہا ہے…" : "Testing…") : (isUrdu ? "Apply & Test" : "Apply & Test")}
@@ -192,7 +193,7 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
             <button
               type="button"
               onClick={clearLocalKey}
-              className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs text-white/70"
+              className="min-h-11 inline-flex items-center justify-center gap-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs text-white/70 touch-manipulation"
             >
               <XCircle className="w-3.5 h-3.5" />
               {isUrdu ? "Clear" : "Clear"}
@@ -219,16 +220,16 @@ export function ApiKeysSection({ geminiKey, onApplyGeminiKey, tavilyKey, onApply
             <Search className="w-4 h-4 mt-0.5 text-amber-200 shrink-0" />
             <div>
               <p className="text-xs font-medium text-white/90">{isUrdu ? "Tavily — Primary Web Search" : "Tavily — Primary Web Search"}</p>
-              <p className="text-[10px] leading-relaxed text-white/55 mt-1">{isUrdu ? "Tavily تازہ ویب نتائج لائے گا، پھر Gemini خلاصہ بنائے گا۔" : "Tavily retrieves live results; Gemini writes the final summary."}</p>
+              <p className="text-[10px] leading-relaxed text-white/55 mt-1">Tavily retrieves live results; Gemini writes the final summary. This search provider is optional.</p>
             </div>
           </div>
           <input type="password" value={tavilyDraft} onChange={(event) => { setTavilyDraft(event.target.value); setTavilyState("idle"); setTavilyMessage(null); }} placeholder="tvly-… Tavily API key" autoComplete="off" spellCheck={false} className="w-full rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-xs text-white outline-none placeholder:text-white/30 focus:border-amber-300/50" aria-label="Tavily API key" />
           <div className="flex gap-2">
-            <button type="button" onClick={testTavily} disabled={tavilyState === "testing"} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-300/15 hover:bg-amber-300/25 disabled:opacity-50 border border-amber-200/25 px-3 py-2 text-xs text-amber-100">
+            <button type="button" onClick={testTavily} disabled={tavilyState === "testing"} className="min-h-11 flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-300/15 hover:bg-amber-300/25 disabled:opacity-50 border border-amber-200/25 px-3 py-2 text-xs text-amber-100">
               {tavilyState === "testing" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
               {tavilyState === "testing" ? (isUrdu ? "Test ہو رہا ہے…" : "Testing…") : "Apply & Test"}
             </button>
-            <button type="button" onClick={clearTavilyKey} className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs text-white/70"><XCircle className="w-3.5 h-3.5" />{isUrdu ? "Clear" : "Clear"}</button>
+            <button type="button" onClick={clearTavilyKey} className="min-h-11 inline-flex items-center justify-center gap-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-xs text-white/70"><XCircle className="w-3.5 h-3.5" />{isUrdu ? "Clear" : "Clear"}</button>
           </div>
           {tavilyMessage && <div className={`rounded-lg border p-2.5 text-[10px] leading-relaxed ${tavilyState === "success" ? "border-emerald-300/25 bg-emerald-300/10 text-emerald-100" : "border-rose-300/25 bg-rose-300/10 text-rose-100"}`} role="status" aria-live="polite">{tavilyMessage}</div>}
         </div>

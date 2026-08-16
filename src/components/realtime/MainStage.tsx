@@ -10,6 +10,7 @@ import { ChatComposer } from "@/components/realtime/ChatComposer";
 import { JARVISHud } from "@/components/realtime/JARVISHud";
 import { QuickSkills } from "@/components/realtime/QuickSkills";
 import { FirstRunOnboarding } from "@/components/realtime/FirstRunOnboarding";
+import { VoiceStateLabel } from "@/components/realtime/VoiceStateLabel";
 import type { useVoiceSettings } from "@/hooks/use-voice-settings";
 import type { useRealtimeSession } from "@/hooks/use-realtime-session";
 import type { useThreadHistory } from "@/hooks/use-thread-history";
@@ -88,6 +89,9 @@ export function MainStage({
         onStop={stop}
       />
       <QuickSkills lang={settings.lang} onRun={onSendText} />
+      <div className="relative z-10 px-4 pt-1 sm:px-6">
+        <VoiceStateLabel status={status} active={active} disabled={disabled} />
+      </div>
 
       <div className={`relative z-10 flex-1 grid grid-cols-1 items-center gap-6 px-4 sm:px-6 pb-6 ${showInlineComposer || messages.length > 0 ? "lg:grid-cols-12" : ""}`}>
         <RingOrb

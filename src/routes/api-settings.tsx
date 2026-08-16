@@ -141,6 +141,15 @@ function ApiSettingsPage() {
       </header>
 
       <main className="mx-auto max-w-xl space-y-6 px-4 py-6">
+        <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4" aria-labelledby="setup-guide-title">
+          <h2 id="setup-guide-title" className="text-sm font-semibold">Connect Alpha in 3 steps</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Paste your key, save it locally, then test the connection. A server-configured key can be tested without entering one here.</p>
+          <div className="mt-3 grid grid-cols-3 gap-1.5 text-center text-[10px]" aria-label="API setup steps">
+            <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-2 text-cyan-100">1. Paste key</span>
+            <span className="rounded-md border border-border bg-background/40 px-2 py-2 text-muted-foreground">2. Detect</span>
+            <span className="rounded-md border border-border bg-background/40 px-2 py-2 text-muted-foreground">3. Test</span>
+          </div>
+        </section>
         <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
           <label htmlFor="provider" className="mb-2 block text-sm font-medium">
             {isUrdu ? "پرووائیڈر" : "Provider"}
@@ -183,7 +192,7 @@ function ApiSettingsPage() {
                 placeholder="AIza…"
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 pe-10 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                className="w-full min-h-11 rounded-lg border border-border bg-background/60 px-3 py-2 pe-10 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
               />
               <button
                 type="button"
@@ -233,7 +242,7 @@ function ApiSettingsPage() {
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder={isUrdu ? "ماڈلز فلٹر کریں…" : "Filter models…"}
-                className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
+                className="w-full min-h-11 rounded-lg border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
               />
               <div className="text-[11px] text-muted-foreground">
                 {selectedModels.length}/6 selected · {filteredModels?.length ?? 0}/{models.length} shown
