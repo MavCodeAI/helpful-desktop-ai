@@ -20,7 +20,7 @@ export function FirstRunOnboarding({ lang, onOpenSettings, onRun }: Props) {
 
   if (!visible) return null;
 
-  const urdu = lang === "ur";
+  const urdu = false;
   const finish = () => {
     localStorage.setItem(STORAGE_KEY, "1");
     setVisible(false);
@@ -60,7 +60,7 @@ export function FirstRunOnboarding({ lang, onOpenSettings, onRun }: Props) {
           {step === 1 ? (
             <button onClick={() => { setVisible(false); onOpenSettings(); setStep(2); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 text-sm font-semibold text-slate-950 hover:bg-cyan-200 touch-manipulation"><KeyRound className="h-4 w-4" />{urdu ? "Settings کھولیں" : "Open Settings"}</button>
           ) : step === 2 ? (
-            <button onClick={() => { void onRun(urdu ? "آج کے اہم کاروباری کام بتاؤ" : "Give me today's top business priorities"); finish(); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 text-sm font-semibold text-slate-950 hover:bg-cyan-200 touch-manipulation"><Check className="h-4 w-4" />{urdu ? "پہلا کام چلائیں" : "Run first task"}</button>
+            <button onClick={() => { void onRun(lang === "ur" ? "آج کے اہم کاروباری کام بتاؤ" : "Give me today's top business priorities"); finish(); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 text-sm font-semibold text-slate-950 hover:bg-cyan-200 touch-manipulation"><Check className="h-4 w-4" />{urdu ? "پہلا کام چلائیں" : "Run first task"}</button>
           ) : (
             <button onClick={() => setStep(1)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 text-sm font-semibold text-slate-950 hover:bg-cyan-200 touch-manipulation"><ArrowRight className="h-4 w-4" />{urdu ? "شروع کریں" : "Get started"}</button>
           )}

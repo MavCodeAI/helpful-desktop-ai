@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Bell, Building2, CheckCircle2, Clock3, ExternalLink, FileText, LayoutDashboard, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
 import { loadBusinessProfile, loadBusinessReminders, type BusinessReminder } from "@/lib/business-profile";
 import { loadActionAudit, type ActionAuditRecord } from "@/lib/action-audit";
-import { loadLang, type LangCode } from "@/lib/persona";
+import { loadLang } from "@/lib/persona";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -11,11 +11,11 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardPage() {
-  const [lang, setLang] = useState<LangCode>("ur");
+  const [, setLang] = useState("ur");
   const [profileName, setProfileName] = useState("");
   const [reminders, setReminders] = useState<BusinessReminder[]>([]);
   const [audits, setAudits] = useState<ActionAuditRecord[]>([]);
-  const urdu = lang === "ur";
+  const urdu = false;
 
   const refresh = () => {
     setLang(loadLang());

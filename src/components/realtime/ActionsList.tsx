@@ -54,14 +54,14 @@ export function ActionsList({
                   onClick={() => void onApprove()}
                   className="rounded-full border border-emerald-300/35 bg-emerald-300/15 px-3 py-1.5 text-xs font-medium text-emerald-100 hover:bg-emerald-300/25"
                 >
-                  Approve / منظور
+                  Approve
                 </button>
                 <button
                   type="button"
                   onClick={onReject}
                   className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/75 hover:bg-white/10"
                 >
-                  Cancel / منسوخ
+                  Cancel
                 </button>
               </div>
             </div>
@@ -72,7 +72,7 @@ export function ActionsList({
       {actions.length > 0 && (
         <>
           <div className="flex items-center justify-between px-1 text-[10px] uppercase tracking-widest text-white/60">
-            <span>Actions / اعمال</span>
+            <span>Actions</span>
             <label className="flex cursor-pointer items-center gap-1.5 normal-case tracking-normal">
               <input
                 type="checkbox"

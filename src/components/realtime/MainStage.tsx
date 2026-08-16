@@ -100,7 +100,7 @@ export function MainStage({
         {!showInlineComposer && messages.length === 0 && (
           <div className="relative z-10 mx-auto w-full max-w-2xl animate-fade-in lg:col-span-12">
             <div className="mb-2 text-center text-[11px] uppercase tracking-[0.18em] text-white/35">
-              {settings.lang === "ur" ? "آواز یا text سے Alpha کو کام بتائیں" : "Tell Alpha what to do by voice or text"}
+              Tell Alpha what to do by voice or text
             </div>
             <ChatComposer
               lang={settings.lang}
@@ -108,7 +108,7 @@ export function MainStage({
               busy={textBusy}
               onNote={onCreateNote}
               notePending={notePending}
-              placeholder={settings.lang === "ur" ? "مثلاً: آج کے اہم کام بتاؤ…" : "Try: prepare today's business briefing…"}
+              placeholder="Try: prepare today's business briefing…"
             />
           </div>
         )}

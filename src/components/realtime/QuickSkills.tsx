@@ -164,17 +164,32 @@ function skillsFor(lang: LangCode): Skill[] {
 
 const PRIMARY_SKILL_IDS = new Set(["saudi-sme", "whatsapp", "quote", "meeting", "complaint", "focus"]);
 
+const ENGLISH_SKILL_COPY: Record<string, { label: string; description: string }> = {
+  "saudi-sme": { label: "Saudi SME briefing", description: "Business news, updates and actions" },
+  whatsapp: { label: "WhatsApp business draft", description: "Customer or supplier message" },
+  quote: { label: "Quote or invoice draft", description: "Professional pricing document" },
+  meeting: { label: "Meeting summary", description: "Decisions and action items" },
+  complaint: { label: "Complaint reply", description: "Empathetic professional draft" },
+  sales: { label: "Sales follow-up", description: "Priorities and message drafts" },
+  expense: { label: "Expense categorizer", description: "Organize business spending" },
+  compliance: { label: "Compliance reminders", description: "ZATCA and business deadlines" },
+  translate: { label: "Business translation", description: "Understand Arabic, draft a reply" },
+  document: { label: "Document review", description: "Key terms, risks and actions" },
+  focus: { label: "Today's priorities", description: "Prioritize business work" },
+  "command-center": { label: "Daily command center", description: "One business briefing for today" },
+};
+
 export function QuickSkills({ lang, onRun }: Props) {
   const [showMore, setShowMore] = useState(false);
   const skills = skillsFor(lang);
   const visibleSkills = showMore ? skills : skills.filter((skill) => PRIMARY_SKILL_IDS.has(skill.id));
-  const moreLabel = lang === "ur" ? "مزید کام" : "More actions";
+  const moreLabel = "More actions";
 
   return (
-    <section className="relative z-10 mx-auto mt-2.5 w-[min(94vw,560px)]" aria-label={lang === "ur" ? "فوری کام" : "Quick skills"}>
+    <section className="relative z-10 mx-auto mt-2.5 w-[min(94vw,560px)]" aria-label="Quick skills">
       <div className="mb-1.5 flex items-center justify-between px-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">{lang === "ur" ? "فوری کام" : "Quick skills"}</span>
-        <span className="text-[10px] text-white/30">{lang === "ur" ? "منظوری کے ساتھ" : "Approval required"}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">Quick skills</span>
+        <span className="text-[10px] text-white/30">Approval required</span>
       </div>
       <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
         {visibleSkills.map((skill) => (
@@ -184,8 +199,8 @@ export function QuickSkills({ lang, onRun }: Props) {
             onClick={() => void onRun(skill.prompt)}
             className="group min-h-11 rounded-lg border border-white/10 bg-white/[0.035] px-2.5 py-2 text-left transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.07] focus:outline-none focus:ring-2 focus:ring-cyan-300/40 sm:rounded-xl sm:px-3 sm:py-2.5"
           >
-            <span className="block truncate text-[11px] font-medium text-white/80 group-hover:text-cyan-100 sm:text-xs">{skill.label}</span>
-            <span className="mt-0.5 hidden text-[10px] leading-snug text-white/40 sm:block">{skill.description}</span>
+            <span className="block truncate text-[11px] font-medium text-white/80 group-hover:text-cyan-100 sm:text-xs">{ENGLISH_SKILL_COPY[skill.id]?.label ?? skill.label}</span>
+            <span className="mt-0.5 hidden text-[10px] leading-snug text-white/40 sm:block">{ENGLISH_SKILL_COPY[skill.id]?.description ?? skill.description}</span>
           </button>
         ))}
       </div>
@@ -195,7 +210,7 @@ export function QuickSkills({ lang, onRun }: Props) {
         aria-expanded={showMore}
         className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-[11px] text-white/55 transition hover:border-cyan-300/30 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-300/40 touch-manipulation"
       >
-        {showMore ? (lang === "ur" ? "کم دکھائیں" : "Show less") : `${moreLabel} +${skills.length - PRIMARY_SKILL_IDS.size}`}
+        {showMore ? "Show less" : `${moreLabel} +${skills.length - PRIMARY_SKILL_IDS.size}`}
       </button>
     </section>
   );

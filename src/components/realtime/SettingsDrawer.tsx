@@ -114,7 +114,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
       className="fixed inset-0 z-40 flex justify-end"
       role="dialog"
       aria-modal="true"
-      aria-label={lang === "ur" ? "وائس ترتیبات" : "Voice settings"}
+      aria-label="Voice settings"
     >
       <button
         aria-label="Close settings"
@@ -138,7 +138,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
           <button
             onClick={onClose}
             className="shrink-0 min-h-11 min-w-11 inline-flex items-center justify-center rounded-full hover:bg-white/5 text-white/60 hover:text-white touch-manipulation"
-            aria-label={lang === "ur" ? "بند کریں" : "Close"}
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>

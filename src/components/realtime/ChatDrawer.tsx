@@ -34,7 +34,7 @@ export function ChatDrawer({
   const drawerRef = useRef<HTMLElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const isUrdu = lang === "ur";
+  const isUrdu = false;
 
   useSwipeClose(drawerRef, "right", onClose, open);
   useFocusTrap(drawerRef, open);
