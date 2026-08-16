@@ -5,7 +5,7 @@ import { captureNativeScreenshot, getActiveWindowTitle, getRegisteredHotkey, isE
 import { addNoteRaw } from "@/lib/utilities/notes";
 import { addMemory } from "@/lib/persona";
 import { describeScreen, askAI } from "@/lib/ai-vision.functions";
-import { appendActionAudit, updateActionAudit } from "@/lib/action-audit";
+import { appendActionAudit, updateActionAudit, type ActionAuditStatus } from "@/lib/action-audit";
 
 export type ActionEntry = Intent & { at: number; opened: boolean };
 export type PendingApproval = { id: string; intent: Intent; at: number };
@@ -87,14 +87,15 @@ export function useIntentActions(opts: Options = {}) {
   useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
   useEffect(() => { onNewsRef.current = onNews; }, [onNews]);
 
-  const pushAction = useCallback((intent: Intent, opened: boolean, auditId?: string) => {
+  const pushAction = useCallback((intent: Intent, opened: boolean, auditId?: string, status?: ActionAuditStatus) => {
     const at = Date.now();
+    const finalStatus = status ?? (opened ? "completed" : "failed");
     setActions((prev) => [{ ...intent, at, opened }, ...prev].slice(0, 5));
-    if (auditId) updateActionAudit(auditId, opened ? "completed" : "failed");
+    if (auditId) updateActionAudit(auditId, finalStatus);
     else appendActionAudit({
       id: `${at}-${Math.random().toString(36).slice(2, 8)}`,
       at,
-      status: opened ? "completed" : "failed",
+      status: finalStatus,
       kind: intent.kind,
       label: intent.label,
       url: intent.url,
@@ -109,7 +110,7 @@ export function useIntentActions(opts: Options = {}) {
         action: { label: "Open", onClick: () => window.open(intent.url, "_blank", "noopener,noreferrer") },
       });
     }
-    pushAction(intent, ok);
+    pushAction(intent, ok, undefined, ok ? "opened" : "failed");
   }, [pushAction]);
 
   const runInApp = useCallback(async (intent: Intent) => {
@@ -371,15 +372,15 @@ export function useIntentActions(opts: Options = {}) {
     updateActionAudit(pending.id, "approved");
     if (pending.intent.action) {
       await runInApp(pending.intent);
+      updateActionAudit(pending.id, "completed");
     } else {
       await openUrl(pending.intent);
     }
-    updateActionAudit(pending.id, "completed");
   }, [openUrl, runInApp, pendingApproval]);
 
   const rejectPending = useCallback(() => {
     if (!pendingApproval) return;
-    updateActionAudit(pendingApproval.id, "rejected");
+    updateActionAudit(pendingApproval.id, "cancelled");
     setPendingApproval(null);
     toast("Action cancelled", { description: pendingApproval.intent.label });
   }, [pendingApproval]);

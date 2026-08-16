@@ -24,8 +24,8 @@ export function ChatComposer({ onSend, onNote, notePending, busy, placeholder = 
   const submit = async () => {
     const t = value.trim();
     if (!t || busy) return;
-    setValue("");
     await onSend(t);
+    setValue("");
     requestAnimationFrame(() => taRef.current?.focus());
   };
 

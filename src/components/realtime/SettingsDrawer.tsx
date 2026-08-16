@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { X } from "lucide-react";
+import { useState } from "react";
 import { useFocusTrap, useSwipeClose } from "@/hooks/use-drawer-a11y";
 import type { LiteMode } from "@/lib/realtime/constants";
 import type { ProviderId, Pace } from "@/lib/voice-providers";
@@ -88,6 +89,7 @@ export interface SettingsDrawerProps {
 
 export function SettingsDrawer(props: SettingsDrawerProps) {
   const drawerRef = useRef<HTMLElement | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   useSwipeClose(drawerRef, "right", props.onClose, props.open);
   useFocusTrap(drawerRef, props.open);
   if (!props.open) return null;
@@ -132,7 +134,7 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
               Voice Settings
             </h2>
             <div className="text-[10px] uppercase tracking-widest text-white/60 mt-0.5 truncate">
-              {currentVoice}
+              {geminiKeyReady ? "Ready · " : "Setup needed · "}{currentVoice}
             </div>
           </div>
           <button
@@ -168,30 +170,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             stopMicTest={stopMicTest}
             level={level}
           />
-          <PerformanceSection
-            autoRate={autoRate}
-            toggleAutoRate={toggleAutoRate}
-            liteMode={liteMode}
-            liteActive={liteActive}
-            changeLiteMode={changeLiteMode}
-            sttLatency={sttLatency}
-            ttsLatency={ttsLatency}
-            latency={latency}
-          />
-          <TriggersSection
-            wakeClap={wakeClap}
-            wakeWord={wakeWord}
-            wakeHotkey={wakeHotkey}
-            toggleClap={toggleWakeClap}
-            toggleWord={toggleWakeWord}
-            toggleHotkey={toggleWakeHotkey}
-          />
-          <PersonaSection
-            persona={persona}
-            customPrompt={customPrompt}
-            changePersona={changePersona}
-            changeCustomPrompt={changeCustomPrompt}
-          />
           <LanguageSection lang={lang} changeLang={changeLang} />
           <RegionSection
             country={country}
@@ -199,24 +177,53 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             changeCountry={changeCountry}
             changeTimezoneMode={changeTimezoneMode}
           />
-          <MemorySection
-            memories={memories}
-            addMemory={addMemory}
-            removeMemory={removeMemory}
-            clearMemories={clearMemories}
-            onCloseDrawer={onClose}
-          />
-          <BriefingSection
-            enabled={briefingEnabled}
-            time={briefingTime}
-            onToggle={toggleBriefing}
-            onChangeTime={changeBriefingTime}
-          />
-          <PrivacySection />
-          <ThemeSection />
           <ApiKeysSection geminiKey={geminiKey} onApplyGeminiKey={applyGeminiKey} tavilyKey={tavilyKey} onApplyTavilyKey={applyTavilyKey} />
-          <DangerSection clearMemories={clearMemories} />
-          <ComingSoonSection />
+          <button type="button" onClick={() => setAdvancedOpen((value) => !value)} className="mx-1 min-h-11 rounded-xl border border-white/10 bg-white/[0.03] px-4 text-left text-xs font-medium text-white/70 hover:bg-white/[0.06] hover:text-white touch-manipulation">
+            {advancedOpen ? "Hide advanced settings" : "Show advanced settings"}
+          </button>
+          {advancedOpen && <>
+            <PerformanceSection
+              autoRate={autoRate}
+              toggleAutoRate={toggleAutoRate}
+              liteMode={liteMode}
+              liteActive={liteActive}
+              changeLiteMode={changeLiteMode}
+              sttLatency={sttLatency}
+              ttsLatency={ttsLatency}
+              latency={latency}
+            />
+            <TriggersSection
+              wakeClap={wakeClap}
+              wakeWord={wakeWord}
+              wakeHotkey={wakeHotkey}
+              toggleClap={toggleWakeClap}
+              toggleWord={toggleWakeWord}
+              toggleHotkey={toggleWakeHotkey}
+            />
+            <PersonaSection
+              persona={persona}
+              customPrompt={customPrompt}
+              changePersona={changePersona}
+              changeCustomPrompt={changeCustomPrompt}
+            />
+            <MemorySection
+              memories={memories}
+              addMemory={addMemory}
+              removeMemory={removeMemory}
+              clearMemories={clearMemories}
+              onCloseDrawer={onClose}
+            />
+            <BriefingSection
+              enabled={briefingEnabled}
+              time={briefingTime}
+              onToggle={toggleBriefing}
+              onChangeTime={changeBriefingTime}
+            />
+            <PrivacySection />
+            <ThemeSection />
+            <DangerSection clearMemories={clearMemories} />
+            <ComingSoonSection />
+          </>}
         </div>
       </aside>
     </div>

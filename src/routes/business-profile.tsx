@@ -40,6 +40,8 @@ function BusinessProfilePage() {
   const [reminders, setReminders] = useState<BusinessReminder[]>([]);
   const [newReminder, setNewReminder] = useState({ title: "", dueDate: "", category: "other" as BusinessReminder["category"], repeat: "none" as ReminderRepeat, notes: "" });
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileAttempted, setProfileAttempted] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     setLang(loadLang());
@@ -124,12 +126,15 @@ function BusinessProfilePage() {
 
   const update = <K extends keyof BusinessProfile>(key: K, value: BusinessProfile[K]) => {
     setProfileSaved(false);
+    setIsDirty(true);
     setProfile((current) => ({ ...current, [key]: value }));
   };
   const save = () => {
+    setProfileAttempted(true);
     if (!profile.businessName.trim()) return;
     saveBusinessProfile({ ...profile, businessName: profile.businessName.trim() });
     setProfileSaved(true);
+    setIsDirty(false);
   };
   const addReminder = () => {
     if (!newReminder.title.trim() || !newReminder.dueDate) return;
@@ -144,7 +149,7 @@ function BusinessProfilePage() {
     <main className="min-h-dvh bg-[radial-gradient(ellipse_at_top,oklch(0.18_0.05_260),oklch(0.09_0.02_240)_60%)] text-white/90">
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
         <header className="mb-6 flex items-center justify-between gap-3">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-white/70 transition hover:text-white"><ArrowLeft className="h-4 w-4" />{copy.back}</Link>
+          <Link to="/" onClick={(event) => { if (isDirty && !window.confirm("You have unsaved changes. Leave without saving?")) event.preventDefault(); }} className="inline-flex min-h-11 items-center gap-1.5 text-xs text-white/70 transition hover:text-white touch-manipulation"><ArrowLeft className="h-4 w-4" />{copy.back}</Link>
           <div className="flex items-center gap-2"><Link to="/dashboard" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-white/70 hover:bg-white/10">{urdu ? "ڈیش بورڈ" : "Dashboard"}</Link><span className="text-[10px] uppercase tracking-[0.2em] text-cyan-300/70">SAR · Saudi SME</span></div>
         </header>
 
@@ -153,7 +158,7 @@ function BusinessProfilePage() {
         <section className="glass-card mb-5 rounded-xl p-4 sm:p-5">
           <h2 className="mb-4 text-sm font-semibold text-white/85">{copy.profile}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="text-xs text-white/55">{copy.name}<span className="ml-1 text-cyan-200">*</span><input value={profile.businessName} onChange={(e) => update("businessName", e.target.value)} aria-required="true" className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/50" />{!profile.businessName.trim() ? <span className="mt-1 block text-[11px] text-amber-200/80">{copy.requiredName}</span> : null}</label>
+            <label className="text-xs text-white/55">{copy.name}<span className="ml-1 text-cyan-200">*</span><input value={profile.businessName} onChange={(e) => update("businessName", e.target.value)} aria-required="true" className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/50" />{profileAttempted && !profile.businessName.trim() ? <span className="mt-1 block text-[11px] text-amber-200/80" role="alert">{copy.requiredName}</span> : null}</label>
             <label className="text-xs text-white/55">{copy.industry}<input value={profile.industry} onChange={(e) => update("industry", e.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/50" /></label>
             <label className="text-xs text-white/55">{copy.city}<input value={profile.city} onChange={(e) => update("city", e.target.value)} placeholder={urdu ? "ریاض" : "Riyadh"} className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/50" /></label>
             <label className="text-xs text-white/55">{copy.hours}<input value={profile.workingHours} onChange={(e) => update("workingHours", e.target.value)} placeholder={urdu ? "صبح 9 تا شام 6" : "9 AM to 6 PM"} className="mt-1.5 min-h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/50" /></label>
@@ -162,14 +167,14 @@ function BusinessProfilePage() {
             <label className="text-xs text-white/55">{copy.tone}<select value={profile.tone} onChange={(e) => update("tone", e.target.value as BusinessProfile["tone"])} className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"><option value="formal">{copy.formal}</option><option value="friendly">{copy.friendly}</option><option value="direct">{copy.direct}</option></select></label>
             <label className="flex items-center gap-2 self-end rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/70"><input type="checkbox" checked={profile.vatRegistered} onChange={(e) => update("vatRegistered", e.target.checked)} className="accent-cyan-300" />{copy.vat}</label>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3"><button type="button" onClick={save} disabled={!profile.businessName.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-4 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/25 disabled:cursor-not-allowed disabled:opacity-40"><Check className="h-4 w-4" />{copy.save}</button>{profileSaved ? <span role="status" className="text-xs text-emerald-200">{copy.saved}</span> : null}</div>
+          <div className="mt-4 flex flex-wrap items-center gap-3"><button type="button" onClick={save} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/35 bg-cyan-300/15 px-4 text-xs font-medium text-cyan-100 transition hover:bg-cyan-300/25 touch-manipulation"><Check className="h-4 w-4" />{copy.save}</button>{profileSaved ? <span role="status" className="text-xs text-emerald-200">{copy.saved}</span> : isDirty ? <span className="text-xs text-amber-200/80">Unsaved changes</span> : null}</div>
         </section>
 
         <section className="glass-card rounded-xl p-4 sm:p-5">
           <div className="mb-4 flex items-center gap-2"><Bell className="h-5 w-5 text-violet-300" /><h2 className="text-sm font-semibold text-white/85">{copy.reminders}</h2></div>
           <div className="grid gap-2 sm:grid-cols-4">
             <input value={newReminder.title} onChange={(e) => setNewReminder((v) => ({ ...v, title: e.target.value }))} placeholder={copy.reminderTitle} className="min-h-11 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300/50" />
-            <input type="date" value={newReminder.dueDate} onChange={(e) => setNewReminder((v) => ({ ...v, dueDate: e.target.value }))} aria-label={copy.due} className="min-h-11 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300/50" />
+            <input type="date" min={new Date().toISOString().slice(0, 10)} value={newReminder.dueDate} onChange={(e) => setNewReminder((v) => ({ ...v, dueDate: e.target.value }))} aria-label={copy.due} className="min-h-11 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300/50" />
             <select value={newReminder.category} onChange={(e) => setNewReminder((v) => ({ ...v, category: e.target.value as BusinessReminder["category"] }))} aria-label={copy.category} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"><option value="tax">{copy.tax}</option><option value="license">{copy.license}</option><option value="payment">{copy.payment}</option><option value="meeting">{copy.meeting}</option><option value="other">{copy.other}</option></select>
             <select value={newReminder.repeat} onChange={(e) => setNewReminder((v) => ({ ...v, repeat: e.target.value as ReminderRepeat }))} aria-label={copy.repeat} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"><option value="none">{copy.none}</option><option value="daily">{copy.daily}</option><option value="weekly">{copy.weekly}</option><option value="monthly">{copy.monthly}</option></select>
           </div>
@@ -178,9 +183,9 @@ function BusinessProfilePage() {
 
           <div className="mt-4 space-y-2">
             {reminders.length === 0 ? <p className="py-5 text-center text-xs text-white/40">{copy.empty}</p> : reminders.map((item) => <div key={item.id} className={`flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 ${item.completed ? "opacity-55" : ""}`}>
-              <button type="button" onClick={() => { toggleBusinessReminder(item.id); setReminders(loadBusinessReminders()); }} aria-label={item.completed ? copy.pending : copy.completed} className={`mt-0.5 h-4 w-4 shrink-0 rounded border ${item.completed ? "border-emerald-300 bg-emerald-300/70" : "border-white/25"}`}>{item.completed ? <Check className="h-3 w-3 text-slate-900" /> : null}</button>
+              <button type="button" onClick={() => { toggleBusinessReminder(item.id); setReminders(loadBusinessReminders()); }} aria-label={item.completed ? copy.pending : copy.completed} className={`mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-lg border ${item.completed ? "border-emerald-300 bg-emerald-300/70" : "border-white/10 bg-white/[0.03]"}`}>{item.completed ? <Check className="h-3 w-3 text-slate-900" /> : null}</button>
               <div className="min-w-0 flex-1"><div className={`text-xs font-medium ${item.completed ? "line-through" : ""}`}>{item.title}</div><div className="mt-1 text-[10px] text-white/45">{item.dueDate} · {categoryLabel(item.category)}{item.repeat !== "none" ? ` · ${copy[item.repeat]}` : ""}{item.notes ? ` · ${item.notes}` : ""}</div></div>
-              <button type="button" onClick={() => { removeBusinessReminder(item.id); setReminders(loadBusinessReminders()); }} aria-label={urdu ? "حذف کریں" : "Delete"} className="min-h-11 min-w-11 rounded-lg text-white/40 transition hover:text-red-200 touch-manipulation"><Trash2 className="h-4 w-4" /></button>
+              <button type="button" onClick={() => { if (window.confirm(`Delete reminder “${item.title}”?`)) { removeBusinessReminder(item.id); setReminders(loadBusinessReminders()); } }} aria-label={urdu ? "حذف کریں" : `Delete ${item.title}`} className="min-h-11 min-w-11 rounded-lg text-white/40 transition hover:text-red-200 touch-manipulation"><Trash2 className="h-4 w-4" /></button>
             </div>)}
           </div>
         </section>

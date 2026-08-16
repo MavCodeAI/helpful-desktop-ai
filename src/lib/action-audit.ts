@@ -1,4 +1,4 @@
-export type ActionAuditStatus = "pending" | "approved" | "rejected" | "completed" | "failed";
+export type ActionAuditStatus = "pending" | "approved" | "opened" | "draft-ready" | "sent" | "completed" | "rejected" | "cancelled" | "failed";
 
 export type ActionAuditRecord = {
   id: string;

@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { AuroraField } from "@/components/realtime/AuroraField";
 import { HeaderPill } from "@/components/realtime/HeaderPill";
 import { RingOrb } from "@/components/realtime/RingOrb";
@@ -49,6 +49,7 @@ export function MainStage({
   onSendText, textBusy, onCreateNote, notePending,
 }: Props) {
   const { provider, currentVoice, pace, rate } = settings;
+  const [online, setOnline] = useState(true);
   const {
     status, partial, error, errorInfo, cooldown, level, latency, sttLatency, ttsLatency,
     micTest, micPermission, start, stop,
@@ -61,9 +62,25 @@ export function MainStage({
   } = intents;
   const showInlineComposer = messages.length > 0 || !!partial;
 
+  useEffect(() => {
+    const updateOnline = () => setOnline(window.navigator.onLine);
+    updateOnline();
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
+
   return (
     <div ref={pageRef} className="contents">
       <AuroraField />
+      {!online && (
+        <div role="status" className="relative z-20 mx-4 mt-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-center text-xs text-amber-100 sm:mx-6">
+          You are offline. Saved local features still work; AI and web actions will retry when you reconnect.
+        </div>
+      )}
       <FirstRunOnboarding lang={settings.lang} onOpenSettings={onOpenSettings} onRun={onSendText} />
       <HeaderPill
         provider={provider}
@@ -129,7 +146,7 @@ export function MainStage({
                   + New
                 </button>
                 <button
-                  onClick={() => history.setMessages([])}
+                  onClick={() => { if (window.confirm("Clear this conversation? This cannot be undone.")) history.setMessages([]); }}
                   className="min-h-10 flex items-center gap-1 px-3 py-2 rounded-full text-[11px] text-muted-foreground hover:text-foreground hover:bg-white/5 border border-white/10 touch-manipulation"
                   aria-label="Clear chat"
                   title="Clear chat"

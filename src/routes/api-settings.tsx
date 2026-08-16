@@ -37,6 +37,7 @@ function ApiSettingsPage() {
   const [filter, setFilter] = useState("");
   const [result, setResult] = useState<ApiTestResult | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -68,14 +69,18 @@ function ApiSettingsPage() {
     } catch { /* ignore */ }
   }, [selectedModels, provider, hydrated]);
 
+  const persistKey = () => {
+    const v = key.trim();
+    if (v) window.localStorage.setItem(GEMINI_KEY_LS, v);
+    else window.localStorage.removeItem(GEMINI_KEY_LS);
+  };
+
   const saveKey = () => {
     try {
-      const v = key.trim();
-      if (v) window.localStorage.setItem(GEMINI_KEY_LS, v);
-      else window.localStorage.removeItem(GEMINI_KEY_LS);
-      toast.success(isUrdu ? "کی محفوظ ہو گئی۔" : "Key saved locally.");
+      persistKey();
+      toast.success(isUrdu ? "کی محفوظ ہو گئی۔" : "Key saved on this device.");
     } catch {
-      toast.error(isUrdu ? "محفوظ نہیں ہو سکا" : "Couldn't save");
+      toast.error(isUrdu ? "محفوظ نہیں ہو سکا" : "Couldn't save the key");
     }
   };
 
@@ -99,6 +104,11 @@ function ApiSettingsPage() {
 
   const runTest = async (only?: string) => {
     setBusy(true); setResult(null);
+    try { persistKey(); } catch {
+      toast.error(isUrdu ? "کی محفوظ نہیں ہو سکی" : "Could not save the key on this device.");
+      setBusy(false);
+      return;
+    }
     try {
       const r = await testProviderConnection({
         data: {
@@ -143,14 +153,10 @@ function ApiSettingsPage() {
       <main className="mx-auto max-w-xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4" aria-labelledby="setup-guide-title">
           <h2 id="setup-guide-title" className="text-sm font-semibold">Connect Alpha in 3 steps</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Paste your key, save it locally, then test the connection. A server-configured key can be tested without entering one here.</p>
-          <div className="mt-3 grid grid-cols-3 gap-1.5 text-center text-[10px]" aria-label="API setup steps">
-            <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-2 text-cyan-100">1. Paste key</span>
-            <span className="rounded-md border border-border bg-background/40 px-2 py-2 text-muted-foreground">2. Detect</span>
-            <span className="rounded-md border border-border bg-background/40 px-2 py-2 text-muted-foreground">3. Test</span>
-          </div>
+          <p className="mt-1 text-xs text-muted-foreground">Connect Alpha with one key. We save it only on this device and test it before you continue.</p>
+          <div className="mt-3 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-3 py-2 text-xs text-cyan-100" aria-label="Connection setup">Paste your key, then choose <strong>Save and test connection</strong>.</div>
         </section>
-        <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
+        {advancedOpen && <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
           <label htmlFor="provider" className="mb-2 block text-sm font-medium">
             {isUrdu ? "پرووائیڈر" : "Provider"}
           </label>
@@ -176,7 +182,7 @@ function ApiSettingsPage() {
               </option>
             ))}
           </select>
-        </section>
+        </section>}
 
         <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
           <label htmlFor="gemini-key" className="mb-2 block text-sm font-medium">
@@ -217,7 +223,7 @@ function ApiSettingsPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
+        {advancedOpen && <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold">{isUrdu ? "دستیاب ماڈلز" : "Available models"}</h2>
@@ -235,6 +241,11 @@ function ApiSettingsPage() {
             </button>
           </div>
 
+          {!detecting && models && models.length === 0 && (
+            <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.06] p-3 text-xs text-amber-100">
+              No models were found. Check the key or continue with the default Gemini model.
+            </div>
+          )}
           {!detecting && models && models.length > 0 && (
             <div className="mt-4 space-y-2">
               <input
@@ -285,16 +296,20 @@ function ApiSettingsPage() {
               </div>
             </div>
           )}
-        </section>
+        </section>}
 
-        <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
+        <button type="button" onClick={() => setAdvancedOpen((value) => !value)} className="min-h-11 w-full rounded-xl border border-border/60 bg-card/30 px-4 text-left text-sm text-muted-foreground hover:text-foreground">
+          {advancedOpen ? "Hide advanced model settings" : "Advanced model settings"}
+        </button>
+
+        <section className="rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.04] p-5">
           <button
             onClick={() => runTest()}
             disabled={anyBusy}
             className="inline-flex items-center gap-2 rounded-full bg-cyan-500/90 px-4 py-2 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50 min-h-11"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-            {isUrdu ? "کنکشن ٹیسٹ کریں" : "Run connection test"}
+            {isUrdu ? "محفوظ کریں اور کنکشن ٹیسٹ کریں" : "Save and test connection"}
           </button>
 
           {result && (
