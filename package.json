@@ -86,7 +86,6 @@
     "three": "^0.185.1",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
-    "vite-tsconfig-paths": "^6.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
