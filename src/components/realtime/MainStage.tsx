@@ -9,6 +9,7 @@ import { VoiceErrorCard } from "@/components/realtime/VoiceErrorCard";
 import { ChatComposer } from "@/components/realtime/ChatComposer";
 import { JARVISHud } from "@/components/realtime/JARVISHud";
 import { QuickSkills } from "@/components/realtime/QuickSkills";
+import { FirstRunOnboarding } from "@/components/realtime/FirstRunOnboarding";
 import type { useVoiceSettings } from "@/hooks/use-voice-settings";
 import type { useRealtimeSession } from "@/hooks/use-realtime-session";
 import type { useThreadHistory } from "@/hooks/use-thread-history";
@@ -62,6 +63,7 @@ export function MainStage({
   return (
     <div ref={pageRef} className="contents">
       <AuroraField />
+      <FirstRunOnboarding lang={settings.lang} onOpenSettings={onOpenSettings} onRun={onSendText} />
       <HeaderPill
         provider={provider}
         currentVoice={currentVoice}
@@ -95,6 +97,21 @@ export function MainStage({
           onStart={start}
           onStop={stop}
         />
+        {!showInlineComposer && messages.length === 0 && (
+          <div className="relative z-10 mx-auto w-full max-w-2xl animate-fade-in lg:col-span-12">
+            <div className="mb-2 text-center text-[11px] uppercase tracking-[0.18em] text-white/35">
+              {settings.lang === "ur" ? "آواز یا text سے Alpha کو کام بتائیں" : "Tell Alpha what to do by voice or text"}
+            </div>
+            <ChatComposer
+              lang={settings.lang}
+              onSend={onSendText}
+              busy={textBusy}
+              onNote={onCreateNote}
+              notePending={notePending}
+              placeholder={settings.lang === "ur" ? "مثلاً: آج کے اہم کام بتاؤ…" : "Try: prepare today's business briefing…"}
+            />
+          </div>
+        )}
         {showInlineComposer || messages.length > 0 ? (
           <aside className="lg:col-span-4 w-full max-w-2xl mx-auto lg:mx-0 lg:max-w-none lg:self-stretch lg:flex lg:flex-col lg:justify-center relative min-h-[120px] animate-fade-in">
             {messages.length > 0 && (
