@@ -26,9 +26,9 @@ function DashboardPage() {
   useEffect(() => { refresh(); }, []);
 
   const copy = useMemo(() => urdu ? {
-    back: "واپس", title: "کاروباری ڈیش بورڈ", subtitle: "آپ کے Alpha کام، یاددہانیاں اور محفوظ actions ایک نظر میں۔", profile: "پروفائل", configure: "پروفائل مکمل کریں", reminders: "یاددہانیاں", pending: "باقی", done: "مکمل", actions: "حالیہ actions", today: "آج", dueSoon: "قریب آنے والی", noReminders: "کوئی یاددہانی نہیں", noActions: "ابھی کوئی action record نہیں ہوا", open: "کھولیں", refresh: "تازہ کریں", quick: "فوری کام", whatsapp: "WhatsApp draft", email: "Email draft", briefing: "Business briefing", security: "Approval حفاظت فعال ہے", securityText: "WhatsApp، Email اور desktop actions user approval کے بغیر نہیں چلتے۔"
+    back: "واپس", title: "کاروباری ڈیش بورڈ", subtitle: "آپ کے Alpha کام، یاددہانیاں اور محفوظ actions ایک نظر میں۔", profile: "پروفائل", configure: "پروفائل مکمل کریں", reminders: "یاددہانیاں", pending: "باقی", done: "مکمل", actions: "حالیہ actions", today: "آج", dueSoon: "قریب آنے والی", noReminders: "کوئی یاددہانی نہیں", noActions: "ابھی کوئی action record نہیں ہوا", open: "کھولیں", refresh: "تازہ کریں", quick: "فوری کام", whatsapp: "WhatsApp draft", email: "Email draft", briefing: "Business briefing", security: "Approval حفاظت فعال ہے", securityText: "WhatsApp، Email اور desktop actions user approval کے بغیر نہیں چلتے۔", todayActions: "آج کے actions"
   } : {
-    back: "Back", title: "Business dashboard", subtitle: "Your Alpha work, reminders, and approved actions in one view.", profile: "Profile", configure: "Complete profile", reminders: "Reminders", pending: "Pending", done: "Done", actions: "Recent actions", today: "Today", dueSoon: "Upcoming", noReminders: "No reminders yet", noActions: "No actions recorded yet", open: "Open", refresh: "Refresh", quick: "Quick actions", whatsapp: "WhatsApp draft", email: "Email draft", briefing: "Business briefing", security: "Approval safety is active", securityText: "WhatsApp, Email, and desktop actions require user approval before they run."
+    back: "Back", title: "Business dashboard", subtitle: "Your Alpha work, reminders, and approved actions in one view.", profile: "Profile", configure: "Complete profile", reminders: "Reminders", pending: "Pending", done: "Done", actions: "Recent actions", today: "Today", dueSoon: "Upcoming", noReminders: "No reminders yet", noActions: "No actions recorded yet", open: "Open", refresh: "Refresh", quick: "Quick actions", whatsapp: "WhatsApp draft", email: "Email draft", briefing: "Business briefing", security: "Approval safety is active", securityText: "WhatsApp, Email, and desktop actions require user approval before they run.", todayActions: "Actions today"
   }, [urdu]);
 
   const pending = reminders.filter((item) => !item.completed);
@@ -36,6 +36,7 @@ function DashboardPage() {
   const today = new Date().toISOString().slice(0, 10);
   const dueSoon = pending.filter((item) => item.dueDate >= today).sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, 5);
   const recent = audits.slice(0, 6);
+  const actionsToday = audits.filter((item) => new Date(item.at).toISOString().slice(0, 10) === today).length;
   const displayDate = (value: number) => new Intl.DateTimeFormat(urdu ? "ur-PK" : "en-SA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
   return (
@@ -50,10 +51,11 @@ function DashboardPage() {
 
         {!profileName && <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-amber-300/25 bg-amber-300/[0.07] p-4 text-xs text-amber-100"><span>{urdu ? "بہتر business context کے لیے اپنا پروفائل مکمل کریں۔" : "Complete your profile for better business context in Gemini."}</span><Link to="/business-profile" className="shrink-0 rounded-full border border-amber-200/30 px-3 py-1.5 hover:bg-amber-200/10">{copy.configure}</Link></div>}
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <Stat icon={<Bell className="h-5 w-5" />} label={copy.reminders} value={reminders.length} tone="cyan" />
           <Stat icon={<Clock3 className="h-5 w-5" />} label={copy.pending} value={pending.length} tone="amber" />
           <Stat icon={<CheckCircle2 className="h-5 w-5" />} label={copy.done} value={completed.length} tone="emerald" />
+          <Stat icon={<FileText className="h-5 w-5" />} label={copy.todayActions} value={actionsToday} tone="cyan" />
         </div>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">

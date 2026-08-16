@@ -10,6 +10,7 @@ import {
   toggleBusinessReminder,
   type BusinessProfile,
   type BusinessReminder,
+  type ReminderRepeat,
 } from "@/lib/business-profile";
 import { loadLang, type LangCode } from "@/lib/persona";
 
@@ -37,7 +38,7 @@ function BusinessProfilePage() {
   const [lang, setLang] = useState<LangCode>("ur");
   const [profile, setProfile] = useState<BusinessProfile>(emptyProfile);
   const [reminders, setReminders] = useState<BusinessReminder[]>([]);
-  const [newReminder, setNewReminder] = useState({ title: "", dueDate: "", category: "other" as BusinessReminder["category"], notes: "" });
+  const [newReminder, setNewReminder] = useState({ title: "", dueDate: "", category: "other" as BusinessReminder["category"], repeat: "none" as ReminderRepeat, notes: "" });
 
   useEffect(() => {
     setLang(loadLang());
@@ -76,6 +77,11 @@ function BusinessProfilePage() {
     payment: "ادائیگی",
     meeting: "میٹنگ",
     other: "دیگر",
+    repeat: "دہرائی",
+    none: "ایک بار",
+    daily: "روزانہ",
+    weekly: "ہفتہ وار",
+    monthly: "ماہانہ",
   } : {
     back: "Back",
     title: "Business profile",
@@ -106,6 +112,11 @@ function BusinessProfilePage() {
     payment: "Payment",
     meeting: "Meeting",
     other: "Other",
+    repeat: "Repeat",
+    none: "Once",
+    daily: "Daily",
+    weekly: "Weekly",
+    monthly: "Monthly",
   }, [urdu]);
 
   const update = <K extends keyof BusinessProfile>(key: K, value: BusinessProfile[K]) => setProfile((current) => ({ ...current, [key]: value }));
@@ -114,7 +125,7 @@ function BusinessProfilePage() {
     if (!newReminder.title.trim() || !newReminder.dueDate) return;
     addBusinessReminder({ ...newReminder, title: newReminder.title.trim(), notes: newReminder.notes.trim() });
     setReminders(loadBusinessReminders());
-    setNewReminder({ title: "", dueDate: "", category: "other", notes: "" });
+    setNewReminder({ title: "", dueDate: "", category: "other", repeat: "none", notes: "" });
   };
 
   const categoryLabel = (category: BusinessReminder["category"]) => ({ tax: copy.tax, license: copy.license, payment: copy.payment, meeting: copy.meeting, other: copy.other })[category];
@@ -146,10 +157,11 @@ function BusinessProfilePage() {
 
         <section className="glass-card rounded-xl p-4 sm:p-5">
           <div className="mb-4 flex items-center gap-2"><Bell className="h-5 w-5 text-violet-300" /><h2 className="text-sm font-semibold text-white/85">{copy.reminders}</h2></div>
-          <div className="grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
+          <div className="grid gap-2 sm:grid-cols-4">
             <input value={newReminder.title} onChange={(e) => setNewReminder((v) => ({ ...v, title: e.target.value }))} placeholder={copy.reminderTitle} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300/50" />
             <input type="date" value={newReminder.dueDate} onChange={(e) => setNewReminder((v) => ({ ...v, dueDate: e.target.value }))} aria-label={copy.due} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300/50" />
             <select value={newReminder.category} onChange={(e) => setNewReminder((v) => ({ ...v, category: e.target.value as BusinessReminder["category"] }))} aria-label={copy.category} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"><option value="tax">{copy.tax}</option><option value="license">{copy.license}</option><option value="payment">{copy.payment}</option><option value="meeting">{copy.meeting}</option><option value="other">{copy.other}</option></select>
+            <select value={newReminder.repeat} onChange={(e) => setNewReminder((v) => ({ ...v, repeat: e.target.value as ReminderRepeat }))} aria-label={copy.repeat} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"><option value="none">{copy.none}</option><option value="daily">{copy.daily}</option><option value="weekly">{copy.weekly}</option><option value="monthly">{copy.monthly}</option></select>
           </div>
           <input value={newReminder.notes} onChange={(e) => setNewReminder((v) => ({ ...v, notes: e.target.value }))} placeholder={copy.notes} className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-cyan-300/50" />
           <button type="button" onClick={addReminder} disabled={!newReminder.title.trim() || !newReminder.dueDate} className="mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-violet-300/35 bg-violet-300/15 px-3 text-xs text-violet-100 disabled:opacity-40"><Plus className="h-3.5 w-3.5" />{copy.add}</button>
@@ -157,7 +169,7 @@ function BusinessProfilePage() {
           <div className="mt-4 space-y-2">
             {reminders.length === 0 ? <p className="py-5 text-center text-xs text-white/40">{copy.empty}</p> : reminders.map((item) => <div key={item.id} className={`flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 ${item.completed ? "opacity-55" : ""}`}>
               <button type="button" onClick={() => { toggleBusinessReminder(item.id); setReminders(loadBusinessReminders()); }} aria-label={item.completed ? copy.pending : copy.completed} className={`mt-0.5 h-4 w-4 shrink-0 rounded border ${item.completed ? "border-emerald-300 bg-emerald-300/70" : "border-white/25"}`}>{item.completed ? <Check className="h-3 w-3 text-slate-900" /> : null}</button>
-              <div className="min-w-0 flex-1"><div className={`text-xs font-medium ${item.completed ? "line-through" : ""}`}>{item.title}</div><div className="mt-1 text-[10px] text-white/45">{item.dueDate} · {categoryLabel(item.category)}{item.notes ? ` · ${item.notes}` : ""}</div></div>
+              <div className="min-w-0 flex-1"><div className={`text-xs font-medium ${item.completed ? "line-through" : ""}`}>{item.title}</div><div className="mt-1 text-[10px] text-white/45">{item.dueDate} · {categoryLabel(item.category)}{item.repeat !== "none" ? ` · ${copy[item.repeat]}` : ""}{item.notes ? ` · ${item.notes}` : ""}</div></div>
               <button type="button" onClick={() => { removeBusinessReminder(item.id); setReminders(loadBusinessReminders()); }} aria-label={urdu ? "حذف کریں" : "Delete"} className="text-white/40 transition hover:text-red-200"><Trash2 className="h-4 w-4" /></button>
             </div>)}
           </div>
