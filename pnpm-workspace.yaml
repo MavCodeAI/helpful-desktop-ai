@@ -1,3 +1,5 @@
 overrides:
   js-yaml: 4.3.1
   nanoid: 3.3.18
+  brace-expansion: 1.1.18
+  uuid: 11.1.1

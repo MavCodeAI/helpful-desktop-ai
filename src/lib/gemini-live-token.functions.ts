@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { GEMINI_LIVE_MODEL_PATH } from "./gemini-live-config";
+import { missingAiKeyMessage, resolveAiKey } from "./ai-key-policy.server";
 
 export type GeminiLiveTokenResult =
   | { configured: true; token: string; expiresAt: string }
@@ -15,7 +16,7 @@ type MintedToken =
   | { ok: false; status: "missing" | "invalid" | "provider_error"; error: string };
 
 function resolveApiKey(userKey?: string) {
-  return (userKey || process.env.GEMINI_API_KEY || "").trim();
+  return resolveAiKey(userKey, "GEMINI_API_KEY").key;
 }
 
 function sanitizeProviderDetail(text: string): string {
@@ -47,7 +48,7 @@ async function mintGeminiLiveToken(apiKey: string): Promise<MintedToken> {
     return {
       ok: false,
       status: "missing",
-      error: "GEMINI_API_KEY is not configured on the server.",
+      error: missingAiKeyMessage("Gemini Live"),
     };
   }
   if (apiKey.length < 20) {

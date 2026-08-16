@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { MessageBubble, PartialBubble, TypingBubble } from "./MessageBubble";
-import { CitedSources, parseCitations } from "./CitedSources";
+import { CitedSources } from "./CitedSources";
+import { parseCitations } from "./citation-parser";
 import type { VoiceMessage, VoiceStatus } from "@/lib/voice-providers";
 
 type Props = {

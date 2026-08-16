@@ -1,3 +1,5 @@
+import { missingAiKeyMessage, resolveAiKey } from "./ai-key-policy.server";
+
 export type GeminiPart =
   | { text: string }
   | { inlineData: { mimeType: string; data: string } };
@@ -44,10 +46,8 @@ function extractText(payload: GeminiResponse) {
 }
 
 export function getGeminiTextApiKey(userKey?: string) {
-  const key = userKey?.trim() || process.env.GEMINI_API_KEY?.trim();
-  if (!key?.trim()) {
-    throw new Error("Gemini AI is not configured. Add a Gemini key in Settings and use Apply & Test, or configure GEMINI_API_KEY on the production server.");
-  }
+  const { key } = resolveAiKey(userKey, "GEMINI_API_KEY");
+  if (!key) throw new Error(missingAiKeyMessage("Gemini AI"));
   return key;
 }
 
