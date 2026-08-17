@@ -62,12 +62,12 @@ export function FirstRunOnboarding({ lang, onOpenSettings, onRun }: Props) {
   const steps = urdu
     ? [
         { icon: Sparkles, title: "Alpha سے ایک کام کروائیں", body: "آپ آواز یا text میں کام بتا سکتے ہیں۔ Alpha پہلے سمجھے گا، پھر خطرناک external action سے پہلے آپ سے اجازت لے گا۔" },
-        { icon: KeyRound, title: "Alpha کو connect کریں", body: "Settings کھولیں، Gemini API key شامل کریں، پھر Save and test دبائیں۔ یہ key صرف اسی device پر محفوظ ہوتی ہے۔" },
+        { icon: KeyRound, title: "Alpha کو connect کریں", body: "Settings کھولیں، Gemini API key شامل کریں، پھر Save and test دبائیں۔ سیکیورٹی کے لیے یہ key صرف موجودہ session میں استعمال ہوگی۔" },
         { icon: Mic, title: "پہلا کام text سے آزمائیں", body: "پہلے کم خطرے والا task چلائیں۔ کامیابی کے بعد آپ voice input آزما سکتے ہیں۔" },
       ]
     : [
         { icon: Sparkles, title: "Give Alpha one useful task", body: "Tell Alpha what you need by voice or text. Alpha explains what it understood and asks before any external action." },
-        { icon: KeyRound, title: "Connect Alpha once", body: "Open Settings, add your Gemini API key, then choose Save and test. The key stays on this device." },
+        { icon: KeyRound, title: "Connect Alpha once", body: "Open Settings, add your Gemini API key, then choose Save and test. For security, the key is used only for the current session." },
         { icon: Mic, title: "Run your first task by text", body: "Start with a safe task so you can see how Alpha works. You can try voice after your first result." },
       ];
   const current = steps[state.step];

@@ -11,7 +11,6 @@ import { VoicePaceSection } from "@/components/realtime/settings/VoicePaceSectio
 import { MicSection } from "@/components/realtime/settings/MicSection";
 import { PerformanceSection } from "@/components/realtime/settings/PerformanceSection";
 import { TriggersSection } from "@/components/realtime/settings/TriggersSection";
-import { ComingSoonSection } from "@/components/realtime/settings/ComingSoonSection";
 import { PersonaSection } from "@/components/realtime/settings/PersonaSection";
 import { LanguageSection } from "@/components/realtime/settings/LanguageSection";
 import { RegionSection } from "@/components/realtime/settings/RegionSection";
@@ -222,7 +221,6 @@ export function SettingsDrawer(props: SettingsDrawerProps) {
             <PrivacySection />
             <ThemeSection />
             <DangerSection clearMemories={clearMemories} />
-            <ComingSoonSection />
           </>}
         </div>
       </aside>
