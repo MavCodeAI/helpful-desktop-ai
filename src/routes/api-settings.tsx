@@ -153,7 +153,7 @@ function ApiSettingsPage() {
       <main className="mx-auto max-w-xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-4" aria-labelledby="setup-guide-title">
           <h2 id="setup-guide-title" className="text-sm font-semibold">Connect Alpha in 3 steps</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Connect Alpha with one key. We save it only on this device and test it before you continue.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Connect Alpha with one key. We use it for this session only and test it before you continue.</p>
           <div className="mt-3 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.06] px-3 py-2 text-xs text-cyan-100" aria-label="Connection setup">Paste your key, then choose <strong>Save and test connection</strong>.</div>
         </section>
         {advancedOpen && <section className="rounded-2xl border border-border/50 bg-card/40 p-5">
@@ -174,7 +174,7 @@ function ApiSettingsPage() {
                 setSelectedModels(Array.isArray(next) ? next.slice(0, 6) : []);
               } catch { setSelectedModels([]); }
             }}
-            className="w-full rounded-lg border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 disabled:opacity-50"
+            className="w-full min-h-11 rounded-lg border border-border bg-background/60 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 disabled:opacity-50"
           >
             {PROVIDERS.filter((p) => p.implemented).map((p) => (
               <option key={p.id} value={p.id} className="bg-background">
@@ -218,8 +218,8 @@ function ApiSettingsPage() {
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
             {isUrdu
-              ? "کی صرف اس براؤزر کے localStorage میں رہتی ہے۔"
-              : "Key stays in this browser's localStorage."}
+              ? "کی صرف اس سیشن کے لیے استعمال ہوتی ہے اور مستقل طور پر محفوظ نہیں رہتی۔"
+              : "Key is used for this session only and is not stored permanently."}
           </p>
         </section>
 
@@ -304,6 +304,7 @@ function ApiSettingsPage() {
 
         <section className="rounded-2xl border border-cyan-400/25 bg-cyan-400/[0.04] p-5">
           <button
+            type="button"
             onClick={() => runTest()}
             disabled={anyBusy}
             className="inline-flex items-center gap-2 rounded-full bg-cyan-500/90 px-4 py-2 text-sm font-semibold text-black hover:bg-cyan-400 disabled:opacity-50 min-h-11"
@@ -313,7 +314,7 @@ function ApiSettingsPage() {
           </button>
 
           {result && (
-            <div className="mt-4 space-y-2 rounded-lg border border-border/50 bg-background/40 p-3">
+            <div role={result.ok ? "status" : "alert"} aria-live="polite" className="mt-4 space-y-2 rounded-lg border border-border/50 bg-background/40 p-3">
               <div className="flex items-center gap-2 text-sm">
                 {result.ok ? (
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />

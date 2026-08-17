@@ -21,7 +21,7 @@ export function VoiceStateLabel({ status, active, disabled = false }: Props) {
   const spinning = status === "connecting";
 
   return (
-    <div className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 px-3 text-center" aria-live="polite">
+    <div role={status === "error" ? "alert" : "status"} aria-live={status === "error" ? "assertive" : "polite"} aria-atomic="true" className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 px-3 text-center">
       <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border ${status === "error" ? "border-rose-300/30 bg-rose-300/10 text-rose-200" : active ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-200" : "border-white/10 bg-white/[0.04] text-white/60"}`}>
         <Icon className={`h-4 w-4 ${spinning ? "animate-spin" : ""}`} aria-hidden="true" />
       </span>
