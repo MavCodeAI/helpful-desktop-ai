@@ -6,6 +6,7 @@ import { useNotes } from "@/lib/utilities/notes";
 import { useAiNotesEnabled } from "@/hooks/use-ai-notes-enabled";
 import { useUILang } from "@/hooks/use-ui-lang";
 import { generateNote } from "@/lib/note-ai.functions";
+import { loadSettings } from "@/lib/realtime/storage";
 
 interface Props {
   open: boolean;
@@ -66,7 +67,7 @@ export function NotesDrawer({ open, onClose }: Props) {
     if (aiMode && aiEnabled) {
       setAiBusy(true);
       try {
-        const res = await generateNote({ data: { prompt: t } });
+        const res = await generateNote({ data: { prompt: t, userKey: loadSettings().geminiKey || undefined } });
         add(res.text);
         setDraft("");
         const summary = res.text.length > 60 ? res.text.slice(0, 60) + "…" : res.text;

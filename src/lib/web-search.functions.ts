@@ -3,6 +3,7 @@ import { z } from "zod";
 import { countryOption, type CountryCode } from "@/lib/locale";
 import type { LangCode } from "@/lib/persona";
 import { generateGeminiGroundedText, generateGeminiText, geminiUserText } from "./gemini-text.server";
+import { resolveAiKey } from "./ai-key-policy.server";
 
 export type WebSource = { title: string; url: string; snippet?: string };
 export type WebSearchProvider = "tavily" | "gemini" | "none";
@@ -22,7 +23,7 @@ function unavailableSummary(query: string, lang: LangCode): string {
 }
 
 function getTavilyKey(userKey?: string) {
-  return userKey?.trim() || process.env.TAVILY_API_KEY?.trim() || "";
+  return resolveAiKey(userKey, "TAVILY_API_KEY").key;
 }
 
 async function searchTavily(query: string, country: string, userKey?: string): Promise<WebSource[]> {
